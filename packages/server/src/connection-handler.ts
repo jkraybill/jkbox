@@ -26,7 +26,7 @@ export class ConnectionHandler {
       return
     }
 
-    // TODO: Handle reconnection with session token
+    // Note: Reconnection with session tokens tracked in issue #4
     // For now, always create new player
 
     const player: Player = {
