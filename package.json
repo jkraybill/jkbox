@@ -1,0 +1,31 @@
+{
+  "name": "jkbox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Party-ready multiplayer game arena - killer app for drunk friends with dark humor",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:client": "npm run dev -w packages/client",
+    "dev:server": "npm run dev -w packages/server",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "rm -rf packages/*/node_modules packages/*/dist node_modules"
+  },
+  "keywords": [
+    "party-game",
+    "multiplayer",
+    "websocket",
+    "local-network"
+  ],
+  "author": "JK",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

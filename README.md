@@ -6,13 +6,20 @@
 
 ## Current Status
 
-**Version:** 0.1.0 (Framework setup complete, games coming soon)
-**Session:** 1
-**Tests:** 0/0 passing (TDD starts with first feature)
-**Party Readiness:** 🔴 Not ready (need at least one game!)
+**Version:** 0.1.0 (Project scaffolding complete, ready for TDD implementation)
+**Session:** 2
+**Tests:** 3/3 passing (placeholder tests, real tests follow TDD)
+**Party Readiness:** 🔴 Not ready (need Arena + Interpreter MVP)
 **JKLES:** TBD (track in HUMOR.md)
 
-**Next:** Build first game module with full test coverage
+**Completed:**
+- ✅ Monorepo structure (client, server, shared packages)
+- ✅ TypeScript strict mode configured
+- ✅ Vitest testing infrastructure
+- ✅ Vite + React setup (client)
+- ✅ Express + Socket.io setup (server)
+
+**Next:** Implement shared types (Room, Player, GameModule) following TDD
 
 ---
 

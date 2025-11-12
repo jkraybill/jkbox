@@ -6,7 +6,10 @@
         "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/dist/index.js"
       ],
       "env": {
-        "NODE_PATH": "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/node_modules"
+        "NODE_PATH": "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/node_modules",
+        "REPO_PATH": "/home/jkraybill/jkbox",
+        "OLLAMA_URL": "http://localhost:11434",
+        "EMBEDDING_MODEL": "mxbai-embed-large:latest"
       }
     },
     "git": {
