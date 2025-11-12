@@ -50,6 +50,11 @@ export interface AdminDelegateMessage {
   playerId: string
 }
 
+export interface WatchMessage {
+  type: 'watch'
+  roomId: string
+}
+
 export type ClientMessage =
   | JoinMessage
   | SubmitMessage
@@ -59,10 +64,17 @@ export type ClientMessage =
   | AdminResumeTimerMessage
   | AdminSkipPhaseMessage
   | AdminDelegateMessage
+  | WatchMessage
 
 // ============================================================================
 // Server → Client Messages
 // ============================================================================
+
+export interface JoinSuccessMessage {
+  type: 'join:success'
+  player: Player
+  room: Room
+}
 
 export interface RoomUpdateMessage {
   type: 'room:update'
@@ -114,6 +126,7 @@ export interface ErrorMessage {
 }
 
 export type ServerMessage =
+  | JoinSuccessMessage
   | RoomUpdateMessage
   | GameStateMessage
   | RoundPhaseChangeMessage

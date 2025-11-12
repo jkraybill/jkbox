@@ -1,11 +1,16 @@
 import { Routes, Route } from 'react-router-dom'
+import { Home } from './pages/Home'
+import { Jumbotron } from './pages/Jumbotron'
+import { Join } from './pages/Join'
+import { Player } from './pages/Player'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<div>jkbox - Coming soon</div>} />
-      <Route path="/jumbotron/:roomId" element={<div>Jumbotron view</div>} />
-      <Route path="/play/:roomId" element={<div>Player view</div>} />
+      <Route path="/" element={<Home />} />
+      <Route path="/jumbotron/:roomId" element={<Jumbotron />} />
+      <Route path="/join/:roomId" element={<Join />} />
+      <Route path="/play/:roomId" element={<Player />} />
     </Routes>
   )
 }

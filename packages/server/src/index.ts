@@ -2,7 +2,7 @@ import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
-import type { JoinMessage } from '@jkbox/shared'
+import type { JoinMessage, WatchMessage } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
 
@@ -17,7 +17,7 @@ const io = new Server(httpServer, {
 
 // Initialize managers
 const roomManager = new RoomManager()
-const connectionHandler = new ConnectionHandler(roomManager)
+const connectionHandler = new ConnectionHandler(roomManager, io)
 
 // Middleware
 app.use(cors())
@@ -58,9 +58,14 @@ app.get('/api/rooms/:roomId', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
 
-  // Handle join messages
+  // Handle join messages (players joining)
   socket.on('join', (message: JoinMessage) => {
     connectionHandler.handleJoin(socket, message)
+  })
+
+  // Handle watch messages (jumbotron/spectators)
+  socket.on('watch', (message: WatchMessage) => {
+    connectionHandler.handleWatch(socket, message)
   })
 
   // Handle disconnect

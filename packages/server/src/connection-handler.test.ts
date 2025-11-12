@@ -1,32 +1,56 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import type { Socket } from 'socket.io'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { Socket, Server } from 'socket.io'
 import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
 
 // Mock Socket.io socket
 function createMockSocket(id: string): Partial<Socket> {
   const emittedEvents: Array<{ event: string; data: unknown }> = []
+  const joinedRooms: string[] = []
 
   return {
     id,
     emit: (event: string, data: unknown) => {
       emittedEvents.push({ event, data })
     },
+    join: (room: string) => {
+      joinedRooms.push(room)
+    },
     disconnect: () => {
       // Mock disconnect
     },
     // Helper to check emitted events in tests
-    _getEmittedEvents: () => emittedEvents
-  } as Partial<Socket> & { _getEmittedEvents: () => Array<{ event: string; data: unknown }> }
+    _getEmittedEvents: () => emittedEvents,
+    _getJoinedRooms: () => joinedRooms
+  } as Partial<Socket> & {
+    _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+    _getJoinedRooms: () => string[]
+  }
+}
+
+// Mock Socket.io server
+function createMockServer(): Partial<Server> {
+  const broadcastEvents: Array<{ room: string; event: string; data: unknown }> = []
+
+  return {
+    to: (room: string) => ({
+      emit: (event: string, data: unknown) => {
+        broadcastEvents.push({ room, event, data })
+      }
+    } as any),
+    _getBroadcastEvents: () => broadcastEvents
+  } as any
 }
 
 describe('ConnectionHandler', () => {
   let roomManager: RoomManager
   let handler: ConnectionHandler
+  let io: Partial<Server> & { _getBroadcastEvents: () => Array<{ room: string; event: string; data: unknown }> }
 
   beforeEach(() => {
     roomManager = new RoomManager()
-    handler = new ConnectionHandler(roomManager)
+    io = createMockServer() as any
+    handler = new ConnectionHandler(roomManager, io as Server)
   })
 
   describe('handleJoin', () => {
@@ -46,10 +70,11 @@ describe('ConnectionHandler', () => {
       expect(updated?.players[0]?.isConnected).toBe(true)
     })
 
-    it('should emit room:update after successful join', () => {
+    it('should emit join:success with player and room after successful join', () => {
       const room = roomManager.createRoom('host-1')
       const socket = createMockSocket('socket-1') as Socket & {
         _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+        _getJoinedRooms: () => string[]
       }
 
       handler.handleJoin(socket, {
@@ -59,9 +84,42 @@ describe('ConnectionHandler', () => {
       })
 
       const events = socket._getEmittedEvents()
-      const roomUpdateEvent = events.find(e => e.event === 'room:update')
+      const joinSuccessEvent = events.find(e => e.event === 'join:success')
 
-      expect(roomUpdateEvent).toBeDefined()
+      expect(joinSuccessEvent).toBeDefined()
+
+      const data = joinSuccessEvent?.data as { type: string; player: { nickname: string; sessionToken: string }; room: { id: string } }
+      expect(data.type).toBe('join:success')
+      expect(data.player.nickname).toBe('Alice')
+      expect(data.player.sessionToken).toBeDefined()
+      expect(data.room.id).toBe(room.id)
+    })
+
+    it('should make socket join room and broadcast room update', () => {
+      const room = roomManager.createRoom('host-1')
+      const socket = createMockSocket('socket-1') as Socket & {
+        _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+        _getJoinedRooms: () => string[]
+      }
+
+      handler.handleJoin(socket, {
+        type: 'join',
+        roomId: room.id,
+        nickname: 'Alice'
+      })
+
+      // Check socket joined the room
+      const joinedRooms = socket._getJoinedRooms()
+      expect(joinedRooms).toContain(room.id)
+
+      // Check broadcast to room
+      const broadcasts = io._getBroadcastEvents()
+      const roomUpdateBroadcast = broadcasts.find(b => b.room === room.id && b.event === 'room:update')
+
+      expect(roomUpdateBroadcast).toBeDefined()
+      const broadcastData = roomUpdateBroadcast?.data as { type: string; room: { id: string } }
+      expect(broadcastData.type).toBe('room:update')
+      expect(broadcastData.room.id).toBe(room.id)
     })
 
     it('should emit error if room does not exist', () => {

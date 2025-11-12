@@ -1,12 +1,15 @@
-import type { Socket } from 'socket.io'
-import type { JoinMessage, Player } from '@jkbox/shared'
+import type { Socket, Server } from 'socket.io'
+import type { JoinMessage, JoinSuccessMessage, RoomUpdateMessage, WatchMessage, Player } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { generatePlayerId, generateSessionToken } from './utils/session-token'
 
 export class ConnectionHandler {
   private socketToPlayer: Map<string, { playerId: string; roomId: string }> = new Map()
 
-  constructor(private roomManager: RoomManager) {}
+  constructor(
+    private roomManager: RoomManager,
+    private io: Server
+  ) {}
 
   /**
    * Handle player join (new or reconnect)
@@ -56,13 +59,25 @@ export class ConnectionHandler {
       roomId: message.roomId
     })
 
-    // Send updated room state
+    // Make socket join the Socket.io room
+    socket.join(message.roomId)
+
+    // Send join success with player and room to the joining player
     const updated = this.roomManager.getRoom(message.roomId)
     if (updated) {
-      socket.emit('room:update', {
+      const joinSuccess: JoinSuccessMessage = {
+        type: 'join:success',
+        player,
+        room: updated
+      }
+      socket.emit('join:success', joinSuccess)
+
+      // Broadcast room update to all clients in the room (including jumbotron)
+      const roomUpdate: RoomUpdateMessage = {
         type: 'room:update',
         room: updated
-      })
+      }
+      this.io.to(message.roomId).emit('room:update', roomUpdate)
     }
   }
 
@@ -82,6 +97,42 @@ export class ConnectionHandler {
     })
 
     this.socketToPlayer.delete(socket.id)
+
+    // Broadcast room update to all clients in the room
+    const updated = this.roomManager.getRoom(mapping.roomId)
+    if (updated) {
+      const roomUpdate: RoomUpdateMessage = {
+        type: 'room:update',
+        room: updated
+      }
+      this.io.to(mapping.roomId).emit('room:update', roomUpdate)
+    }
+  }
+
+  /**
+   * Handle watch (for jumbotron/spectator views)
+   */
+  handleWatch(socket: Socket, message: WatchMessage): void {
+    const room = this.roomManager.getRoom(message.roomId)
+
+    if (!room) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'ROOM_NOT_FOUND',
+        message: `Room ${message.roomId} not found. Check the code and try again.`
+      })
+      return
+    }
+
+    // Make socket join the Socket.io room to receive broadcasts
+    socket.join(message.roomId)
+
+    // Send initial room state
+    const roomUpdate: RoomUpdateMessage = {
+      type: 'room:update',
+      room
+    }
+    socket.emit('room:update', roomUpdate)
   }
 
   /**

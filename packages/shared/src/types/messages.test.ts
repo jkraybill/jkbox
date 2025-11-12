@@ -4,6 +4,7 @@ import type {
   SubmitMessage,
   VoteMessage,
   AdminStartGameMessage,
+  JoinSuccessMessage,
   RoomUpdateMessage,
   RoundPhaseChangeMessage,
   TimerTickMessage,
@@ -93,6 +94,45 @@ describe('WebSocket message types', () => {
   })
 
   describe('Server → Client Messages', () => {
+    describe('JoinSuccessMessage', () => {
+      it('should have correct shape with player and room', () => {
+        const msg: JoinSuccessMessage = {
+          type: 'join:success',
+          player: {
+            id: 'player-abc',
+            roomId: 'WXYZ',
+            nickname: 'Alice',
+            sessionToken: 'token-xyz-789',
+            isAdmin: false,
+            isHost: false,
+            score: 0,
+            connectedAt: new Date(),
+            lastSeenAt: new Date(),
+            isConnected: true
+          },
+          room: {
+            id: 'WXYZ',
+            hostId: 'player-1',
+            adminIds: ['player-1'],
+            state: 'lobby',
+            currentGame: null,
+            players: [],
+            createdAt: new Date(),
+            config: {
+              maxPlayers: 12,
+              allowMidGameJoin: false,
+              autoAdvanceTimers: true
+            }
+          }
+        }
+
+        expect(msg.type).toBe('join:success')
+        expect(msg.player.nickname).toBe('Alice')
+        expect(msg.player.sessionToken).toBe('token-xyz-789')
+        expect(msg.room.id).toBe('WXYZ')
+      })
+    })
+
     describe('RoomUpdateMessage', () => {
       it('should have correct shape', () => {
         const msg: RoomUpdateMessage = {
