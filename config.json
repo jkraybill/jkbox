@@ -22,7 +22,7 @@
     }
   },
   "sessions": {
-    "count": 0,
+    "count": 1,
     "framework": "gordo-framework-v0.8.0+",
     "provider": "claude-code",
     "features": {
