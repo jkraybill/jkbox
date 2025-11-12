@@ -196,6 +196,10 @@ Journal entries reference HC outcomes:
 
 [2025-11-12 22:35 UTC] Session 1✓. Framework setup complete. Interview→AI-driven HC design Δ. MCPs installed (gordo-memory, git, github). Skills created (health-check v2.0, test-analyzer, api-validator). T:0/0✓. C:0cf412f. Pattern: Entertainment ethos→humor constitutional✓. JKLES: 8/10 (ACK joke landed). TL:0→demonstrated understanding✓. Next: First game module with TDD.
 
+### Session 2 (2025-11-13)
+
+[2025-11-13 10:54 UTC] Session 2✓. Crash recovery→lobby UI pushed. #4 created (reconnection). TODO violation fixed. T:105/105✓. C:d57f3c4,71d3853. Pattern: Session crash→CONSTITUTION audit→issue tracking✓. JKLES: ∅ (recovery work).
+
 ---
 
 ## Usage Notes
