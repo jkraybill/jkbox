@@ -2,6 +2,9 @@ import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
+import type { JoinMessage } from '@jkbox/shared'
+import { RoomManager } from './room-manager'
+import { ConnectionHandler } from './connection-handler'
 
 const app = express()
 const httpServer = createServer(app)
@@ -12,6 +15,10 @@ const io = new Server(httpServer, {
   }
 })
 
+// Initialize managers
+const roomManager = new RoomManager()
+const connectionHandler = new ConnectionHandler(roomManager)
+
 // Middleware
 app.use(cors())
 app.use(express.json())
@@ -21,12 +28,45 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'jkbox-server' })
 })
 
-// Socket.io connection handler (placeholder)
+// Room creation endpoint
+app.post('/api/rooms', (req, res) => {
+  const { hostId } = req.body as { hostId?: string }
+
+  if (!hostId) {
+    res.status(400).json({ error: 'hostId required' })
+    return
+  }
+
+  const room = roomManager.createRoom(hostId)
+  res.json({ room })
+})
+
+// Get room endpoint
+app.get('/api/rooms/:roomId', (req, res) => {
+  const { roomId } = req.params
+  const room = roomManager.getRoom(roomId)
+
+  if (!room) {
+    res.status(404).json({ error: 'Room not found' })
+    return
+  }
+
+  res.json({ room })
+})
+
+// Socket.io connection handler
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
 
+  // Handle join messages
+  socket.on('join', (message: JoinMessage) => {
+    connectionHandler.handleJoin(socket, message)
+  })
+
+  // Handle disconnect
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`)
+    connectionHandler.handleDisconnect(socket)
   })
 })
 
