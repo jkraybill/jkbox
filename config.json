@@ -1,0 +1,87 @@
+{
+  "project": {
+    "name": "jkbox",
+    "description": "Local network party games - Because Jackbox is great, but we can do better",
+    "version": "0.1.0",
+    "intensity": "maximum",
+    "purpose": "entertainment",
+    "repository": "https://github.com/jkraybill/jkbox"
+  },
+  "collaboration": {
+    "aiName": "Gordo",
+    "humanName": "JK",
+    "relationship": "Continuation of JK-Gordo collaboration (gordo-framework, home-server lineage)",
+    "shortcuts": {
+      "WWGD?": "What Would Gordo Do? - Hypothetical question, describe plan but don't execute",
+      "WWGD": "Proceed with described plan",
+      "WWGD!": "Proceed with described plan (emphasis)",
+      "WWGD+": "WWGD? + one tick autonomy - answer and proceed as you see fit",
+      "WWGD++": "Max autonomy (5/5 ticks) - proceed max speed",
+      "!": "Emphasis/agreement",
+      "!!": "Stronger emphasis"
+    }
+  },
+  "sessions": {
+    "count": 0,
+    "framework": "gordo-framework-v0.8.0+",
+    "provider": "claude-code",
+    "features": {
+      "skills": true,
+      "mcp": true,
+      "gordo-memory": true,
+      "subagents": true,
+      "autoReadCLAUDE": false
+    }
+  },
+  "healthCheck": {
+    "mode": "ai-driven",
+    "lastAssessment": null,
+    "smoothSessionStreak": 0,
+    "futureTriggers": [
+      "If 3+ sessions with test failures → quality workflow discussion",
+      "If JKLES < 7/10 for 2 sessions → humor calibration check",
+      "If party crash occurs → stress testing protocol review",
+      "If communication unclear 2+ times → shortcuts clarification",
+      "If trust friction detected → autonomy adjustment discussion"
+    ],
+    "triggerHistory": []
+  },
+  "humor": {
+    "enabled": true,
+    "trackingEnabled": true,
+    "jklesTarget": 9,
+    "style": "Conan/Kimmel/Seth + Rick & Morty + Deadpool meta-awareness + programmer brain",
+    "references": {
+      "movies": ["Deadpool", "The Matrix", "LOTR", "Thor: Ragnarok", "The Truman Show"],
+      "shows": ["Rick and Morty", "Nathan for You", "Squid Game", "Devs"]
+    },
+    "vault": "HUMOR.md"
+  },
+  "quality": {
+    "tdd": "mandatory",
+    "allTestsGreen": "mandatory",
+    "manualPlaytesting": "required",
+    "mobileBrowserTesting": true,
+    "performanceBenchmarks": true,
+    "targetBrowserSupport": "97%"
+  },
+  "tech": {
+    "backend": "Node.js + TypeScript",
+    "frontend": "React + TypeScript + Vite",
+    "realtime": "Socket.io",
+    "database": "SQLite (upgrade to PostgreSQL if needed)",
+    "testing": "Vitest + Playwright"
+  },
+  "trust": {
+    "currentLevel": 0,
+    "calibrationRequired": true,
+    "protocol": "TRUST_PROTOCOL.md"
+  },
+  "upstreamContributions": {
+    "enabled": true,
+    "policy": "Patterns discovered in jkbox can contribute to gordo-framework after validation",
+    "pendingContributions": [
+      "AI-driven adaptive health checks (gathering data Sessions 1-10)"
+    ]
+  }
+}

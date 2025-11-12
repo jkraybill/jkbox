@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "gordo-memory": {
+      "command": "/home/jkraybill/.nvm/versions/node/v22.17.0/bin/node",
+      "args": [
+        "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/dist/index.js"
+      ],
+      "env": {
+        "NODE_PATH": "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/node_modules"
+      }
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "/home/jkraybill/jkbox"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
