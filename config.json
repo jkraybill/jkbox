@@ -22,7 +22,7 @@
     }
   },
   "sessions": {
-    "count": 1,
+    "count": 2,
     "framework": "gordo-framework-v0.8.0+",
     "provider": "claude-code",
     "features": {
@@ -35,8 +35,8 @@
   },
   "healthCheck": {
     "mode": "ai-driven",
-    "lastAssessment": null,
-    "smoothSessionStreak": 0,
+    "lastAssessment": "2025-11-12 Session 2 BOS: Smooth Session 1, no friction detected, proceeding",
+    "smoothSessionStreak": 1,
     "futureTriggers": [
       "If 3+ sessions with test failures → quality workflow discussion",
       "If JKLES < 7/10 for 2 sessions → humor calibration check",
@@ -83,5 +83,29 @@
     "pendingContributions": [
       "AI-driven adaptive health checks (gathering data Sessions 1-10)"
     ]
+  },
+  "memory": {
+    "semantic": {
+      "enabled": true,
+      "provider": "ollama",
+      "model": "mxbai-embed-large",
+      "threshold": 0.5,
+      "indexPath": ".gordo-memory",
+      "autoIndex": true,
+      "ollamaUrl": "http://localhost:11434",
+      "hierarchicalBoost": {
+        "session": 2.0,
+        "issue": 1.5,
+        "commit": 1.2,
+        "docs": 1.0,
+        "code": 0.5
+      },
+      "indexDocs": true,
+      "indexCode": false,
+      "indexPatterns": {
+        "include": ["**/*.md", "**/*.txt", "CONSTITUTION.md", "COLLABORATION.md", "GORDO-WORKFLOW.md", "TRUST_PROTOCOL.md", "HUMOR.md"],
+        "exclude": ["node_modules/**", "dist/**", "build/**", ".git/**"]
+      }
+    }
   }
 }

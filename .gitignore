@@ -18,6 +18,9 @@ build/
 # Gordo Memory index (vector database)
 .gordo-memory/
 
+# Gordo logs and runtime data
+.gordo/logs/
+
 # IDE
 .vscode/
 .idea/
