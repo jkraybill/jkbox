@@ -204,6 +204,8 @@ Journal entries reference HC outcomes:
 
 [2025-11-13 12:30 UTC] #5 Phase 2 complete✓. T:47/47✓. C:9e5a481. Pattern: TDD→full integration: RSS scraper(13), category detector(19), DiscoveryService, CLI commands. Ollama classification + PostgreSQL working. Discovery pipeline operational✓. JKLES: ∅.
 
+[2025-11-13 13:10 UTC] #5 Setup complete✓. PostgreSQL installed, schema loaded, dotenv integration. T:47/47✓. C:31203f3. Pattern: Discovery pipeline validated→401 errors expected from major news sites (ethical blocks)✓. System fully operational.
+
 ---
 
 ## Usage Notes
