@@ -109,7 +109,7 @@ Pattern: Test coverage dropped 3 sessions→added test-analyzer skill
 
 ## Session Count Tracking
 
-**Current session: 1** (updated at BOS)
+**Current session: 3** (updated at BOS)
 
 Framework automation triggers based on count:
 - AI-driven health check (when friction detected, not calendar)
@@ -211,6 +211,22 @@ Journal entries reference HC outcomes:
 [2025-11-13 13:40 UTC] #5 Progress logging✓. Fixed "hung" discovery→added detailed progress at domain/feed level, reduced retries 3→2. T:47/47✓. C:09b8eea. Pattern: Lack of visibility→appeared stuck. Guardian accessible but insufficient weird content. System validated working.
 
 [2025-11-13 14:00 UTC] #5 Major improvements✓. Domain prioritization (never-checked first), 138 sources (14 languages), verbose Ollama logging with emojis. T:47/47✓. C:7920664. Pattern: Extensive web research→regional/local sources more permissive than majors. Italian dedicated weird news sites discovered. WWGD autonomy successful.
+
+### Session 3 (2025-11-13)
+
+[2025-11-13 19:10 UTC] Session 3✓. Deep historical collection implemented. Wayback Machine (10yr) + Reddit (top 1K posts/sub) integrations. 2 new CLI commands. T:47/47✓. C:9ada6a9. Pattern: WWGD+→comprehensive solution: WaybackFetcher, RedditFetcher, 20 curated subs, domain_discovery bug fixed✓. Next: DB schema for historical data, integration into pipeline.
+
+[2025-11-13 19:15 UTC] Session 3 continued. Wayback integrated into discovery pipeline✓. History = discovery (timeless stories). Auto-fetch 10yr snapshots after feed validation. CLI: --no-historical to disable. T:47/47✓. C:b361ea1. Pattern: User direction→unified approach: all content same bucket, history part of discovery✓. Ready for large-scale collection.
+
+[2025-11-13 19:20 UTC] Bug fixes✓. domain_discovery.checkedAt NULL→crashes fixed. Duplicate feed handling→graceful skip. T:47/47✓. C:7c862a7. Pattern: Real user testing→edge cases found immediately. Discovery robust for re-runs now.
+
+[2025-11-13 19:35 UTC] Additional fixes✓. Keyword/errors parsing robust (JSON/CSV/array). Wayback timeouts 30s→90s (archive.org slow but reliable). T:47/47✓. C:8dda014. Pattern: User question→legitimate issue. Archive.org needs patience, not speed. More complete data collection now.
+
+[2025-11-13 19:40 UTC] Article storage TDD✓. Unified schema (RSS+historical+Reddit). SHA256 deduplication. 7 integration tests, auto-skip without DB. collect-historical saves articles. T:47+7✓. C:84ea505. Pattern: User TDD request→comprehensive test suite. "Same bucket" design working. Historical articles now persist.
+
+[2025-11-13 19:50 UTC] Array format bug✓. PostgreSQL TEXT[] expects native arrays, not JSON strings. 274 historical articles saved. T:47/47✓. C:42dc025. Pattern: DB schema creation→real data test→immediate bug found & fixed. System fully operational.
+
+[2025-11-13 20:00 UTC] Auto-classification opt-out✓. User feedback→all articles must be classified. Changed --classify (opt-in) to --no-classify (opt-out). Fixed Commander.js default bug. T:54/54✓. C:156317d. Pattern: User expectation clear→immediate reversal. All 274 articles classified (43 weird/16%)✓. Classification now default behavior.
 
 ---
 
