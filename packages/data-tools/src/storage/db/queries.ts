@@ -1,6 +1,8 @@
 import { Pool } from 'pg'
+import { createHash } from 'crypto'
 import type { FeedSource, FeedCategory } from '../../types/feed'
 import type { DomainDiscovery, DiscoverySession } from '../../types/domain'
+import type { Article, ArticleInsert } from '../../types/article'
 
 /**
  * Type-safe PostgreSQL query layer
@@ -196,7 +198,135 @@ export class DatabaseQueries {
     return result.rows[0]?.last_checked ? new Date(result.rows[0].last_checked) : null
   }
 
+  // ============ Articles ============
+
+  /**
+   * Insert article with deduplication
+   * Uses content_hash (SHA256 of title+description) to prevent duplicates
+   */
+  async insertArticle(article: ArticleInsert): Promise<string | null> {
+    // Generate content hash for deduplication
+    const contentHash = this.generateContentHash(article.title, article.description ?? '')
+
+    try {
+      const result = await this.pool.query<{ id: string }>(
+        `INSERT INTO articles (
+          source_type, source_id, source_url,
+          title, description, content, link,
+          author, pub_date, collected_at,
+          is_weird, weird_confidence, categories,
+          engagement_score, quality_score,
+          language, country, content_hash
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        ON CONFLICT (content_hash) DO NOTHING
+        RETURNING id`,
+        [
+          article.sourceType,
+          article.sourceId,
+          article.sourceUrl,
+          article.title,
+          article.description,
+          article.content,
+          article.link,
+          article.author,
+          article.pubDate,
+          article.collectedAt,
+          article.isWeird,
+          article.weirdConfidence,
+          JSON.stringify(article.categories),
+          article.engagementScore,
+          article.qualityScore,
+          article.language,
+          article.country,
+          contentHash,
+        ]
+      )
+      // Returns null if duplicate (ON CONFLICT DO NOTHING)
+      return result.rows[0]?.id ?? null
+    } catch (error) {
+      console.error(`Failed to insert article: ${error}`)
+      return null
+    }
+  }
+
+  /**
+   * Bulk insert articles with deduplication
+   * Returns count of successfully inserted (non-duplicate) articles
+   */
+  async insertArticles(articles: ArticleInsert[]): Promise<number> {
+    let inserted = 0
+    for (const article of articles) {
+      const id = await this.insertArticle(article)
+      if (id) inserted++
+    }
+    return inserted
+  }
+
+  /**
+   * Get articles by source
+   */
+  async getArticlesBySource(
+    sourceType: 'rss' | 'historical' | 'reddit',
+    sourceId: string,
+    limit?: number
+  ): Promise<Article[]> {
+    const query = limit
+      ? `SELECT * FROM articles WHERE source_type = $1 AND source_id = $2
+         ORDER BY pub_date DESC LIMIT $3`
+      : `SELECT * FROM articles WHERE source_type = $1 AND source_id = $2
+         ORDER BY pub_date DESC`
+
+    const result = await this.pool.query(
+      query,
+      limit ? [sourceType, sourceId, limit] : [sourceType, sourceId]
+    )
+    return result.rows.map(this.mapArticleRow)
+  }
+
+  /**
+   * Get weird articles
+   */
+  async getWeirdArticles(limit?: number): Promise<Article[]> {
+    const query = limit
+      ? `SELECT * FROM articles WHERE is_weird = true
+         ORDER BY pub_date DESC LIMIT $1`
+      : `SELECT * FROM articles WHERE is_weird = true
+         ORDER BY pub_date DESC`
+
+    const result = await this.pool.query(query, limit ? [limit] : [])
+    return result.rows.map(this.mapArticleRow)
+  }
+
   // ============ Helper Methods ============
+
+  private generateContentHash(title: string, description: string): string {
+    const content = `${title}|${description}`.toLowerCase().trim()
+    return createHash('sha256').update(content).digest('hex')
+  }
+
+  private mapArticleRow(row: any): Article {
+    return {
+      id: row.id,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
+      sourceUrl: row.source_url,
+      title: row.title,
+      description: row.description,
+      content: row.content,
+      link: row.link,
+      author: row.author,
+      pubDate: row.pub_date ? new Date(row.pub_date) : null,
+      collectedAt: new Date(row.collected_at),
+      isWeird: row.is_weird,
+      weirdConfidence: row.weird_confidence,
+      categories: Array.isArray(row.categories) ? row.categories : [],
+      engagementScore: row.engagement_score,
+      qualityScore: row.quality_score,
+      language: row.language,
+      country: row.country,
+      contentHash: row.content_hash,
+    }
+  }
 
   private mapFeedSourceRow(row: any): FeedSource {
     // Handle keywords - might be array, JSON string, or CSV string
