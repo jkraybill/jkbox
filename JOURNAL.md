@@ -208,6 +208,8 @@ Journal entries reference HC outcomes:
 
 [2025-11-13 13:20 UTC] #5 Human-like scraping✓. Rotating browser UAs, random delays (±20%), robots.txt disabled, 2s base rate limit. T:47/47✓. C:1fa5b18. Pattern: Major sites still block (sophisticated detection)→may need more permissive sources or headless browser future. System working correctly.
 
+[2025-11-13 13:40 UTC] #5 Progress logging✓. Fixed "hung" discovery→added detailed progress at domain/feed level, reduced retries 3→2. T:47/47✓. C:09b8eea. Pattern: Lack of visibility→appeared stuck. Guardian accessible but insufficient weird content. System validated working.
+
 ---
 
 ## Usage Notes
