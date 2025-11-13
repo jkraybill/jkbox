@@ -69,6 +69,18 @@ export class DatabaseQueries {
     return result.rows.map(this.mapFeedSourceRow)
   }
 
+  async getFeedById(id: number): Promise<FeedSource | null> {
+    const result = await this.pool.query('SELECT * FROM feed_sources WHERE id = $1', [id])
+    return result.rows.length > 0 ? this.mapFeedSourceRow(result.rows[0]) : null
+  }
+
+  async getAllValidatedFeeds(): Promise<FeedSource[]> {
+    const result = await this.pool.query(
+      'SELECT * FROM feed_sources WHERE is_validated = true ORDER BY quality_score DESC'
+    )
+    return result.rows.map(this.mapFeedSourceRow)
+  }
+
   // ============ Domain Discovery ============
 
   async insertDomainDiscovery(

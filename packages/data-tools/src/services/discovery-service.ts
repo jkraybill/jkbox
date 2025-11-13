@@ -60,10 +60,14 @@ export class DiscoveryService {
   async discoverFromDomain(
     domain: string,
     language: string,
-    country: string
+    country: string,
+    sessionId?: string
   ): Promise<FeedSource[]> {
     const discoveredFeeds: FeedSource[] = []
     const baseUrl = `https://${domain}`
+    let rejectionReason: string | null = null
+    let sampleArticlesTested = 0
+    let weirdArticlesFound = 0
 
     try {
       // Skip robots.txt check for content collection
@@ -79,29 +83,66 @@ export class DiscoveryService {
 
       console.log(`  Found ${feeds.length} potential feeds, validating...`)
 
+      if (feeds.length === 0) {
+        rejectionReason = 'No RSS feeds found on homepage'
+      }
+
       // Process each discovered feed
       for (let i = 0; i < feeds.length; i++) {
         const discoveredFeed = feeds[i]!
         try {
           console.log(`  [${i + 1}/${feeds.length}] Checking ${discoveredFeed.url}...`)
-          const feedSource = await this.processFeed(
+          const result = await this.processFeed(
             discoveredFeed.url,
             domain,
             language,
             country
           )
 
-          if (feedSource) {
+          if (result) {
+            const { feedSource, stats } = result
+            sampleArticlesTested += stats.tested
+            weirdArticlesFound += stats.weird
             console.log(`    ✓ Validated (${feedSource.qualityScore}% weird content)`)
             discoveredFeeds.push(feedSource)
           } else {
             console.log(`    ✗ Not enough weird content`)
+            if (!rejectionReason) {
+              rejectionReason = 'Insufficient weird content in feeds'
+            }
           }
         } catch (error) {
-          console.log(`    ✗ Failed: ${error instanceof Error ? error.message : error}`)
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          console.log(`    ✗ Failed: ${errorMsg}`)
+          if (!rejectionReason) {
+            rejectionReason = errorMsg
+          }
         }
       }
+
+      // Log domain discovery attempt
+      await this.db.insertDomainDiscovery({
+        domain,
+        hasSSL: baseUrl.startsWith('https'),
+        feedsFound: feeds.length,
+        sampleArticlesTested,
+        weirdArticlesFound,
+        feedsAdded: discoveredFeeds.map((f) => f.url),
+        rejectionReason: discoveredFeeds.length === 0 ? rejectionReason : null,
+        sessionId: sessionId ?? null,
+      })
     } catch (error) {
+      // Log failed discovery attempt
+      await this.db.insertDomainDiscovery({
+        domain,
+        hasSSL: baseUrl.startsWith('https'),
+        feedsFound: 0,
+        sampleArticlesTested,
+        weirdArticlesFound,
+        feedsAdded: [],
+        rejectionReason: error instanceof Error ? error.message : String(error),
+        sessionId: sessionId ?? null,
+      })
       throw new Error(`Failed to discover feeds on ${domain}: ${error}`)
     }
 
@@ -116,7 +157,7 @@ export class DiscoveryService {
     domain: string,
     language: string,
     country: string
-  ): Promise<FeedSource | null> {
+  ): Promise<{ feedSource: FeedSource; stats: { tested: number; weird: number } } | null> {
     // Parse feed
     console.log(`      Parsing RSS feed...`)
     const parsedFeed = await this.rateLimiter.throttle(domain, async () => {
@@ -204,8 +245,14 @@ export class DiscoveryService {
     const feedId = await this.db.insertFeedSource(feedSource)
 
     return {
-      id: feedId,
-      ...feedSource,
+      feedSource: {
+        id: feedId,
+        ...feedSource,
+      },
+      stats: {
+        tested: articlesToSample.length,
+        weird: weirdCount,
+      },
     }
   }
 
@@ -224,7 +271,7 @@ export class DiscoveryService {
       console.log(`\n[${i + 1}/${domains.length}] Processing ${domain}...`)
 
       try {
-        const feeds = await this.discoverFromDomain(domain, language, country)
+        const feeds = await this.discoverFromDomain(domain, language, country, sessionId)
         console.log(`  ✓ Found ${feeds.length} validated feeds`)
         allFeeds.push(...feeds)
       } catch (error) {

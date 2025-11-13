@@ -46,6 +46,33 @@ export class RSSScraperService {
   }
 
   /**
+   * Parse RSS/Atom feed from content string (for Wayback Machine snapshots)
+   */
+  async parseRSSContent(content: string): Promise<ParsedFeed> {
+    try {
+      const feed = await this.parser.parseString(content)
+
+      return {
+        title: feed.title ?? '',
+        description: feed.description,
+        link: feed.link ?? '',
+        lastBuildDate: feed.lastBuildDate,
+        items: feed.items.map((item) => ({
+          title: item.title ?? '',
+          link: item.link ?? '',
+          description: item.contentSnippet ?? item.content,
+          content: item.content,
+          author: item.creator ?? item.author,
+          pubDate: item.pubDate ? new Date(item.pubDate) : undefined,
+          categories: item.categories ?? [],
+        })),
+      }
+    } catch (error) {
+      throw new Error(`Failed to parse RSS content: ${error}`)
+    }
+  }
+
+  /**
    * Discover RSS feed links on a webpage
    * Looks for <link rel="alternate" type="application/rss+xml"> tags
    */
