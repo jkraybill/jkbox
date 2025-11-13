@@ -1,0 +1,7 @@
+{
+  "provider": "ollama",
+  "model": "llama3.2:latest",
+  "endpoint": "http://localhost:11434",
+  "temperature": 0.3,
+  "maxTokens": 200
+}

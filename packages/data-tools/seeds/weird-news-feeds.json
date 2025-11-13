@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "description": "Initial seed data for weird news feed discovery (14 languages)",
+  "feeds": [
+    { "domain": "apnews.com", "country": "US", "language": "en" },
+    { "domain": "reuters.com", "country": "GB", "language": "en" },
+    { "domain": "theguardian.com", "country": "GB", "language": "en" },
+    { "domain": "bbc.com", "country": "GB", "language": "en" },
+    { "domain": "abc.net.au", "country": "AU", "language": "en" },
+    { "domain": "people.cn", "country": "CN", "language": "zh" },
+    { "domain": "lemonde.fr", "country": "FR", "language": "fr" },
+    { "domain": "elpais.com", "country": "ES", "language": "es" },
+    { "domain": "corriere.it", "country": "IT", "language": "it" },
+    { "domain": "folha.uol.com.br", "country": "BR", "language": "pt" },
+    { "domain": "asahi.com", "country": "JP", "language": "ja" },
+    { "domain": "rbc.ru", "country": "RU", "language": "ru" },
+    { "domain": "nos.nl", "country": "NL", "language": "nl" },
+    { "domain": "gazeta.pl", "country": "PL", "language": "pl" },
+    { "domain": "hurriyet.com.tr", "country": "TR", "language": "tr" },
+    { "domain": "farsnews.ir", "country": "IR", "language": "fa" },
+    { "domain": "vnexpress.net", "country": "VN", "language": "vi" },
+    { "domain": "alarabiya.net", "country": "SA", "language": "ar" }
+  ],
+  "keywords": {
+    "en": ["weird", "offbeat", "oddly", "strange", "unusual", "bizarre", "quirky"],
+    "zh": ["奇闻", "趣闻", "怪事"],
+    "fr": ["étrange", "insolite", "bizarre", "incroyable"],
+    "es": ["extraño", "raro", "insólito", "curioso"],
+    "it": ["strano", "insolito", "bizzarro"],
+    "pt": ["estranho", "incomum", "bizarro", "curioso"],
+    "ja": ["奇妙", "変わった", "珍しい"],
+    "ru": ["странный", "необычный", "курьезный"],
+    "nl": ["vreemd", "bijzonder", "merkwaardig"],
+    "pl": ["dziwne", "niezwykłe", "osobliwe"],
+    "tr": ["garip", "tuhaf", "ilginç"],
+    "fa": ["عجیب", "غیرمعمول"],
+    "vi": ["kỳ lạ", "khác thường"],
+    "ar": ["غريب", "عجيب", "نادر"]
+  }
+}

@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
+
+# Data directory (git-ignored, populated at runtime)
+data/
+
+# Environment variables
+.env
+.env.local
