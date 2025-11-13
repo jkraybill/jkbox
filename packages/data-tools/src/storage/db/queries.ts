@@ -158,6 +158,32 @@ export class DatabaseQueries {
     )
   }
 
+  /**
+   * Get domains checked within the last N hours
+   */
+  async getRecentlyCheckedDomains(hoursAgo: number = 24): Promise<string[]> {
+    const result = await this.pool.query(
+      `SELECT DISTINCT domain
+       FROM domain_discovery
+       WHERE checked_at > NOW() - INTERVAL '${hoursAgo} hours'`,
+      []
+    )
+    return result.rows.map((row) => row.domain)
+  }
+
+  /**
+   * Get domain last check time
+   */
+  async getDomainLastChecked(domain: string): Promise<Date | null> {
+    const result = await this.pool.query(
+      `SELECT MAX(checked_at) as last_checked
+       FROM domain_discovery
+       WHERE domain = $1`,
+      [domain]
+    )
+    return result.rows[0]?.last_checked ? new Date(result.rows[0].last_checked) : null
+  }
+
   // ============ Helper Methods ============
 
   private mapFeedSourceRow(row: any): FeedSource {

@@ -40,17 +40,15 @@ async function main() {
     console.log(chalk.gray(`Filtered to language: ${options.language}`))
   }
 
-  // Apply limit
-  const limit = parseInt(options.limit, 10)
-  if (limit > 0) {
-    domains = domains.slice(0, limit)
-    console.log(chalk.gray(`Limited to ${limit} domains\n`))
-  }
-
   if (domains.length === 0) {
     console.log(chalk.red('No domains to process'))
     process.exit(1)
   }
+
+  console.log(chalk.gray(`Found ${domains.length} potential domains`))
+
+  // Prioritize domains: never checked > oldest checked > recently checked
+  console.log(chalk.gray(`Prioritizing domains by check history...\n`))
 
   // Check database URL
   const databaseUrl = process.env.DATABASE_URL
@@ -59,8 +57,6 @@ async function main() {
     console.log(chalk.gray('   Example: export DATABASE_URL="postgresql://user:pass@localhost:5432/jkbox_data"'))
     process.exit(1)
   }
-
-  console.log(chalk.green(`📡 Discovering feeds from ${domains.length} domains...\n`))
 
   const service = new DiscoveryService({
     keywords: seedData.keywords,
@@ -71,7 +67,45 @@ async function main() {
   })
 
   try {
-    const result = await service.discoverFromDomains(domains)
+    // Get check history for prioritization
+    const domainCheckTimes = await Promise.all(
+      domains.map(async (d: any) => ({
+        ...d,
+        lastChecked: await service.getDomainLastChecked(d.domain),
+      }))
+    )
+
+    // Sort: never checked first, then oldest checked
+    domainCheckTimes.sort((a, b) => {
+      if (!a.lastChecked && !b.lastChecked) return 0
+      if (!a.lastChecked) return -1
+      if (!b.lastChecked) return 1
+      return a.lastChecked.getTime() - b.lastChecked.getTime()
+    })
+
+    // Apply limit after prioritization
+    const limit = parseInt(options.limit, 10)
+    const domainsToCheck = limit > 0 ? domainCheckTimes.slice(0, limit) : domainCheckTimes
+
+    // Show prioritization results
+    const neverChecked = domainsToCheck.filter((d) => !d.lastChecked).length
+    const previouslyChecked = domainsToCheck.length - neverChecked
+    console.log(
+      chalk.gray(
+        `Prioritized: ${neverChecked} never checked, ${previouslyChecked} previously checked`
+      )
+    )
+    if (domainsToCheck.length > 0 && domainsToCheck[0]!.lastChecked) {
+      const oldest = domainsToCheck[0]!.lastChecked
+      const hoursAgo = Math.round((Date.now() - oldest.getTime()) / (1000 * 60 * 60))
+      console.log(chalk.gray(`Oldest check was ${hoursAgo} hours ago\n`))
+    } else {
+      console.log('')
+    }
+
+    console.log(chalk.green(`📡 Discovering feeds from ${domainsToCheck.length} domains...\n`))
+
+    const result = await service.discoverFromDomains(domainsToCheck)
 
     console.log(chalk.green('\n✅ Discovery Complete!'))
     console.log(chalk.gray(`Session ID: ${result.sessionId}`))

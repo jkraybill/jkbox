@@ -118,38 +118,55 @@ export class DiscoveryService {
     country: string
   ): Promise<FeedSource | null> {
     // Parse feed
+    console.log(`      Parsing RSS feed...`)
     const parsedFeed = await this.rateLimiter.throttle(domain, async () => {
       return await this.rssScr.parseFeed(feedUrl)
     })
+    console.log(
+      `      Found ${parsedFeed.items.length} articles (title: "${parsedFeed.title}")`
+    )
 
     // Check if recently updated
     const isRecent = await this.rssScr.isRecentlyUpdated(feedUrl)
     if (!isRecent) {
+      console.log(`      Feed is stale (no updates in 30 days)`)
       return null // Skip stale feeds
     }
 
     // Detect category from metadata
     const category = this.categoryDetector.detectFromFeedMetadata(parsedFeed, language)
+    console.log(`      Category detected: ${category}`)
 
     // Sample articles for Ollama classification
     const sampleSize = this.config.sampleSize ?? 5
     const articlesToSample = parsedFeed.items.slice(0, sampleSize)
     let weirdCount = 0
 
-    for (const article of articlesToSample) {
+    console.log(`      Classifying ${articlesToSample.length} articles with Ollama...`)
+    for (let i = 0; i < articlesToSample.length; i++) {
+      const article = articlesToSample[i]!
       try {
         const classification = await this.llm.classify(
           article.title,
           article.description ?? ''
         )
 
+        const weirdMarker = classification.isWeird ? '🎭' : '📰'
+        console.log(
+          `        [${i + 1}/${articlesToSample.length}] ${weirdMarker} "${article.title.substring(0, 60)}..." (${classification.confidence}% confident)`
+        )
+
         if (classification.isWeird && classification.confidence > 60) {
           weirdCount++
         }
       } catch (error) {
-        console.error(`Ollama classification failed for ${article.title}:`, error)
+        console.log(
+          `        [${i + 1}/${articlesToSample.length}] ❌ Classification failed: ${error instanceof Error ? error.message : error}`
+        )
       }
     }
+
+    console.log(`      Result: ${weirdCount}/${articlesToSample.length} weird articles`)
 
     // Check if feed meets weird threshold
     const weirdThreshold = this.config.weirdThreshold ?? 1 // At least 1 weird article
@@ -239,6 +256,13 @@ export class DiscoveryService {
    */
   async getFeedsByLanguage(language: string, limit?: number): Promise<FeedSource[]> {
     return await this.db.getFeedsByLanguage(language, limit)
+  }
+
+  /**
+   * Get domain last check time for prioritization
+   */
+  async getDomainLastChecked(domain: string): Promise<Date | null> {
+    return await this.db.getDomainLastChecked(domain)
   }
 
   private extractNewspaperName(domain: string): string {
