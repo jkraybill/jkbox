@@ -3,6 +3,13 @@ import { createHash } from 'crypto'
 import type { FeedSource, FeedCategory } from '../../types/feed'
 import type { DomainDiscovery, DiscoverySession } from '../../types/domain'
 import type { Article, ArticleInsert } from '../../types/article'
+import type {
+  FakeFactsQuestion,
+  FakeFactsQuestionInsert,
+  FakeFactsAnswer,
+  FakeFactsAnswerInsert,
+  FakeFactsGameQuestion,
+} from '../../types/fake-facts'
 
 /**
  * Type-safe PostgreSQL query layer
@@ -304,30 +311,6 @@ export class DatabaseQueries {
     return createHash('sha256').update(content).digest('hex')
   }
 
-  private mapArticleRow(row: any): Article {
-    return {
-      id: row.id,
-      sourceType: row.source_type,
-      sourceId: row.source_id,
-      sourceUrl: row.source_url,
-      title: row.title,
-      description: row.description,
-      content: row.content,
-      link: row.link,
-      author: row.author,
-      pubDate: row.pub_date ? new Date(row.pub_date) : null,
-      collectedAt: new Date(row.collected_at),
-      isWeird: row.is_weird,
-      weirdConfidence: row.weird_confidence,
-      categories: Array.isArray(row.categories) ? row.categories : [],
-      engagementScore: row.engagement_score,
-      qualityScore: row.quality_score,
-      language: row.language,
-      country: row.country,
-      contentHash: row.content_hash,
-    }
-  }
-
   private mapFeedSourceRow(row: any): FeedSource {
     // Handle keywords - might be array, JSON string, or CSV string
     let keywords: string[]
@@ -381,6 +364,199 @@ export class DatabaseQueries {
       isActive: row.is_active,
       isValidated: row.is_validated,
       errors,
+    }
+  }
+
+  // ============ Fake Facts ============
+
+  /**
+   * Get unprocessed articles for Fake Facts generation
+   */
+  async getUnprocessedArticles(limit: number = 10): Promise<Article[]> {
+    const result = await this.pool.query(
+      `SELECT * FROM articles
+       WHERE fake_facts_processed = false OR fake_facts_processed IS NULL
+       ORDER BY pub_date DESC
+       LIMIT $1`,
+      [limit]
+    )
+    return result.rows.map(this.mapArticleRow)
+  }
+
+  /**
+   * Mark article as processed for Fake Facts
+   */
+  async markArticleAsProcessed(
+    articleId: string,
+    eligible: boolean,
+    rejectionReason: string | null
+  ): Promise<void> {
+    await this.pool.query(
+      `UPDATE articles
+       SET fake_facts_processed = true,
+           fake_facts_processed_at = NOW(),
+           fake_facts_eligible = $2,
+           fake_facts_rejection_reason = $3
+       WHERE id = $1`,
+      [articleId, eligible, rejectionReason]
+    )
+  }
+
+  /**
+   * Insert a new Fake Facts question
+   */
+  async insertQuestion(question: FakeFactsQuestionInsert): Promise<string> {
+    const result = await this.pool.query<{ id: string }>(
+      `INSERT INTO fake_facts_questions (
+        article_id, question_text, blank_text, generator_model, generation_cost
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING id`,
+      [
+        question.articleId,
+        question.questionText,
+        question.blankText,
+        question.generatorModel,
+        question.generationCost ?? null,
+      ]
+    )
+    return result.rows[0]!.id
+  }
+
+  /**
+   * Insert a single answer
+   */
+  async insertAnswer(answer: FakeFactsAnswerInsert): Promise<string> {
+    const result = await this.pool.query<{ id: string }>(
+      `INSERT INTO fake_facts_answers (
+        question_id, answer_text, is_real, answer_order, generator_model
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING id`,
+      [
+        answer.questionId,
+        answer.answerText,
+        answer.isReal,
+        answer.answerOrder ?? null,
+        answer.generatorModel ?? null,
+      ]
+    )
+    return result.rows[0]!.id
+  }
+
+  /**
+   * Insert multiple answers
+   */
+  async insertAnswers(answers: FakeFactsAnswerInsert[]): Promise<string[]> {
+    const ids: string[] = []
+    for (const answer of answers) {
+      const id = await this.insertAnswer(answer)
+      ids.push(id)
+    }
+    return ids
+  }
+
+  /**
+   * Get a complete question with all answers for gameplay
+   */
+  async getQuestionWithAnswers(questionId: string): Promise<FakeFactsGameQuestion | null> {
+    // Get question
+    const questionResult = await this.pool.query(
+      'SELECT * FROM fake_facts_questions WHERE id = $1',
+      [questionId]
+    )
+
+    if (questionResult.rows.length === 0) {
+      return null
+    }
+
+    // Get all answers
+    const answersResult = await this.pool.query(
+      'SELECT * FROM fake_facts_answers WHERE question_id = $1 ORDER BY answer_order',
+      [questionId]
+    )
+
+    const question = this.mapQuestionRow(questionResult.rows[0])
+    const allAnswers = answersResult.rows.map(this.mapAnswerRow)
+
+    const realAnswer = allAnswers.find((a) => a.isReal)
+    const houseAnswers = allAnswers.filter((a) => !a.isReal)
+
+    if (!realAnswer) {
+      return null
+    }
+
+    return {
+      question,
+      realAnswer,
+      houseAnswers,
+    }
+  }
+
+  private mapArticleRow(row: any): Article {
+    return {
+      id: row.id,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
+      sourceUrl: row.source_url,
+      title: row.title,
+      description: row.description,
+      content: row.content,
+      link: row.link,
+      author: row.author,
+      pubDate: row.pub_date ? new Date(row.pub_date) : null,
+      collectedAt: new Date(row.collected_at),
+      isWeird: row.is_weird,
+      weirdConfidence: row.weird_confidence,
+      categories: Array.isArray(row.categories) ? row.categories : [],
+      engagementScore: row.engagement_score,
+      qualityScore: row.quality_score,
+      language: row.language,
+      country: row.country,
+      contentHash: row.content_hash,
+      // Fake Facts fields
+      fakeFactsProcessed: row.fake_facts_processed ?? false,
+      fakeFactsProcessedAt: row.fake_facts_processed_at
+        ? new Date(row.fake_facts_processed_at)
+        : null,
+      fakeFactsEligible: row.fake_facts_eligible,
+      fakeFactsRejectionReason: row.fake_facts_rejection_reason,
+      articleSummary: row.article_summary,
+      fullContentFetched: row.full_content_fetched ?? false,
+      fullContentFetchedAt: row.full_content_fetched_at
+        ? new Date(row.full_content_fetched_at)
+        : null,
+    }
+  }
+
+  private mapQuestionRow(row: any): FakeFactsQuestion {
+    return {
+      id: row.id,
+      articleId: row.article_id,
+      questionText: row.question_text,
+      blankText: row.blank_text,
+      generatedAt: new Date(row.generated_at),
+      generatorModel: row.generator_model,
+      generationCost: row.generation_cost ? parseFloat(row.generation_cost) : null,
+      timesUsed: row.times_used,
+      timesCorrect: row.times_correct,
+      difficultyScore: row.difficulty_score ? parseFloat(row.difficulty_score) : null,
+      isActive: row.is_active,
+      isReviewed: row.is_reviewed,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }
+  }
+
+  private mapAnswerRow(row: any): FakeFactsAnswer {
+    return {
+      id: row.id,
+      questionId: row.question_id,
+      answerText: row.answer_text,
+      isReal: row.is_real,
+      answerOrder: row.answer_order,
+      generatedAt: new Date(row.generated_at),
+      generatorModel: row.generator_model,
+      timesSelected: row.times_selected,
+      createdAt: new Date(row.created_at),
     }
   }
 }

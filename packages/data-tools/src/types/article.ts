@@ -46,5 +46,15 @@ export const ArticleSchema = z.object({
   contentHash: z.string().nullable(), // SHA256(title + description)
 })
 
-export type Article = z.infer<typeof ArticleSchema>
+export type Article = z.infer<typeof ArticleSchema> & {
+  // Fake Facts processing (added to type, optional for inserts)
+  fakeFactsProcessed?: boolean
+  fakeFactsProcessedAt?: Date | null
+  fakeFactsEligible?: boolean | null
+  fakeFactsRejectionReason?: string | null
+  articleSummary?: string | null
+  fullContentFetched?: boolean
+  fullContentFetchedAt?: Date | null
+}
+
 export type ArticleInsert = Omit<Article, 'id'>

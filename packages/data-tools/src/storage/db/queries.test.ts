@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { Pool } from 'pg'
 import { DatabaseQueries } from './queries'
 import type { ArticleInsert } from '../../types/article'
+import type { FakeFactsQuestionInsert, FakeFactsAnswerInsert } from '../../types/fake-facts'
 
 // Note: These tests require a PostgreSQL database
 // Set DATABASE_URL environment variable for testing
@@ -379,6 +380,305 @@ describeDb('DatabaseQueries - Articles (Integration)', () => {
       const limited = await db.getWeirdArticles(3)
 
       expect(limited).toHaveLength(3)
+    })
+  })
+})
+
+describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
+  let pool: Pool
+  let db: DatabaseQueries
+  let testArticleId: string
+
+  beforeEach(async () => {
+    pool = new Pool({ connectionString: TEST_DATABASE_URL })
+    db = new DatabaseQueries(pool)
+
+    // Ensure tables exist (schema should be applied)
+    // Insert a test article for FK relationships
+    const article: ArticleInsert = {
+      sourceType: 'rss',
+      sourceId: 'test-feed',
+      sourceUrl: 'https://example.com/feed.xml',
+      title: 'Court Says Bees Are Fish',
+      description: 'California court rules bees are legally fish',
+      content: null,
+      link: 'https://example.com/bees-fish',
+      author: null,
+      pubDate: new Date(),
+      collectedAt: new Date(),
+      isWeird: true,
+      weirdConfidence: 95,
+      categories: ['weird', 'legal'],
+      engagementScore: null,
+      qualityScore: null,
+      language: 'en',
+      country: 'US',
+      contentHash: null,
+    }
+
+    testArticleId = await db.insertArticle(article) as string
+  })
+
+  afterEach(async () => {
+    // Clean up in reverse dependency order
+    await pool.query('DELETE FROM fake_facts_answers')
+    await pool.query('DELETE FROM fake_facts_questions')
+    await pool.query('DELETE FROM articles')
+    await pool.end()
+  })
+
+  describe('getUnprocessedArticles', () => {
+    it('should return articles where fake_facts_processed is false', async () => {
+      // testArticleId should be unprocessed by default
+      const unprocessed = await db.getUnprocessedArticles(10)
+
+      expect(unprocessed.length).toBeGreaterThan(0)
+      expect(unprocessed[0]?.id).toBe(testArticleId)
+      expect(unprocessed[0]?.fakeFactsProcessed).toBe(false)
+    })
+
+    it('should not return processed articles', async () => {
+      // Mark article as processed
+      await db.markArticleAsProcessed(testArticleId, true, null)
+
+      const unprocessed = await db.getUnprocessedArticles(10)
+
+      expect(unprocessed.every((a) => a.id !== testArticleId)).toBe(true)
+    })
+
+    it('should respect limit parameter', async () => {
+      // Insert more articles
+      await db.insertArticles([
+        {
+          sourceType: 'rss',
+          sourceId: 'test-feed',
+          sourceUrl: 'https://example.com/feed.xml',
+          title: 'Article 2',
+          description: 'Desc 2',
+          content: null,
+          link: 'https://example.com/2',
+          author: null,
+          pubDate: new Date(),
+          collectedAt: new Date(),
+          isWeird: true,
+          weirdConfidence: 80,
+          categories: [],
+          engagementScore: null,
+          qualityScore: null,
+          language: 'en',
+          country: null,
+          contentHash: null,
+        },
+        {
+          sourceType: 'rss',
+          sourceId: 'test-feed',
+          sourceUrl: 'https://example.com/feed.xml',
+          title: 'Article 3',
+          description: 'Desc 3',
+          content: null,
+          link: 'https://example.com/3',
+          author: null,
+          pubDate: new Date(),
+          collectedAt: new Date(),
+          isWeird: true,
+          weirdConfidence: 85,
+          categories: [],
+          engagementScore: null,
+          qualityScore: null,
+          language: 'en',
+          country: null,
+          contentHash: null,
+        },
+      ])
+
+      const limited = await db.getUnprocessedArticles(2)
+
+      expect(limited.length).toBeLessThanOrEqual(2)
+    })
+  })
+
+  describe('markArticleAsProcessed', () => {
+    it('should mark article as processed with eligibility true', async () => {
+      await db.markArticleAsProcessed(testArticleId, true, null)
+
+      const articles = await db.getUnprocessedArticles(10)
+      expect(articles.every((a) => a.id !== testArticleId)).toBe(true)
+    })
+
+    it('should mark article as processed with eligibility false and reason', async () => {
+      await db.markArticleAsProcessed(testArticleId, false, 'Too generic')
+
+      // Verify article is marked processed
+      const result = await pool.query(
+        'SELECT fake_facts_processed, fake_facts_eligible, fake_facts_rejection_reason FROM articles WHERE id = $1',
+        [testArticleId]
+      )
+
+      expect(result.rows[0]?.fake_facts_processed).toBe(true)
+      expect(result.rows[0]?.fake_facts_eligible).toBe(false)
+      expect(result.rows[0]?.fake_facts_rejection_reason).toBe('Too generic')
+    })
+  })
+
+  describe('insertQuestion', () => {
+    it('should insert a new question', async () => {
+      const question: FakeFactsQuestionInsert = {
+        articleId: testArticleId,
+        questionText: 'In California, _____ are legally classified as fish.',
+        blankText: 'bees',
+        generatorModel: 'claude-3-5-haiku-20241022',
+        generationCost: 0.003,
+      }
+
+      const questionId = await db.insertQuestion(question)
+
+      expect(questionId).toBeTruthy()
+      expect(questionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    })
+
+    it('should reject question with invalid article_id', async () => {
+      const question: FakeFactsQuestionInsert = {
+        articleId: '00000000-0000-0000-0000-000000000000',
+        questionText: 'Test question with _____ blank.',
+        blankText: 'invalid',
+        generatorModel: 'claude-3-5-haiku-20241022',
+      }
+
+      await expect(db.insertQuestion(question)).rejects.toThrow()
+    })
+  })
+
+  describe('insertAnswers', () => {
+    let questionId: string
+
+    beforeEach(async () => {
+      const question: FakeFactsQuestionInsert = {
+        articleId: testArticleId,
+        questionText: 'In California, _____ are legally classified as fish.',
+        blankText: 'bees',
+        generatorModel: 'claude-3-5-haiku-20241022',
+      }
+
+      questionId = await db.insertQuestion(question)
+    })
+
+    it('should insert real answer', async () => {
+      const answer: FakeFactsAnswerInsert = {
+        questionId,
+        answerText: 'bees',
+        isReal: true,
+        answerOrder: null,
+        generatorModel: null,
+      }
+
+      const answerId = await db.insertAnswer(answer)
+
+      expect(answerId).toBeTruthy()
+
+      // Verify answer is marked as real
+      const result = await pool.query('SELECT is_real, answer_order FROM fake_facts_answers WHERE id = $1', [answerId])
+      expect(result.rows[0]?.is_real).toBe(true)
+      expect(result.rows[0]?.answer_order).toBeNull()
+    })
+
+    it('should insert house answers with order', async () => {
+      const houseAnswers: FakeFactsAnswerInsert[] = [
+        {
+          questionId,
+          answerText: 'wasps',
+          isReal: false,
+          answerOrder: 1,
+          generatorModel: 'claude-3-5-haiku-20241022',
+        },
+        {
+          questionId,
+          answerText: 'coral',
+          isReal: false,
+          answerOrder: 2,
+          generatorModel: 'claude-3-5-haiku-20241022',
+        },
+      ]
+
+      const ids = await db.insertAnswers(houseAnswers)
+
+      expect(ids.length).toBe(2)
+      expect(ids.every((id) => id.match(/^[0-9a-f-]{36}$/))).toBe(true)
+    })
+
+    it('should insert complete question with 1 real + 5 house answers', async () => {
+      const realAnswer: FakeFactsAnswerInsert = {
+        questionId,
+        answerText: 'bees',
+        isReal: true,
+      }
+
+      const houseAnswers: FakeFactsAnswerInsert[] = Array.from({ length: 5 }, (_, i) => ({
+        questionId,
+        answerText: `house answer ${i + 1}`,
+        isReal: false,
+        answerOrder: i + 1,
+        generatorModel: 'claude-3-5-haiku-20241022',
+      }))
+
+      const realId = await db.insertAnswer(realAnswer)
+      const houseIds = await db.insertAnswers(houseAnswers)
+
+      expect(realId).toBeTruthy()
+      expect(houseIds.length).toBe(5)
+
+      // Verify total answer count
+      const result = await pool.query('SELECT COUNT(*) FROM fake_facts_answers WHERE question_id = $1', [questionId])
+      expect(parseInt(result.rows[0]?.count)).toBe(6)
+    })
+  })
+
+  describe('getQuestionWithAnswers', () => {
+    let questionId: string
+
+    beforeEach(async () => {
+      // Create complete question with answers
+      const question: FakeFactsQuestionInsert = {
+        articleId: testArticleId,
+        questionText: 'In California, _____ are legally classified as fish.',
+        blankText: 'bees',
+        generatorModel: 'claude-3-5-haiku-20241022',
+      }
+
+      questionId = await db.insertQuestion(question)
+
+      // Insert real answer
+      await db.insertAnswer({
+        questionId,
+        answerText: 'bees',
+        isReal: true,
+      })
+
+      // Insert house answers
+      await db.insertAnswers(
+        Array.from({ length: 5 }, (_, i) => ({
+          questionId,
+          answerText: `house answer ${i + 1}`,
+          isReal: false,
+          answerOrder: i + 1,
+          generatorModel: 'claude-3-5-haiku-20241022',
+        }))
+      )
+    })
+
+    it('should retrieve question with all answers', async () => {
+      const gameQuestion = await db.getQuestionWithAnswers(questionId)
+
+      expect(gameQuestion).toBeTruthy()
+      expect(gameQuestion?.question.id).toBe(questionId)
+      expect(gameQuestion?.realAnswer.isReal).toBe(true)
+      expect(gameQuestion?.houseAnswers.length).toBe(5)
+      expect(gameQuestion?.houseAnswers.every((a) => !a.isReal)).toBe(true)
+    })
+
+    it('should return null for non-existent question', async () => {
+      const gameQuestion = await db.getQuestionWithAnswers('00000000-0000-0000-0000-000000000000')
+
+      expect(gameQuestion).toBeNull()
     })
   })
 })
