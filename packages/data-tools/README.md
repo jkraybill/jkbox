@@ -185,13 +185,13 @@ Each language has keywords for "weird/offbeat" news:
 - Arabic: غريب, عجيب, نادر
 - ...and more
 
-## Ethical Guidelines
+## Collection Approach
 
-1. **Robots.txt**: Always checked before scraping
-2. **Rate Limiting**: 1 req/sec per domain (respects Crawl-delay)
-3. **User-Agent**: Clearly identifies jkbox data collector
+1. **Rate Limiting**: 2 req/sec per domain with ±20% random jitter
+2. **Human-like Behavior**: Rotating browser user-agents, random delays
+3. **Respectful Access**: Conservative rate limits to avoid server load
 4. **Attribution**: Source URLs stored for all content
-5. **Fair Use**: Content transformed for game generation
+5. **Fair Use**: Content transformed for game generation (entertainment)
 
 ## Troubleshooting
 

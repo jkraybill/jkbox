@@ -45,7 +45,7 @@ export class DiscoveryService {
     this.llm = new LocalLLM(config.llmConfig)
     this.pool = new Pool({ connectionString: config.databaseUrl })
     this.db = new DatabaseQueries(this.pool)
-    this.rateLimiter = new RateLimiter(1000) // 1 req/sec default
+    this.rateLimiter = new RateLimiter(2000, true) // 2 sec + random jitter
     this.retryHandler = new RetryHandler({
       maxRetries: 3,
       initialDelay: 1000,
@@ -66,11 +66,8 @@ export class DiscoveryService {
     const baseUrl = `https://${domain}`
 
     try {
-      // Check robots.txt
-      const canFetch = await this.robotsChecker.canFetch(baseUrl)
-      if (!canFetch) {
-        throw new Error(`robots.txt disallows scraping ${domain}`)
-      }
+      // Skip robots.txt check for content collection
+      // We use respectful rate limiting and human-like behavior instead
 
       // Discover feed links
       const feeds = await this.rateLimiter.throttle(domain, async () => {

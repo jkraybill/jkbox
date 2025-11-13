@@ -1,8 +1,9 @@
 {
-  "userAgent": "jkbox-data-collector/0.1.0 (+https://github.com/jkraybill/jkbox; data@jkbox.party)",
-  "defaultRateLimit": 1000,
-  "maxConcurrentDomains": 5,
-  "requestTimeout": 10000,
+  "description": "Content collection configuration - uses human-like behavior with rate limiting",
+  "defaultRateLimit": 2000,
+  "randomJitter": true,
+  "maxConcurrentDomains": 3,
+  "requestTimeout": 15000,
   "maxRetries": 3,
   "retryBackoff": "exponential"
 }

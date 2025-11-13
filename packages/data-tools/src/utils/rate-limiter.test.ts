@@ -7,7 +7,7 @@ describe('RateLimiter', () => {
   })
 
   it('should allow first request immediately', async () => {
-    const limiter = new RateLimiter(1000) // 1 req/sec
+    const limiter = new RateLimiter(1000, false) // 1 req/sec, no jitter for tests
     const start = Date.now()
 
     await limiter.throttle('example.com', async () => 'result')
@@ -17,7 +17,7 @@ describe('RateLimiter', () => {
   })
 
   it('should delay second request by rate limit duration', async () => {
-    const limiter = new RateLimiter(1000) // 1 req/sec
+    const limiter = new RateLimiter(1000, false) // 1 req/sec, no jitter for tests
 
     const promise1 = limiter.throttle('example.com', async () => 'first')
     await promise1
@@ -34,7 +34,7 @@ describe('RateLimiter', () => {
   })
 
   it('should track rate limits per domain independently', async () => {
-    const limiter = new RateLimiter(1000)
+    const limiter = new RateLimiter(1000, false)
 
     await limiter.throttle('example.com', async () => 'first')
 
@@ -47,7 +47,7 @@ describe('RateLimiter', () => {
   })
 
   it('should allow custom rate limit per domain', async () => {
-    const limiter = new RateLimiter(1000)
+    const limiter = new RateLimiter(1000, false)
     limiter.setDomainDelay('fast.com', 500) // 2 req/sec
 
     await limiter.throttle('fast.com', async () => 'first')
@@ -63,7 +63,7 @@ describe('RateLimiter', () => {
   })
 
   it('should execute function and return result', async () => {
-    const limiter = new RateLimiter(1000)
+    const limiter = new RateLimiter(1000, false)
     const fn = vi.fn(async () => 'test result')
 
     const result = await limiter.throttle('example.com', fn)
@@ -73,7 +73,7 @@ describe('RateLimiter', () => {
   })
 
   it('should handle errors from throttled function', async () => {
-    const limiter = new RateLimiter(1000)
+    const limiter = new RateLimiter(1000, false)
     const error = new Error('test error')
 
     await expect(
@@ -84,7 +84,7 @@ describe('RateLimiter', () => {
   })
 
   it('should queue multiple requests for same domain', async () => {
-    const limiter = new RateLimiter(500)
+    const limiter = new RateLimiter(500, false)
     const results: string[] = []
 
     const p1 = limiter.throttle('example.com', async () => {
