@@ -7,6 +7,7 @@ import { RateLimiter } from '../utils/rate-limiter'
 import { RetryHandler } from '../utils/retry-handler'
 import { RobotsChecker } from '../utils/robots-checker'
 import { getUserAgent } from '../utils/user-agent'
+import { WaybackFetcher } from '../scrapers/wayback-fetcher'
 import type { FeedSource } from '../types/feed'
 import type { LocalLLMConfig } from '../llm/types'
 
@@ -16,6 +17,8 @@ export interface DiscoveryConfig {
   databaseUrl: string
   sampleSize?: number // Number of articles to sample for classification
   weirdThreshold?: number // Minimum number of weird articles to approve feed
+  enableHistorical?: boolean // Fetch historical data via Wayback Machine (default: true)
+  historicalYears?: number // Years of history to fetch (default: 10)
 }
 
 export interface DiscoveryResult {
@@ -37,6 +40,7 @@ export class DiscoveryService {
   private rateLimiter: RateLimiter
   private retryHandler: RetryHandler
   private robotsChecker: RobotsChecker
+  private wayback: WaybackFetcher
   private pool: Pool
 
   constructor(private config: DiscoveryConfig) {
@@ -52,6 +56,7 @@ export class DiscoveryService {
       backoffStrategy: 'exponential',
     })
     this.robotsChecker = new RobotsChecker(getUserAgent())
+    this.wayback = new WaybackFetcher()
   }
 
   /**
@@ -243,6 +248,26 @@ export class DiscoveryService {
 
     // Save to database
     const feedId = await this.db.insertFeedSource(feedSource)
+
+    // Collect historical data if enabled (default: true)
+    const enableHistorical = this.config.enableHistorical ?? true
+    const historicalYears = this.config.historicalYears ?? 10
+
+    if (enableHistorical) {
+      console.log(`      📚 Fetching ${historicalYears} years of historical data...`)
+      try {
+        const snapshots = await this.wayback.getYearlySnapshots(feedUrl, historicalYears)
+        console.log(`      Found ${snapshots.length} yearly snapshots`)
+
+        // TODO: Process and store historical articles
+        // For now, just report the availability
+        if (snapshots.length > 0) {
+          console.log(`      ✓ Historical data available (${snapshots.length} snapshots)`)
+        }
+      } catch (error) {
+        console.log(`      ⚠️  Historical fetch failed: ${error}`)
+      }
+    }
 
     return {
       feedSource: {

@@ -17,6 +17,8 @@ program
   .option('--limit <number>', 'Limit number of domains', '0')
   .option('--sample-size <number>', 'Articles to sample per feed', '5')
   .option('--weird-threshold <number>', 'Minimum weird articles required', '1')
+  .option('--no-historical', 'Disable automatic historical collection', false)
+  .option('--historical-years <number>', 'Years of historical data to fetch', '10')
   .parse()
 
 const options = program.opts()
@@ -64,6 +66,8 @@ async function main() {
     databaseUrl,
     sampleSize: parseInt(options.sampleSize, 10),
     weirdThreshold: parseInt(options.weirdThreshold, 10),
+    enableHistorical: options.historical !== false, // Commander negates --no-historical
+    historicalYears: parseInt(options.historicalYears, 10),
   })
 
   try {
