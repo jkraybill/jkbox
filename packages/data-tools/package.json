@@ -17,7 +17,8 @@
     "validate-feed": "tsx src/cli/validate-feed.ts",
     "check-health": "tsx src/cli/check-health.ts",
     "collect-reddit": "tsx src/cli/collect-reddit.ts",
-    "collect-historical": "tsx src/cli/collect-historical.ts"
+    "collect-historical": "tsx src/cli/collect-historical.ts",
+    "generate-fake-facts": "tsx src/cli/generate-fake-facts.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
