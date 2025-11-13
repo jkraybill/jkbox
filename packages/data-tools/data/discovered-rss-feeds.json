@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "generatedAt": "2025-11-13T20:00:00Z",
-    "method": "web-search-discovery",
-    "totalFeeds": 25,
-    "languages": ["en", "es", "fr", "de", "it"]
+    "generatedAt": "2025-11-13T20:30:00Z",
+    "method": "web-search-discovery + user-provided",
+    "totalFeeds": 39,
+    "languages": ["en", "es", "fr", "de", "it", "zh", "vi", "tr"]
   },
   "feeds": [
     {
@@ -13,6 +13,54 @@
       "country": "US",
       "description": "Funny news and strange news from around the world",
       "confidence": "verified"
+    },
+    {
+      "url": "http://feeds.reuters.com/reuters/oddlyEnoughNews",
+      "source": "Reuters Oddly Enough",
+      "language": "en",
+      "country": "International",
+      "description": "Reuters odd news section",
+      "confidence": "high"
+    },
+    {
+      "url": "http://rss.cnn.com/rss/cnn_offbeat.rss",
+      "source": "CNN Offbeat",
+      "language": "en",
+      "country": "US",
+      "description": "CNN offbeat news",
+      "confidence": "high"
+    },
+    {
+      "url": "http://www.abc.net.au/news/syndicate/offbeatrss.xml",
+      "source": "ABC Australia Offbeat",
+      "language": "en",
+      "country": "Australia",
+      "description": "Australian Broadcasting Corporation offbeat news",
+      "confidence": "high"
+    },
+    {
+      "url": "http://hosted.ap.org/lineups/STRANGEHEADS-rss_2.0.xml?SITE=FLTAM&SECTION=HOME",
+      "source": "AP Strange News",
+      "language": "en",
+      "country": "US",
+      "description": "Associated Press strange headlines",
+      "confidence": "high"
+    },
+    {
+      "url": "http://rssfeeds.usatoday.com/UsatodaycomOffbeat-TopStories",
+      "source": "USA Today Offbeat",
+      "language": "en",
+      "country": "US",
+      "description": "USA Today offbeat news",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.express.co.uk/posts/rss/80/weird",
+      "source": "Express Weird News",
+      "language": "en",
+      "country": "UK",
+      "description": "Express weird news section",
+      "confidence": "high"
     },
     {
       "url": "https://www.dailyrecord.co.uk/news/weird-news/rss.xml",
@@ -63,22 +111,6 @@
       "confidence": "verified"
     },
     {
-      "url": "https://news.sky.com/feeds/rss/strange.xml",
-      "source": "Sky News - Strange But True",
-      "language": "en",
-      "country": "UK",
-      "description": "Strange news from Sky News",
-      "confidence": "medium"
-    },
-    {
-      "url": "https://www.npr.org/rss/rss.php?id=1003",
-      "source": "NPR Strange News",
-      "language": "en",
-      "country": "US",
-      "description": "Unlikely stories from around the nation",
-      "confidence": "medium"
-    },
-    {
       "url": "https://www.loweringthebar.net/feed",
       "source": "Lowering the Bar",
       "language": "en",
@@ -103,6 +135,14 @@
       "confidence": "high"
     },
     {
+      "url": "https://metro.co.uk/sport/oddballs/feed/",
+      "source": "Metro Oddballs Sports",
+      "language": "en",
+      "country": "UK",
+      "description": "Odd sports news and stories",
+      "confidence": "medium"
+    },
+    {
       "url": "https://www.bbc.co.uk/news/magazine/rss.xml",
       "source": "BBC Magazine",
       "language": "en",
@@ -111,12 +151,68 @@
       "confidence": "medium"
     },
     {
-      "url": "https://www.theguardian.com/world/series/the-weird-wide-world/rss",
-      "source": "Guardian - Weird Wide World",
+      "url": "https://www.newser.com/rss/odd-news",
+      "source": "Newser Odd News",
       "language": "en",
-      "country": "UK",
-      "description": "Strange stories from around the world",
+      "country": "US",
+      "description": "Aggregated odd news stories",
       "confidence": "high"
+    },
+    {
+      "url": "https://www.eltiempo.com/noticias/noticias-curiosas/rss",
+      "source": "El Tiempo Noticias Curiosas",
+      "language": "es",
+      "country": "Colombia",
+      "description": "Curious news from Colombia",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.cnews.fr/rss/categorie/insolite",
+      "source": "CNEWS Insolite",
+      "language": "fr",
+      "country": "France",
+      "description": "Unusual news from CNEWS France",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.20min.ch/fr/insolite/rss",
+      "source": "20 Minutes Swiss Insolite",
+      "language": "fr",
+      "country": "Switzerland",
+      "description": "Unusual news from Swiss French news",
+      "confidence": "medium"
+    },
+    {
+      "url": "http://rss.sina.com.cn/news/society/wonder15.xml",
+      "source": "Sina Wonder News",
+      "language": "zh",
+      "country": "China",
+      "description": "Curiosities and wonder section from Sina",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://qiwen.lu/feed",
+      "source": "Qiwen.lu",
+      "language": "zh",
+      "country": "China",
+      "description": "Chinese weird news aggregator",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://ngoisao.vnexpress.net/rss/chuyen-la.rss",
+      "source": "VnExpress Chuyện Lạ",
+      "language": "vi",
+      "country": "Vietnam",
+      "description": "Strange news from VnExpress Vietnam",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.tdhhaber.com/rss/ilginc-haberler",
+      "source": "TDH Haber İlginç",
+      "language": "tr",
+      "country": "Turkey",
+      "description": "Interesting news from Turkish news site",
+      "confidence": "medium"
     },
     {
       "url": "https://www.elespectador.com/actualidad/feed",
@@ -199,11 +295,27 @@
       "confidence": "medium"
     },
     {
-      "url": "https://www.newser.com/rss/odd-news",
-      "source": "Newser Odd News",
+      "url": "https://news.sky.com/feeds/rss/strange.xml",
+      "source": "Sky News - Strange But True",
+      "language": "en",
+      "country": "UK",
+      "description": "Strange news from Sky News",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.npr.org/rss/rss.php?id=1003",
+      "source": "NPR Strange News",
       "language": "en",
       "country": "US",
-      "description": "Aggregated odd news stories",
+      "description": "Unlikely stories from around the nation",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.theguardian.com/world/series/the-weird-wide-world/rss",
+      "source": "Guardian - Weird Wide World",
+      "language": "en",
+      "country": "UK",
+      "description": "Strange stories from around the world",
       "confidence": "high"
     }
   ]
