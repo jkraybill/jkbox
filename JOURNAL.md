@@ -210,6 +210,8 @@ Journal entries reference HC outcomes:
 
 [2025-11-13 13:40 UTC] #5 Progress logging✓. Fixed "hung" discovery→added detailed progress at domain/feed level, reduced retries 3→2. T:47/47✓. C:09b8eea. Pattern: Lack of visibility→appeared stuck. Guardian accessible but insufficient weird content. System validated working.
 
+[2025-11-13 14:00 UTC] #5 Major improvements✓. Domain prioritization (never-checked first), 138 sources (14 languages), verbose Ollama logging with emojis. T:47/47✓. C:7920664. Pattern: Extensive web research→regional/local sources more permissive than majors. Italian dedicated weird news sites discovered. WWGD autonomy successful.
+
 ---
 
 ## Usage Notes
