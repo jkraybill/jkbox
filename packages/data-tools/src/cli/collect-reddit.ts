@@ -124,6 +124,7 @@ async function main() {
   )
 
   await pool.end()
+  process.exit(0)
 }
 
 main()

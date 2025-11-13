@@ -130,6 +130,7 @@ async function main() {
     }
 
     await service.close()
+    process.exit(0)
   } catch (error) {
     console.log(chalk.red(`\n❌ Discovery failed: ${error}`))
     await service.close()
