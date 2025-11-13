@@ -47,7 +47,7 @@ export class WaybackFetcher {
           filter: 'statuscode:200', // Only successful captures
           collapse: 'timestamp:8', // One per day to avoid duplicates
         },
-        timeout: 30000,
+        timeout: 90000, // 90 seconds - archive.org can be slow
       })
 
       if (!response.data || response.data.length === 0) {
@@ -86,7 +86,7 @@ export class WaybackFetcher {
   async fetchSnapshot(snapshotUrl: string): Promise<string | null> {
     try {
       const response = await axios.get(snapshotUrl, {
-        timeout: 15000,
+        timeout: 60000, // 60 seconds - fetching full RSS feed snapshots can be slow
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -119,7 +119,7 @@ export class WaybackFetcher {
           filter: 'statuscode:200',
           collapse: 'timestamp:8', // One per day
         },
-        timeout: 30000,
+        timeout: 90000, // 90 seconds - archive.org can be slow
       })
 
       if (!response.data || response.data.length === 0) {
