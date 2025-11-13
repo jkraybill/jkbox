@@ -199,6 +199,35 @@ export class DatabaseQueries {
   // ============ Helper Methods ============
 
   private mapFeedSourceRow(row: any): FeedSource {
+    // Handle keywords - might be array, JSON string, or CSV string
+    let keywords: string[]
+    if (Array.isArray(row.keywords)) {
+      keywords = row.keywords
+    } else if (typeof row.keywords === 'string') {
+      try {
+        keywords = JSON.parse(row.keywords)
+      } catch {
+        // If JSON parse fails, treat as comma-separated values
+        keywords = row.keywords.split(',').map((k: string) => k.trim())
+      }
+    } else {
+      keywords = []
+    }
+
+    // Handle errors - might be array or JSON string
+    let errors: string[]
+    if (Array.isArray(row.errors)) {
+      errors = row.errors
+    } else if (typeof row.errors === 'string') {
+      try {
+        errors = JSON.parse(row.errors)
+      } catch {
+        errors = []
+      }
+    } else {
+      errors = []
+    }
+
     return {
       id: row.id,
       url: row.url,
@@ -207,7 +236,7 @@ export class DatabaseQueries {
       country: row.country,
       language: row.language,
       category: row.category,
-      keywords: JSON.parse(row.keywords),
+      keywords,
       title: row.title,
       description: row.description,
       lastBuildDate: row.last_build_date ? new Date(row.last_build_date) : null,
@@ -221,7 +250,7 @@ export class DatabaseQueries {
       qualityScore: row.quality_score,
       isActive: row.is_active,
       isValidated: row.is_validated,
-      errors: JSON.parse(row.errors),
+      errors,
     }
   }
 }
