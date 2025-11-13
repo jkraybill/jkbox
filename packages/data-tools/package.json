@@ -11,6 +11,7 @@
     "lint": "eslint src --ext .ts",
     "discover-feeds": "tsx src/cli/discover-feeds.ts",
     "import-rss": "tsx src/cli/import-discovered-rss.ts",
+    "collect-rss": "tsx src/cli/collect-rss.ts",
     "fetch-articles": "tsx src/cli/fetch-articles.ts",
     "list-feeds": "tsx src/cli/list-feeds.ts",
     "validate-feed": "tsx src/cli/validate-feed.ts",
