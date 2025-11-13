@@ -1,0 +1,210 @@
+{
+  "metadata": {
+    "generatedAt": "2025-11-13T20:00:00Z",
+    "method": "web-search-discovery",
+    "totalFeeds": 25,
+    "languages": ["en", "es", "fr", "de", "it"]
+  },
+  "feeds": [
+    {
+      "url": "https://rss.upi.com/news/odd_news.rss",
+      "source": "UPI Odd News",
+      "language": "en",
+      "country": "US",
+      "description": "Funny news and strange news from around the world",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://www.dailyrecord.co.uk/news/weird-news/rss.xml",
+      "source": "Daily Record Weird News",
+      "language": "en",
+      "country": "UK",
+      "description": "Weird news from Scotland",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.odditycentral.com/feed",
+      "source": "Oddity Central",
+      "language": "en",
+      "country": "International",
+      "description": "Collecting oddities - weird places, odd events, bizarre news",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.reddit.com/r/nottheonion/.rss",
+      "source": "Reddit - Not The Onion",
+      "language": "en",
+      "country": "International",
+      "description": "True stories that sound like satire",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://www.reddit.com/r/offbeat/.rss",
+      "source": "Reddit - Offbeat",
+      "language": "en",
+      "country": "International",
+      "description": "Offbeat, quirky news",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://www.reddit.com/r/NewsOfTheWeird/.rss",
+      "source": "Reddit - News of the Weird",
+      "language": "en",
+      "country": "International",
+      "description": "Weird news from around the world",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://www.reddit.com/r/FloridaMan/.rss",
+      "source": "Reddit - Florida Man",
+      "language": "en",
+      "country": "US",
+      "description": "Florida Man headlines",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://news.sky.com/feeds/rss/strange.xml",
+      "source": "Sky News - Strange But True",
+      "language": "en",
+      "country": "UK",
+      "description": "Strange news from Sky News",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.npr.org/rss/rss.php?id=1003",
+      "source": "NPR Strange News",
+      "language": "en",
+      "country": "US",
+      "description": "Unlikely stories from around the nation",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.loweringthebar.net/feed",
+      "source": "Lowering the Bar",
+      "language": "en",
+      "country": "US",
+      "description": "Legal humor and weird legal news",
+      "confidence": "verified"
+    },
+    {
+      "url": "https://www.mirror.co.uk/news/weird-news/rss.xml",
+      "source": "Mirror Weird News",
+      "language": "en",
+      "country": "UK",
+      "description": "Weird news from the UK",
+      "confidence": "high"
+    },
+    {
+      "url": "https://metro.co.uk/news/weird/feed/",
+      "source": "Metro Weird News",
+      "language": "en",
+      "country": "UK",
+      "description": "Weird and wonderful news",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.bbc.co.uk/news/magazine/rss.xml",
+      "source": "BBC Magazine",
+      "language": "en",
+      "country": "UK",
+      "description": "Long reads and interesting stories",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.theguardian.com/world/series/the-weird-wide-world/rss",
+      "source": "Guardian - Weird Wide World",
+      "language": "en",
+      "country": "UK",
+      "description": "Strange stories from around the world",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.elespectador.com/actualidad/feed",
+      "source": "El Espectador Actualidad",
+      "language": "es",
+      "country": "Colombia",
+      "description": "Current affairs including curious news",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.20minutos.es/rss/curiosidades/",
+      "source": "20 Minutos Curiosidades",
+      "language": "es",
+      "country": "Spain",
+      "description": "Curiosities and unusual news",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.elmundo.es/rss/curiosidades.xml",
+      "source": "El Mundo Curiosidades",
+      "language": "es",
+      "country": "Spain",
+      "description": "Curiosities section",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.franceinfo.fr/faits-divers.rss",
+      "source": "Franceinfo Faits Divers",
+      "language": "fr",
+      "country": "France",
+      "description": "Unusual incidents and crime stories",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.lemonde.fr/insolite/rss_full.xml",
+      "source": "Le Monde Insolite",
+      "language": "fr",
+      "country": "France",
+      "description": "Unusual news section",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.bild.de/rss/news/kurioses/kurioses-17834378.bild.html",
+      "source": "Bild Kurioses",
+      "language": "de",
+      "country": "Germany",
+      "description": "Curious news from Germany",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.repubblica.it/rss/curiosita/rss2.0.xml",
+      "source": "La Repubblica Curiosità",
+      "language": "it",
+      "country": "Italy",
+      "description": "Curiosities section",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.corriere.it/rss/curiosita.xml",
+      "source": "Corriere della Sera Curiosità",
+      "language": "it",
+      "country": "Italy",
+      "description": "Curiosities and unusual news",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.ansa.it/sito/notizie/curiosita/curiosita_rss.xml",
+      "source": "ANSA Curiosità",
+      "language": "it",
+      "country": "Italy",
+      "description": "Curiosities from Italian news agency",
+      "confidence": "high"
+    },
+    {
+      "url": "https://www.lagaceta.com.ar/rss/curiosidades.xml",
+      "source": "La Gaceta Curiosidades",
+      "language": "es",
+      "country": "Argentina",
+      "description": "Curiosities from Argentina",
+      "confidence": "medium"
+    },
+    {
+      "url": "https://www.newser.com/rss/odd-news",
+      "source": "Newser Odd News",
+      "language": "en",
+      "country": "US",
+      "description": "Aggregated odd news stories",
+      "confidence": "high"
+    }
+  ]
+}
