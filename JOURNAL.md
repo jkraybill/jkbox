@@ -200,6 +200,8 @@ Journal entries reference HC outcomes:
 
 [2025-11-13 10:54 UTC] Session 2✓. Crash recovery→lobby UI pushed. #4 created (reconnection). TODO violation fixed. T:105/105✓. C:d57f3c4,71d3853. Pattern: Session crash→CONSTITUTION audit→issue tracking✓. JKLES: ∅ (recovery work).
 
+[2025-11-13 11:40 UTC] Session 2 continued. #5 spec finalized (data collection tools). Phase 1 foundation implemented. T:15/15✓. C:84a849a. Pattern: Conversational design→adaptive Q&A→comprehensive spec✓. TDD: rate limiter(7/7), retry handler(8/8)✓. PostgreSQL schema, Ollama integration, 14 languages, seed data complete.
+
 ---
 
 ## Usage Notes
