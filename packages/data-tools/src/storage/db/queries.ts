@@ -233,7 +233,7 @@ export class DatabaseQueries {
           article.collectedAt,
           article.isWeird,
           article.weirdConfidence,
-          JSON.stringify(article.categories),
+          article.categories, // PostgreSQL handles arrays natively
           article.engagementScore,
           article.qualityScore,
           article.language,
