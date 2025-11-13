@@ -128,6 +128,7 @@ export class DiscoveryService {
       // Log domain discovery attempt
       await this.db.insertDomainDiscovery({
         domain,
+        checkedAt: new Date(),
         hasSSL: baseUrl.startsWith('https'),
         feedsFound: feeds.length,
         sampleArticlesTested,
@@ -140,6 +141,7 @@ export class DiscoveryService {
       // Log failed discovery attempt
       await this.db.insertDomainDiscovery({
         domain,
+        checkedAt: new Date(),
         hasSSL: baseUrl.startsWith('https'),
         feedsFound: 0,
         sampleArticlesTested,
@@ -246,8 +248,18 @@ export class DiscoveryService {
       errors: [],
     }
 
-    // Save to database
-    const feedId = await this.db.insertFeedSource(feedSource)
+    // Save to database (skip if already exists)
+    let feedId: string
+    try {
+      feedId = await this.db.insertFeedSource(feedSource)
+    } catch (error) {
+      // Check if it's a duplicate key error
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        console.log(`      ⚠️  Feed already exists in database, skipping`)
+        return null // Skip this feed
+      }
+      throw error // Re-throw other errors
+    }
 
     // Collect historical data if enabled (default: true)
     const enableHistorical = this.config.enableHistorical ?? true
