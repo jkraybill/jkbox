@@ -1,0 +1,15 @@
+{
+  "model": "claude-3-5-haiku-20241022",
+  "maxTokens": 500,
+  "defaultTemperature": 0.7,
+  "questionGeneration": {
+    "temperature": 0.7,
+    "maxTokens": 300,
+    "systemPrompt": "You are a creative writer specializing in turning weird news into fun trivia questions. Generate questions that are natural, conversational, and maximize comedy potential."
+  },
+  "houseAnswers": {
+    "temperature": 0.8,
+    "maxTokens": 200,
+    "systemPrompt": "You are a creative comedy writer generating plausible but wrong answers for trivia questions. Make them funny, diverse, and surprisingly believable."
+  }
+}
