@@ -18,7 +18,7 @@ program
   .option('-s, --subreddits <names...>', 'Specific subreddits to fetch (without r/)')
   .option('-l, --limit <number>', 'Posts per subreddit', '1000')
   .option('--min-score <number>', 'Minimum post score', '100')
-  .option('--classify', 'Classify posts with Ollama (slow)', false)
+  .option('--no-classify', 'Skip Ollama classification (faster but not recommended)')
   .parse()
 
 const options = program.opts()
@@ -56,10 +56,11 @@ async function main() {
     chalk.gray(`\nFiltered: ${filtered.length}/${posts.length} posts with score >= ${minScore}`)
   )
 
-  // Optionally classify with Ollama
+  // Classify with Ollama (enabled by default)
+  const shouldClassify = options.classify !== false
   let classified = filtered
-  if (options.classify) {
-    console.log(chalk.yellow('\n🧠 Classifying posts with Ollama...\n'))
+  if (shouldClassify) {
+    console.log(chalk.yellow('\n🧠 Classifying posts with Ollama (default)...\n'))
 
     const llmConfig: LocalLLMConfig = JSON.parse(
       readFileSync(join(process.cwd(), 'config/llm.json'), 'utf-8')
