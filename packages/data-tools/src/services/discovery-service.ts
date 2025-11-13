@@ -47,8 +47,8 @@ export class DiscoveryService {
     this.db = new DatabaseQueries(this.pool)
     this.rateLimiter = new RateLimiter(2000, true) // 2 sec + random jitter
     this.retryHandler = new RetryHandler({
-      maxRetries: 3,
-      initialDelay: 1000,
+      maxRetries: 2, // Reduced retries to fail faster on 401s
+      initialDelay: 500,
       backoffStrategy: 'exponential',
     })
     this.robotsChecker = new RobotsChecker(getUserAgent())
@@ -70,15 +70,20 @@ export class DiscoveryService {
       // We use respectful rate limiting and human-like behavior instead
 
       // Discover feed links
+      console.log(`  Discovering RSS feeds...`)
       const feeds = await this.rateLimiter.throttle(domain, async () => {
         return await this.retryHandler.execute(async () => {
           return await this.rssScr.discoverFeeds(baseUrl)
         })
       })
 
+      console.log(`  Found ${feeds.length} potential feeds, validating...`)
+
       // Process each discovered feed
-      for (const discoveredFeed of feeds) {
+      for (let i = 0; i < feeds.length; i++) {
+        const discoveredFeed = feeds[i]!
         try {
+          console.log(`  [${i + 1}/${feeds.length}] Checking ${discoveredFeed.url}...`)
           const feedSource = await this.processFeed(
             discoveredFeed.url,
             domain,
@@ -87,10 +92,13 @@ export class DiscoveryService {
           )
 
           if (feedSource) {
+            console.log(`    ✓ Validated (${feedSource.qualityScore}% weird content)`)
             discoveredFeeds.push(feedSource)
+          } else {
+            console.log(`    ✗ Not enough weird content`)
           }
         } catch (error) {
-          console.error(`Failed to process feed ${discoveredFeed.url}:`, error)
+          console.log(`    ✗ Failed: ${error instanceof Error ? error.message : error}`)
         }
       }
     } catch (error) {
@@ -194,11 +202,16 @@ export class DiscoveryService {
     const allFeeds: FeedSource[] = []
     const errors: string[] = []
 
-    for (const { domain, language, country } of domains) {
+    for (let i = 0; i < domains.length; i++) {
+      const { domain, language, country } = domains[i]!
+      console.log(`\n[${i + 1}/${domains.length}] Processing ${domain}...`)
+
       try {
         const feeds = await this.discoverFromDomain(domain, language, country)
+        console.log(`  ✓ Found ${feeds.length} validated feeds`)
         allFeeds.push(...feeds)
       } catch (error) {
+        console.log(`  ✗ Failed: ${error}`)
         errors.push(`${domain}: ${error}`)
       }
     }
