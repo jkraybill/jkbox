@@ -109,7 +109,7 @@ Pattern: Test coverage dropped 3 sessions→added test-analyzer skill
 
 ## Session Count Tracking
 
-**Current session: 3** (updated at BOS)
+**Current session: 4** (updated at BOS)
 
 Framework automation triggers based on count:
 - AI-driven health check (when friction detected, not calendar)
@@ -227,6 +227,10 @@ Journal entries reference HC outcomes:
 [2025-11-13 19:50 UTC] Array format bug✓. PostgreSQL TEXT[] expects native arrays, not JSON strings. 274 historical articles saved. T:47/47✓. C:42dc025. Pattern: DB schema creation→real data test→immediate bug found & fixed. System fully operational.
 
 [2025-11-13 20:00 UTC] Auto-classification opt-out✓. User feedback→all articles must be classified. Changed --classify (opt-in) to --no-classify (opt-out). Fixed Commander.js default bug. T:54/54✓. C:156317d. Pattern: User expectation clear→immediate reversal. All 274 articles classified (43 weird/16%)✓. Classification now default behavior.
+
+### Session 4 (2025-11-15)
+
+[2025-11-15 01:30 UTC] Session 4✓. Migration scripts for laptop portability. export-data.sh + import-data.sh + MIGRATION.md created. T:175/175✓. C:e8cfef3. Pattern: User needs laptop migration→comprehensive export/import scripts with safety checks, backups, docs✓. Bundles .env, PostgreSQL, Gordo memory, Redis into tarball. JKLES: ∅ (utility work).
 
 ---
 

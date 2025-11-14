@@ -208,6 +208,22 @@ See **GORDO-WORKFLOW.md** for full details.
 
 ---
 
+## Laptop Migration
+
+**Moving to a new laptop?** See **scripts/MIGRATION.md** for automated data portability.
+
+```bash
+# Old laptop: Export everything
+./scripts/export-data.sh
+
+# New laptop: Import everything
+./scripts/import-data.sh jkbox-migration-*.tar.gz
+```
+
+Migrates: .env files, PostgreSQL database, Gordo memory, Redis cache
+
+---
+
 ## Quality Standards
 
 See **CONSTITUTION.md** for non-negotiables.

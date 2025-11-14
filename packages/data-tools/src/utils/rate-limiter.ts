@@ -22,6 +22,14 @@ export class RateLimiter {
   }
 
   /**
+   * Simple acquire pattern for backwards compatibility
+   * Uses a default domain queue
+   */
+  async acquire(): Promise<void> {
+    await this.throttle('default', async () => {})
+  }
+
+  /**
    * Set custom delay for a specific domain
    * Useful for respecting Crawl-delay from robots.txt
    */

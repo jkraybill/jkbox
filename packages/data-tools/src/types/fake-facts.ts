@@ -9,6 +9,7 @@ export interface FakeFactsQuestion {
   // Question content
   questionText: string // e.g., "In California, _____ are legally classified as fish."
   blankText: string // e.g., "bees"
+  postscript: string | null // e.g., "Bees were classified as fish to protect them under the Endangered Species Act."
 
   // Generation metadata
   generatedAt: Date
@@ -32,6 +33,7 @@ export interface FakeFactsQuestionInsert {
   articleId: string
   questionText: string
   blankText: string
+  postscript?: string | null
   generatorModel: string
   generationCost?: number | null
 }
@@ -92,6 +94,7 @@ export interface QuestionGenerationResult {
   question: string
   realAnswer: string
   blank: string
+  postscript: string
 }
 
 /**

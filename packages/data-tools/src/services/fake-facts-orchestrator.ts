@@ -13,6 +13,8 @@ export interface ProcessingStats {
   errors: number
   totalCost: number
   ollamaInferences: number
+  errorDetails: Array<{ articleId: string; title: string; error: string }>
+  rejectionReasons: Array<{ articleId: string; title: string; reason: string }>
 }
 
 export interface ProcessingResult {
@@ -47,6 +49,27 @@ export class FakeFactsOrchestrator {
       errors: 0,
       totalCost: 0,
       ollamaInferences: 0,
+      errorDetails: [],
+      rejectionReasons: [],
+    }
+  }
+
+  /**
+   * Get sample real answers to show Claude the style
+   */
+  private async getSampleRealAnswers(limit: number = 5): Promise<string[]> {
+    try {
+      const result = await this.db['pool'].query(
+        `SELECT DISTINCT blank_text
+         FROM fake_facts_questions
+         ORDER BY RANDOM()
+         LIMIT $1`,
+        [limit]
+      )
+      return result.rows.map(row => row.blank_text)
+    } catch {
+      // If no samples exist yet, return empty array
+      return []
     }
   }
 
@@ -55,20 +78,29 @@ export class FakeFactsOrchestrator {
    */
   async processArticle(article: Article): Promise<ProcessingResult> {
     try {
-      // Step 1: Fetch full content
-      if (!article.link) {
-        return {
-          success: false,
-          articleId: article.id!,
-          questionGenerated: false,
-          error: 'No link available for article',
+      // Step 1: Get content (use existing if available, otherwise fetch)
+      let contentText: string
+
+      if (article.content && article.content.length > 100) {
+        // Use existing content from database
+        contentText = article.content
+      } else {
+        // Fetch content from URL
+        if (!article.link) {
+          return {
+            success: false,
+            articleId: article.id!,
+            questionGenerated: false,
+            error: 'No link or content available for article',
+          }
         }
+
+        const fetchedContent = await this.articleFetcher.fetchArticleContent(article.link)
+        contentText = fetchedContent.mainText
       }
 
-      const content = await this.articleFetcher.fetchArticleContent(article.link)
-
       // Step 2: Summarize with Ollama
-      const summary = await this.ollama.summarize(article.title, content.mainText)
+      const summary = await this.ollama.summarize(article.title, contentText)
       this.stats.ollamaInferences++
 
       // Step 3: Evaluate candidate with Ollama
@@ -91,19 +123,24 @@ export class FakeFactsOrchestrator {
       // Step 4: Generate question with Claude
       const questionResult = await this.claude.generateQuestion(article.title, summary)
 
-      // Step 5: Generate house answers with Claude
+      // Step 5: Get sample real answers to show Claude the style
+      const sampleAnswers = await this.getSampleRealAnswers(5)
+
+      // Step 6: Generate house answers with Claude
       const houseAnswersResult = await this.claude.generateHouseAnswers(
         article.title,
         summary,
         questionResult.question,
-        questionResult.realAnswer
+        questionResult.realAnswer,
+        sampleAnswers
       )
 
-      // Step 6: Store in database
+      // Step 7: Store in database
       const question: FakeFactsQuestionInsert = {
         articleId: article.id!,
         questionText: questionResult.question,
         blankText: questionResult.blank,
+        postscript: questionResult.postscript,
         generatorModel: 'claude-3-5-haiku-20241022',
         generationCost: 0.003, // Approximate, could be calculated from tokens
       }
@@ -133,7 +170,7 @@ export class FakeFactsOrchestrator {
 
       await this.db.insertAnswers(houseAnswers)
 
-      // Step 7: Mark article as processed
+      // Step 8: Mark article as processed
       await this.db.markArticleAsProcessed(article.id!, true, null)
 
       this.stats.questionsGenerated++
@@ -167,7 +204,7 @@ export class FakeFactsOrchestrator {
   /**
    * Process a batch of articles
    */
-  async processBatch(batchSize: number = 10): Promise<ProcessingStats> {
+  async processBatch(batchSize: number = 10, verbose: boolean = true): Promise<ProcessingStats> {
     // Reset stats
     this.stats = {
       articlesProcessed: 0,
@@ -176,6 +213,8 @@ export class FakeFactsOrchestrator {
       errors: 0,
       totalCost: 0,
       ollamaInferences: 0,
+      errorDetails: [],
+      rejectionReasons: [],
     }
 
     // Get unprocessed articles
@@ -186,8 +225,41 @@ export class FakeFactsOrchestrator {
     }
 
     // Process each article
-    for (const article of articles) {
-      await this.processArticle(article)
+    for (let i = 0; i < articles.length; i++) {
+      const article = articles[i]!
+
+      if (verbose) {
+        const progress = `[${i + 1}/${articles.length}]`
+        const title = article.title.substring(0, 80)
+        console.log(`\n${progress} Processing: "${title}"...`)
+      }
+
+      const result = await this.processArticle(article)
+
+      // Track detailed results
+      if (result.error) {
+        this.stats.errorDetails.push({
+          articleId: result.articleId,
+          title: article.title,
+          error: result.error,
+        })
+      } else if (result.rejectionReason) {
+        this.stats.rejectionReasons.push({
+          articleId: result.articleId,
+          title: article.title,
+          reason: result.rejectionReason,
+        })
+      }
+
+      if (verbose) {
+        if (result.questionGenerated) {
+          console.log(`  ✓ Question generated successfully`)
+        } else if (result.rejectionReason) {
+          console.log(`  ⊘ Rejected: ${result.rejectionReason}`)
+        } else if (result.error) {
+          console.log(`  ✗ Error: ${result.error}`)
+        }
+      }
     }
 
     return this.stats

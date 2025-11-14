@@ -56,72 +56,93 @@ async function main() {
     chalk.gray(`\nFiltered: ${filtered.length}/${posts.length} posts with score >= ${minScore}`)
   )
 
-  // Classify with Ollama (enabled by default)
+  // Classify with Ollama and save immediately (enabled by default)
   const shouldClassify = options.classify !== false
+  let saved = 0
+  let duplicates = 0
+  let weirdCount = 0
   let classified = filtered
+
   if (shouldClassify) {
-    console.log(chalk.yellow('\n🧠 Classifying posts with Ollama (default)...\n'))
+    console.log(chalk.yellow('\n🧠 Classifying & saving posts with Ollama (saves after each post)...\n'))
 
     const llmConfig: LocalLLMConfig = JSON.parse(
       readFileSync(join(process.cwd(), 'config/llm.json'), 'utf-8')
     )
     const llm = new LocalLLM(llmConfig)
 
-    const weirdPosts = []
     for (let i = 0; i < filtered.length; i++) {
       const post = filtered[i]!
       try {
         const classification = await llm.classify(post.title, post.text)
         const marker = classification.isWeird ? '🎭' : '📰'
-        console.log(
-          `  [${i + 1}/${filtered.length}] ${marker} r/${post.subreddit}: "${post.title.substring(0, 60)}..." (${classification.confidence}% confident)`
-        )
+        const confidence = classification.confidence
 
-        if (classification.isWeird && classification.confidence > 60) {
-          weirdPosts.push(post)
+        // Save to DB immediately if weird enough
+        if (classification.isWeird && confidence > 60) {
+          weirdCount++
+
+          const article = {
+            sourceType: 'reddit' as const,
+            sourceId: post.id,
+            sourceUrl: `https://www.reddit.com${post.permalink}`,
+            title: post.title,
+            description: post.text.substring(0, 500) || null,
+            content: post.text || null,
+            link: post.url,
+            author: null,
+            pubDate: post.createdAt,
+            collectedAt: new Date(),
+            isWeird: true,
+            weirdConfidence: confidence,
+            categories: [post.subreddit],
+            engagementScore: post.score,
+            qualityScore: null,
+            language: 'en',
+            country: null,
+            contentHash: null,
+          }
+
+          try {
+            await db.insertArticle(article)
+            saved++
+            console.log(
+              `  [${i + 1}/${filtered.length}] ${marker} r/${post.subreddit}: "${post.title.substring(0, 60)}..." (${confidence}% confident) ✓ saved`
+            )
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('duplicate')) {
+              duplicates++
+              console.log(
+                `  [${i + 1}/${filtered.length}] ${marker} r/${post.subreddit}: "${post.title.substring(0, 60)}..." (${confidence}% confident) - duplicate`
+              )
+            } else {
+              console.log(
+                `  [${i + 1}/${filtered.length}] ${marker} r/${post.subreddit}: "${post.title.substring(0, 60)}..." (${confidence}% confident) ❌ save failed`
+              )
+            }
+          }
+        } else {
+          console.log(
+            `  [${i + 1}/${filtered.length}] ${marker} r/${post.subreddit}: "${post.title.substring(0, 60)}..." (${confidence}% confident)`
+          )
         }
       } catch (error) {
         console.log(`  [${i + 1}/${filtered.length}] ❌ Classification failed`)
       }
     }
 
-    console.log(chalk.green(`\n✓ Classified: ${weirdPosts.length}/${filtered.length} weird posts`))
-    classified = weirdPosts
+    console.log(chalk.green(`\n✓ Processed: ${weirdCount} weird posts found, ${saved} new saved, ${duplicates} duplicates`))
   }
 
   // Display summary
   console.log(chalk.blue('\n📊 Collection Summary:\n'))
   console.log(chalk.white(`  Total posts fetched: ${posts.length}`))
   console.log(chalk.white(`  After score filter: ${filtered.length}`))
-  if (options.classify) {
-    console.log(chalk.white(`  After classification: ${classified.length}`))
+  if (shouldClassify) {
+    console.log(chalk.white(`  Classified as weird: ${weirdCount}`))
+    console.log(chalk.white(`  New articles saved: ${saved}`))
+    console.log(chalk.white(`  Duplicates skipped: ${duplicates}`))
   }
-
-  // Show top posts by subreddit
-  console.log(chalk.blue('\n📰 Top Posts by Subreddit:\n'))
-  const bySubreddit = new Map<string, typeof classified>()
-  for (const post of classified) {
-    const existing = bySubreddit.get(post.subreddit) || []
-    existing.push(post)
-    bySubreddit.set(post.subreddit, existing)
-  }
-
-  for (const [subreddit, subPosts] of bySubreddit.entries()) {
-    console.log(chalk.white(`  r/${subreddit}: ${subPosts.length} posts`))
-    // Show top 3
-    const sorted = fetcher.sortByScore(subPosts).slice(0, 3)
-    for (const post of sorted) {
-      console.log(chalk.gray(`    ↑${post.score.toLocaleString()} - ${post.title.substring(0, 80)}`))
-    }
-    console.log('')
-  }
-
-  // TODO: Store in database (need to design reddit_posts table schema)
-  console.log(
-    chalk.yellow(
-      '\n⚠️  Database storage not yet implemented - posts are not saved (TODO: design schema)'
-    )
-  )
 
   await pool.end()
   process.exit(0)

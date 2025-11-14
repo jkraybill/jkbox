@@ -408,13 +408,14 @@ export class DatabaseQueries {
   async insertQuestion(question: FakeFactsQuestionInsert): Promise<string> {
     const result = await this.pool.query<{ id: string }>(
       `INSERT INTO fake_facts_questions (
-        article_id, question_text, blank_text, generator_model, generation_cost
-      ) VALUES ($1, $2, $3, $4, $5)
+        article_id, question_text, blank_text, postscript, generator_model, generation_cost
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id`,
       [
         question.articleId,
         question.questionText,
         question.blankText,
+        question.postscript ?? null,
         question.generatorModel,
         question.generationCost ?? null,
       ]

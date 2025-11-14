@@ -16,9 +16,12 @@
     "list-feeds": "tsx src/cli/list-feeds.ts",
     "validate-feed": "tsx src/cli/validate-feed.ts",
     "check-health": "tsx src/cli/check-health.ts",
+    "reddit-auth": "tsx src/cli/reddit-auth.ts",
     "collect-reddit": "tsx src/cli/collect-reddit.ts",
     "collect-historical": "tsx src/cli/collect-historical.ts",
-    "generate-fake-facts": "tsx src/cli/generate-fake-facts.ts"
+    "generate-fake-facts": "tsx src/cli/generate-fake-facts.ts",
+    "reset-questions": "tsx src/cli/reset-questions.ts",
+    "show-question": "tsx src/cli/show-question.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

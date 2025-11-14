@@ -35,7 +35,7 @@ interface RedditApiResponse {
 }
 
 /**
- * Recommended weird news subreddits
+ * Recommended weird news subreddits (actual news only, not user-generated stories)
  */
 export const WEIRD_NEWS_SUBREDDITS = [
   'nottheonion', // Satirical-sounding real news
@@ -43,21 +43,6 @@ export const WEIRD_NEWS_SUBREDDITS = [
   'NewsOfTheWeird', // Weird news
   'NewsOfTheStupid', // Stupid news
   'FloridaMan', // Florida-specific weird news
-  'brandnewsentence', // Never-before-said phrases
-  'WTF_Florida', // More Florida weirdness
-  'ANormalDayInRussia', // Russian oddities
-  'PublicFreakout', // Public incidents
-  'CrazyIdeas', // Unusual concepts
-  'ABoringDystopia', // Dystopian reality
-  'LateStageCapitalism', // Economic absurdity
-  'SubredditDrama', // Internet drama
-  'bestof', // Best Reddit content
-  'facepalm', // Face-palm moments
-  'Whatcouldgowrong', // Failed attempts
-  'instant_regret', // Immediate consequences
-  'JusticeServed', // Karma stories
-  'MaliciousCompliance', // Following rules too literally
-  'ProRevenge', // Revenge stories
 ]
 
 /**
@@ -65,9 +50,113 @@ export const WEIRD_NEWS_SUBREDDITS = [
  */
 export class RedditFetcher {
   private readonly baseUrl = 'https://www.reddit.com'
-  private readonly userAgent =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  private readonly oauthBaseUrl = 'https://oauth.reddit.com'
+  private readonly userAgent = 'jkbox-data-collector/0.1.0 (by /u/YOUR_USERNAME)'
   private readonly rateLimitDelay = 2000 // 2 seconds between requests
+  private accessToken: string | null = null
+  private tokenExpiresAt: number = 0
+
+  private readonly clientId: string | null
+  private readonly clientSecret: string | null
+  private readonly refreshToken: string | null
+  private readonly username: string | null
+  private readonly password: string | null
+
+  constructor(
+    clientId?: string,
+    clientSecret?: string,
+    refreshToken?: string,
+    username?: string,
+    password?: string
+  ) {
+    this.clientId = clientId || process.env.REDDIT_CLIENT_ID || null
+    this.clientSecret = clientSecret || process.env.REDDIT_CLIENT_SECRET || null
+    this.refreshToken = refreshToken || process.env.REDDIT_REFRESH_TOKEN || null
+    this.username = username || process.env.REDDIT_USERNAME || null
+    this.password = password || process.env.REDDIT_PASSWORD || null
+  }
+
+  /**
+   * Get OAuth access token using refresh token (preferred) or password grant (legacy)
+   */
+  private async getAccessToken(): Promise<string> {
+    // Return cached token if still valid
+    if (this.accessToken && Date.now() < this.tokenExpiresAt) {
+      return this.accessToken
+    }
+
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error('Reddit OAuth credentials not configured (missing client_id/client_secret).')
+    }
+
+    const auth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')
+
+    try {
+      // Prefer refresh token flow (more secure)
+      if (this.refreshToken) {
+        const response = await axios.post(
+          'https://www.reddit.com/api/v1/access_token',
+          new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: this.refreshToken,
+          }),
+          {
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'User-Agent': this.userAgent,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          }
+        )
+
+        this.accessToken = response.data.access_token
+        this.tokenExpiresAt = Date.now() + (response.data.expires_in * 1000) - 60000 // Refresh 1 min early
+
+        return this.accessToken
+      }
+
+      // Fallback to password grant (less secure, legacy)
+      if (this.username && this.password) {
+        console.warn('⚠️  Using password grant - consider running `npm run reddit-auth` for secure OAuth')
+
+        const response = await axios.post(
+          'https://www.reddit.com/api/v1/access_token',
+          new URLSearchParams({
+            grant_type: 'password',
+            username: this.username,
+            password: this.password,
+          }),
+          {
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'User-Agent': this.userAgent,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          }
+        )
+
+        this.accessToken = response.data.access_token
+        this.tokenExpiresAt = Date.now() + (response.data.expires_in * 1000) - 60000
+
+        return this.accessToken
+      }
+
+      throw new Error('No Reddit authentication method configured (need refresh_token or username/password).')
+    } catch (error) {
+      throw new Error(`Failed to get Reddit OAuth token: ${error}`)
+    }
+  }
+
+  /**
+   * Check if OAuth is configured (refresh token preferred, password grant fallback)
+   */
+  private isOAuthConfigured(): boolean {
+    const hasClientCredentials = !!(this.clientId && this.clientSecret)
+    const hasRefreshToken = !!this.refreshToken
+    const hasPasswordGrant = !!(this.username && this.password)
+
+    return hasClientCredentials && (hasRefreshToken || hasPasswordGrant)
+  }
 
   /**
    * Get top posts of all time from a subreddit
@@ -79,25 +168,54 @@ export class RedditFetcher {
     let after: string | null = null
     const batchSize = 100 // Reddit API returns max 100 per request
 
-    console.log(`    Fetching top posts from r/${subreddit}...`)
+    // Check if OAuth is configured
+    const useOAuth = this.isOAuthConfigured()
+    const maxPosts = useOAuth ? limit : Math.min(limit, 250) // Unauthenticated API limited to 250
+
+    if (!useOAuth && limit > 250) {
+      console.log(`    ⚠️  OAuth not configured - limited to 250 posts (requested ${limit})`)
+    }
+
+    console.log(`    Fetching top posts from r/${subreddit}... (${useOAuth ? 'authenticated' : 'unauthenticated'})`)
 
     try {
-      while (posts.length < limit) {
-        // Build URL with pagination
-        const url = `${this.baseUrl}/r/${subreddit}/top.json`
+      // Get OAuth token if configured
+      let accessToken: string | null = null
+      if (useOAuth) {
+        try {
+          accessToken = await this.getAccessToken()
+          console.log(`    ✓ OAuth authenticated`)
+        } catch (error) {
+          console.error(`    ⚠️  OAuth failed, falling back to unauthenticated: ${error}`)
+        }
+      }
+
+      while (posts.length < maxPosts) {
+        // Build URL with pagination - use OAuth endpoint if authenticated
+        const baseUrl = accessToken ? this.oauthBaseUrl : this.baseUrl
+        const url = accessToken
+          ? `${baseUrl}/r/${subreddit}/top`
+          : `${baseUrl}/r/${subreddit}/top.json`
+
         const params = {
           sort: 'top',
           t: 'all', // All time
-          limit: Math.min(batchSize, limit - posts.length),
+          limit: Math.min(batchSize, maxPosts - posts.length),
           ...(after ? { after } : {}),
+        }
+
+        // Build headers
+        const headers: Record<string, string> = {
+          'User-Agent': this.userAgent,
+        }
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`
         }
 
         // Fetch page
         const response = await axios.get<RedditApiResponse>(url, {
           params,
-          headers: {
-            'User-Agent': this.userAgent,
-          },
+          headers,
           timeout: 15000,
         })
 
@@ -121,7 +239,7 @@ export class RedditFetcher {
           })
         }
 
-        console.log(`    Progress: ${posts.length}/${limit} posts`)
+        console.log(`    Progress: ${posts.length}/${maxPosts} posts`)
 
         // Check if there are more pages
         after = response.data.data.after

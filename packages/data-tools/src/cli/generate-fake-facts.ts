@@ -81,6 +81,27 @@ async function main() {
     console.log(chalk.gray(`  Average cost per question: $${avgCost.toFixed(4)}`))
   }
 
+  // Show error details if any
+  if (stats.errorDetails.length > 0) {
+    console.log(chalk.red('\n❌ Error Details:\n'))
+    for (const detail of stats.errorDetails) {
+      console.log(chalk.red(`  • ${detail.title.substring(0, 60)}...`))
+      console.log(chalk.gray(`    ${detail.error}`))
+    }
+  }
+
+  // Show rejection reasons if requested
+  if (stats.rejectionReasons.length > 0 && stats.rejectionReasons.length <= 10) {
+    console.log(chalk.yellow('\n⊘ Sample Rejection Reasons:\n'))
+    for (const rejection of stats.rejectionReasons.slice(0, 5)) {
+      console.log(chalk.yellow(`  • ${rejection.title.substring(0, 60)}...`))
+      console.log(chalk.gray(`    ${rejection.reason}`))
+    }
+    if (stats.rejectionReasons.length > 5) {
+      console.log(chalk.gray(`  ... and ${stats.rejectionReasons.length - 5} more`))
+    }
+  }
+
   await pool.end()
 
   // Exit with error if all failed
