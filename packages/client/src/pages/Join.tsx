@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
+import { getSavedNickname, saveNickname } from '../utils/cookies'
 import type { JoinSuccessMessage, ErrorMessage } from '@jkbox/shared'
 
 export function Join() {
@@ -14,6 +15,14 @@ export function Join() {
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Load saved nickname from cookie on mount
+  useEffect(() => {
+    const savedNickname = getSavedNickname()
+    if (savedNickname) {
+      setNickname(savedNickname)
+    }
+  }, [])
+
   useEffect(() => {
     if (!socket) return
 
@@ -23,6 +32,9 @@ export function Join() {
       setCurrentPlayer(message.player)
       setSessionToken(message.player.sessionToken)
       setRoom(message.room)
+
+      // Save nickname to cookie (90-day expiration)
+      saveNickname(message.player.nickname)
 
       // Navigate to player view
       navigate(`/play/${roomId}`)
