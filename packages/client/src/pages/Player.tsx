@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
+import { EvilJK } from '../components/EvilJK'
 import type { RoomUpdateMessage } from '@jkbox/shared'
 
 export function Player() {
@@ -73,6 +74,9 @@ export function Player() {
           )}
         </div>
       </div>
+
+      {/* Evil JK corner mascot (smaller for mobile) */}
+      <EvilJK variant="corner" />
     </div>
   )
 }

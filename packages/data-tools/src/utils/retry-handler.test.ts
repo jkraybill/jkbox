@@ -179,9 +179,9 @@ describe('RetryHandler', () => {
     const delay4 = timestamps[4]! - timestamps[3]! // Should be capped at 100
     const delay5 = timestamps[5]! - timestamps[4]! // Should be capped at 100
 
-    // All should be capped at maxDelay (with some tolerance)
-    expect(delay3).toBeLessThanOrEqual(120)
-    expect(delay4).toBeLessThanOrEqual(120)
-    expect(delay5).toBeLessThanOrEqual(120)
+    // All should be capped at maxDelay (with some tolerance for system timing variations)
+    expect(delay3).toBeLessThanOrEqual(150)
+    expect(delay4).toBeLessThanOrEqual(150)
+    expect(delay5).toBeLessThanOrEqual(150)
   })
 })

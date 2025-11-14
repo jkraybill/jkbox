@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useGameStore } from '../store/game-store'
 import { useSocket } from '../lib/use-socket'
 import { JumbotronVoting } from '../components/JumbotronVoting'
+import { EvilJK } from '../components/EvilJK'
 
 export function Jumbotron() {
   const { roomId } = useParams<{ roomId: string }>()
   const { room, setRoom } = useGameStore()
   const { socket, isConnected } = useSocket()
+  const [showIntro, setShowIntro] = useState(true)
 
   const joinUrl = `${window.location.origin}/join/${roomId}`
 
@@ -75,6 +77,12 @@ export function Jumbotron() {
         <div>State: {room.state}</div>
         <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
       </div>
+
+      {/* Evil JK intro animation (plays once on load) */}
+      {showIntro && <EvilJK variant="intro" onIntroComplete={() => setShowIntro(false)} />}
+
+      {/* Evil JK corner mascot (persistent, animated) */}
+      {!showIntro && <EvilJK variant="corner" />}
     </div>
   )
 }
