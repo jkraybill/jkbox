@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useGameStore } from '../store/game-store'
 import { useSocket } from '../lib/use-socket'
+import { JumbotronVoting } from '../components/JumbotronVoting'
 
 export function Jumbotron() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -47,47 +48,28 @@ export function Jumbotron() {
         </div>
       </div>
 
-      <div style={styles.content}>
-        <div style={styles.qrSection}>
-          <h2 style={styles.sectionTitle}>Scan to Join</h2>
-          <div style={styles.qrCode}>
-            <QRCodeSVG value={joinUrl} size={256} level="M" />
-          </div>
-          <div style={styles.joinUrl}>{joinUrl}</div>
-        </div>
-
-        <div style={styles.playerSection}>
-          <h2 style={styles.sectionTitle}>
-            Players ({room.players.length}/{room.config.maxPlayers})
-          </h2>
-          <div style={styles.playerList}>
-            {room.players.length === 0 ? (
-              <div style={styles.emptyState}>Waiting for players to join...</div>
-            ) : (
-              room.players.map((player) => (
-                <div key={player.id} style={styles.playerCard}>
-                  <div style={styles.playerNickname}>{player.nickname}</div>
-                  <div style={styles.playerStatus}>
-                    {player.isHost && <span style={styles.badge}>HOST</span>}
-                    {player.isAdmin && !player.isHost && <span style={styles.badge}>ADMIN</span>}
-                    {player.isConnected ? (
-                      <span style={styles.statusConnected}>●</span>
-                    ) : (
-                      <span style={styles.statusDisconnected}>●</span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+      {room.players.length === 0 ? (
+        // Show QR code when no players
+        <div style={styles.content}>
+          <div style={styles.qrSection}>
+            <h2 style={styles.sectionTitle}>Scan to Join</h2>
+            <div style={styles.qrCode}>
+              <QRCodeSVG value={joinUrl} size={256} level="M" />
+            </div>
+            <div style={styles.joinUrl}>{joinUrl}</div>
           </div>
 
-          {room.players.length >= 3 && (
-            <button style={styles.startButton} disabled>
-              Start Game (Coming Soon)
-            </button>
-          )}
+          <div style={styles.playerSection}>
+            <h2 style={styles.sectionTitle}>
+              Players ({room.players.length}/{room.config.maxPlayers})
+            </h2>
+            <div style={styles.emptyState}>Waiting for players to join...</div>
+          </div>
         </div>
-      </div>
+      ) : (
+        // Show voting UI when players have joined
+        <JumbotronVoting players={room.players} />
+      )}
 
       <div style={styles.footer}>
         <div>State: {room.state}</div>
