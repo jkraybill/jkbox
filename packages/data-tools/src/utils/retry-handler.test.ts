@@ -74,6 +74,8 @@ describe('RetryHandler', () => {
   })
 
   it('should use linear backoff', async () => {
+    vi.useFakeTimers()
+
     const handler = new RetryHandler({
       maxRetries: 3,
       initialDelay: 100,
@@ -90,17 +92,26 @@ describe('RetryHandler', () => {
       return 'done'
     })
 
-    await handler.execute(fn)
+    const executePromise = handler.execute(fn)
 
-    // Check delays: should all be ~100ms
+    // Advance time through each retry
+    await vi.advanceTimersByTimeAsync(100) // First retry
+    await vi.advanceTimersByTimeAsync(100) // Second retry
+    await vi.advanceTimersByTimeAsync(100) // Third retry
+
+    await executePromise
+
+    // Check delays: should all be exactly 100ms (with fake timers)
     expect(timestamps.length).toBe(4)
     const delay1 = timestamps[1]! - timestamps[0]!
     const delay2 = timestamps[2]! - timestamps[1]!
     const delay3 = timestamps[3]! - timestamps[2]!
 
-    expect(delay1).toBeGreaterThanOrEqual(90)
-    expect(delay2).toBeGreaterThanOrEqual(90)
-    expect(delay3).toBeGreaterThanOrEqual(90)
+    expect(delay1).toBe(100)
+    expect(delay2).toBe(100)
+    expect(delay3).toBe(100)
+
+    vi.useRealTimers()
   })
 
   it('should only retry on retryable errors', async () => {

@@ -421,6 +421,28 @@ If it's getting in the way → fix it. That's the point of self-improvement.
 
 ---
 
+## Prompt Optimization Workflow (LLM Quality Improvement)
+
+**When LLM outputs are consistently failing quality standards:**
+
+1. **Sample real outputs** (10-20 examples from production)
+2. **Interactive review session** with human:
+   - Show one output at a time
+   - Get specific feedback on what's good/bad and WHY
+   - Distill patterns (verb constraints, semantic violations, etc.)
+   - Continue until human feedback becomes predictable (3 in a row)
+3. **Rebuild prompts** with:
+   - Explicit rules derived from failures
+   - Multiple examples (good AND bad with explanations)
+   - Validation techniques (forced sentence completion)
+   - Clear section headers for readability
+4. **Test on small batch** (5-10) before scaling up
+5. **Document learnings** in session journal
+
+**Key insight from Session 5:** Iterative feedback with distilled rules dramatically outperforms theoretical prompt design.
+
+---
+
 ## Summary
 
 **The Flow:**
@@ -441,6 +463,7 @@ If it's getting in the way → fix it. That's the point of self-improvement.
 
 ---
 
-**Workflow v1.0**
+**Workflow v1.1**
 **Created:** 2025-11-12 (Session 1)
+**Updated:** 2025-11-15 (Session 5 - Added prompt optimization workflow)
 **Based on:** Gordo Framework best practices + home-server production patterns

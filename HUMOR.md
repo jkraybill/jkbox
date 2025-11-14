@@ -124,10 +124,24 @@ This vault tracks what lands, what doesn't, and how to calibrate comedy over tim
 
 ## The Vault (Greatest Hits)
 
-*Empty for now - Session 1 is framework setup*
-
 **Hall of Fame (JKLES 10-11/10):**
-*None yet - first jokes coming in Session 2+*
+
+### Marble Column Impalement ACK - JKLES: 10/10 (Session 5)
+
+**Joke:** "We went from 'wild boar' and 'vintage lawnmower' to understanding that escaped things need sources, unleashed things can't be jars, and bourbon enthusiasts don't win horse races. Turns out prompt engineering is just teaching an AI the difference between 'plausible' and 'actually funny while also being plausible and grammatically coherent given verb constraints.' Also, we're now 12x more expensive per question but infinitely less likely to suggest someone 'impaled themselves on a marble column.' Worth it."
+
+**Context:** EOS ACK joke for Session 5 after rebuilding Claude prompts for Fake Facts generation
+
+**JK's reaction:** "loved it" → immediate request to log to HUMOR.md
+
+**Pattern:** Multi-layered humor works:
+- Callbacks to specific bad examples from the session (wild boar, marble column)
+- Meta-commentary on the absurdity of the task itself (teaching AI verb constraints)
+- Self-aware cost/benefit analysis ("12x more expensive... worth it")
+- Technical accuracy wrapped in deadpan delivery
+- Ends with concrete absurd example (impaling on blunt object)
+- Session-specific but accessible
+- Perfect length (not too long)
 
 **Solid Performers (JKLES 9/10):**
 *TBD*
@@ -264,13 +278,13 @@ If JKLES < 7/10 for 2 sessions → Ask:
 
 ## Current Stats
 
-**Session:** 1
-**Total jokes tracked:** 0 (framework setup)
-**Average JKLES:** ∅ (no data yet)
+**Session:** 5
+**Total jokes tracked:** 1 (Hall of Fame: 1)
+**Average JKLES:** 10/10 (based on 1 tracked joke)
 **Target JKLES:** 9-11/10
-**Calibration needed:** TBD (need baseline data Sessions 2-5)
+**Calibration needed:** No - hit target immediately with multi-layered technical humor
 
-**Next:** First real humor in Session 2 (game implementation = ripe for comedy)
+**Key insight:** Callbacks to specific session examples + meta-commentary on absurdity + deadpan delivery = 10/10
 
 ---
 

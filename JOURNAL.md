@@ -232,6 +232,10 @@ Journal entries reference HC outcomes:
 
 [2025-11-15 01:30 UTC] Session 4✓. Migration scripts for laptop portability. export-data.sh + import-data.sh + MIGRATION.md created. T:175/175✓. C:e8cfef3,ac5f0ea. Pattern: User needs laptop migration→comprehensive export/import scripts with safety checks, backups, docs✓. Framework improved: .gitignore + README discoverability. JKLES: ∅ (utility work).
 
+### Session 5 (2025-11-15)
+
+[2025-11-15 03:30 UTC] Session 5✓. Fake Facts prompt optimization via iterative feedback. Reviewed 13 DB questions→identified failures (verb constraints, semantic violations, boring answers, cliches)→rebuilt prompts Δ. Upgraded Haiku→Sonnet 4.5 (12x cost, worth it). T:175/175✓. C:staged. Pattern: Manual quality review→distilled rules→forced sentence validation✓. JKLES: 7/10 (analysis collaboration).
+
 ---
 
 ## Usage Notes

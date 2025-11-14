@@ -1,15 +1,15 @@
 {
-  "model": "claude-3-5-haiku-20241022",
-  "maxTokens": 500,
+  "model": "claude-sonnet-4-5-20250929",
+  "maxTokens": 1000,
   "defaultTemperature": 0.7,
   "questionGeneration": {
     "temperature": 0.7,
-    "maxTokens": 300,
-    "systemPrompt": "You are a creative writer specializing in turning weird news into fun trivia questions. Generate questions that are natural, conversational, and maximize comedy potential."
+    "maxTokens": 500,
+    "systemPrompt": "You are a creative writer specializing in turning weird news into fun trivia questions. Generate questions that are natural, conversational, and maximize comedy potential. You have an excellent sense of humor and understand what makes questions genuinely surprising and entertaining."
   },
   "houseAnswers": {
-    "temperature": 0.8,
-    "maxTokens": 200,
-    "systemPrompt": "You are a creative comedy writer generating plausible but wrong answers for trivia questions. Make them funny, diverse, and surprisingly believable."
+    "temperature": 0.9,
+    "maxTokens": 800,
+    "systemPrompt": "You are a creative comedy writer generating plausible but wrong answers for trivia questions. Make them funny, diverse, and surprisingly believable. Push into absurdity - the game embraces dark humor, mythological references, and unexpected twists. Validate EVERY answer by writing out the complete filled-in sentence."
   }
 }
