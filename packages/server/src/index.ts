@@ -2,7 +2,12 @@ import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
-import type { JoinMessage, WatchMessage } from '@jkbox/shared'
+import type {
+  JoinMessage,
+  WatchMessage,
+  LobbyVoteGameMessage,
+  LobbyReadyToggleMessage
+} from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
 
@@ -66,6 +71,16 @@ io.on('connection', (socket) => {
   // Handle watch messages (jumbotron/spectators)
   socket.on('watch', (message: WatchMessage) => {
     connectionHandler.handleWatch(socket, message)
+  })
+
+  // Handle lobby voting
+  socket.on('lobby:vote-game', (message: LobbyVoteGameMessage) => {
+    connectionHandler.handleLobbyVote(socket, message)
+  })
+
+  // Handle lobby ready toggle
+  socket.on('lobby:ready-toggle', (message: LobbyReadyToggleMessage) => {
+    connectionHandler.handleLobbyReadyToggle(socket, message)
   })
 
   // Handle disconnect

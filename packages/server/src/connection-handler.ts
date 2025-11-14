@@ -1,10 +1,21 @@
 import type { Socket, Server } from 'socket.io'
-import type { JoinMessage, JoinSuccessMessage, RoomUpdateMessage, WatchMessage, Player } from '@jkbox/shared'
+import type {
+  JoinMessage,
+  JoinSuccessMessage,
+  RoomUpdateMessage,
+  WatchMessage,
+  Player,
+  LobbyVoteGameMessage,
+  LobbyReadyToggleMessage,
+  LobbyVotingUpdateMessage
+} from '@jkbox/shared'
 import { RoomManager } from './room-manager'
+import { VotingHandler } from './voting-handler'
 import { generatePlayerId, generateSessionToken } from './utils/session-token'
 
 export class ConnectionHandler {
   private socketToPlayer: Map<string, { playerId: string; roomId: string }> = new Map()
+  private votingHandlers: Map<string, VotingHandler> = new Map() // roomId → VotingHandler
 
   constructor(
     private roomManager: RoomManager,
@@ -62,6 +73,10 @@ export class ConnectionHandler {
     // Make socket join the Socket.io room
     socket.join(message.roomId)
 
+    // Add player to voting handler
+    const votingHandler = this.getVotingHandler(message.roomId)
+    votingHandler.addPlayer(player.id)
+
     // Send join success with player and room to the joining player
     const updated = this.roomManager.getRoom(message.roomId)
     if (updated) {
@@ -78,6 +93,9 @@ export class ConnectionHandler {
         room: updated
       }
       this.io.to(message.roomId).emit('room:update', roomUpdate)
+
+      // Broadcast current voting state to new player
+      this.broadcastVotingUpdate(message.roomId)
     }
   }
 
@@ -96,6 +114,10 @@ export class ConnectionHandler {
       lastSeenAt: new Date()
     })
 
+    // Remove player from voting (they can re-vote on reconnect)
+    const votingHandler = this.getVotingHandler(mapping.roomId)
+    votingHandler.removePlayer(mapping.playerId)
+
     this.socketToPlayer.delete(socket.id)
 
     // Broadcast room update to all clients in the room
@@ -106,6 +128,9 @@ export class ConnectionHandler {
         room: updated
       }
       this.io.to(mapping.roomId).emit('room:update', roomUpdate)
+
+      // Broadcast updated voting state (player removed)
+      this.broadcastVotingUpdate(mapping.roomId)
     }
   }
 
@@ -147,5 +172,90 @@ export class ConnectionHandler {
    */
   getRoomId(socketId: string): string | undefined {
     return this.socketToPlayer.get(socketId)?.roomId
+  }
+
+  /**
+   * Get or create voting handler for a room
+   */
+  private getVotingHandler(roomId: string): VotingHandler {
+    let handler = this.votingHandlers.get(roomId)
+    if (!handler) {
+      handler = new VotingHandler()
+      this.votingHandlers.set(roomId, handler)
+    }
+    return handler
+  }
+
+  /**
+   * Handle lobby game vote
+   */
+  handleLobbyVote(socket: Socket, message: LobbyVoteGameMessage): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'NOT_IN_ROOM',
+        message: 'You must join a room first'
+      })
+      return
+    }
+
+    const handler = this.getVotingHandler(mapping.roomId)
+    handler.submitVote(mapping.playerId, message.gameId)
+
+    // Broadcast voting update to all clients in room
+    this.broadcastVotingUpdate(mapping.roomId)
+  }
+
+  /**
+   * Handle lobby ready toggle
+   */
+  handleLobbyReadyToggle(socket: Socket, message: LobbyReadyToggleMessage): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'NOT_IN_ROOM',
+        message: 'You must join a room first'
+      })
+      return
+    }
+
+    const handler = this.getVotingHandler(mapping.roomId)
+
+    try {
+      handler.toggleReady(mapping.playerId, message.isReady)
+
+      // Broadcast voting update
+      this.broadcastVotingUpdate(mapping.roomId)
+
+      // If all ready, start countdown (TODO: implement countdown logic)
+      const votingState = handler.getVotingState()
+      if (votingState.allReady && votingState.selectedGame) {
+        // TODO: Trigger countdown (Issue #22)
+        console.log(`All ready! Starting countdown for ${votingState.selectedGame}`)
+      }
+    } catch (error) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'INVALID_READY_TOGGLE',
+        message: error instanceof Error ? error.message : 'Failed to toggle ready'
+      })
+    }
+  }
+
+  /**
+   * Broadcast voting state update to all clients in room
+   */
+  private broadcastVotingUpdate(roomId: string): void {
+    const handler = this.getVotingHandler(roomId)
+    const votingState = handler.getVotingState()
+
+    const update: LobbyVotingUpdateMessage = {
+      type: 'lobby:voting-update',
+      votingState
+    }
+
+    this.io.to(roomId).emit('lobby:voting-update', update)
   }
 }
