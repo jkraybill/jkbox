@@ -90,37 +90,37 @@ export function Jumbotron() {
 const styles = {
   container: {
     minHeight: '100vh',
-    padding: '40px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    backgroundColor: '#1a1a1a',
-    color: '#ffffff'
+    padding: 'var(--space-3xl)',
+    fontFamily: 'var(--font-family)',
+    backgroundColor: 'var(--color-bg-dark)',
+    color: 'var(--color-text-primary)'
   },
   loading: {
-    fontSize: '24px',
+    fontSize: 'var(--font-size-2xl)',
     textAlign: 'center' as const,
     marginTop: '100px'
   },
   header: {
     textAlign: 'center' as const,
-    marginBottom: '40px'
+    marginBottom: 'var(--space-3xl)'
   },
   title: {
-    fontSize: '48px',
-    margin: '0 0 20px 0'
+    fontSize: 'var(--font-size-5xl)',
+    margin: '0 0 var(--space-xl) 0'
   },
   roomCode: {
-    fontSize: '24px',
-    color: '#aaaaaa'
+    fontSize: 'var(--font-size-2xl)',
+    color: 'var(--color-text-secondary)'
   },
   roomCodeValue: {
-    color: '#3b82f6',
+    color: 'var(--color-accent-blue)',
     fontWeight: 'bold',
-    fontSize: '36px'
+    fontSize: 'var(--font-size-jumbo-2xl)'
   },
   content: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '40px',
+    gap: 'var(--space-3xl)',
     maxWidth: '1400px',
     margin: '0 auto'
   },
@@ -128,91 +128,91 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    padding: '40px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '16px'
+    padding: 'var(--space-3xl)',
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)'
   },
   sectionTitle: {
-    fontSize: '28px',
-    marginBottom: '30px'
+    fontSize: 'var(--font-size-3xl)',
+    marginBottom: 'var(--space-2xl)'
   },
   qrCode: {
-    padding: '20px',
+    padding: 'var(--space-xl)',
     backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    marginBottom: '20px'
+    borderRadius: 'var(--radius-lg)',
+    marginBottom: 'var(--space-xl)'
   },
   joinUrl: {
-    fontSize: '14px',
-    color: '#888888',
+    fontSize: 'var(--font-size-sm)',
+    color: 'var(--color-text-muted)',
     wordBreak: 'break-all' as const,
     textAlign: 'center' as const
   },
   playerSection: {
-    padding: '40px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '16px'
+    padding: 'var(--space-3xl)',
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)'
   },
   playerList: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '12px',
-    marginBottom: '30px'
+    gap: 'var(--space-md)',
+    marginBottom: 'var(--space-2xl)'
   },
   emptyState: {
     textAlign: 'center' as const,
-    padding: '40px',
-    color: '#666666',
-    fontSize: '18px'
+    padding: 'var(--space-3xl)',
+    color: 'var(--color-text-disabled)',
+    fontSize: 'var(--font-size-lg)'
   },
   playerCard: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '16px 20px',
-    backgroundColor: '#1a1a1a',
-    borderRadius: '8px'
+    padding: 'var(--space-lg) var(--space-xl)',
+    backgroundColor: 'var(--color-bg-dark)',
+    borderRadius: 'var(--radius-md)'
   },
   playerNickname: {
-    fontSize: '20px',
+    fontSize: 'var(--font-size-xl)',
     fontWeight: 'bold'
   },
   playerStatus: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px'
+    gap: 'var(--space-md)'
   },
   badge: {
-    fontSize: '12px',
-    padding: '4px 8px',
-    backgroundColor: '#3b82f6',
-    borderRadius: '4px',
+    fontSize: 'var(--font-size-xs)',
+    padding: 'var(--space-xs) var(--space-sm)',
+    backgroundColor: 'var(--color-accent-blue)',
+    borderRadius: 'var(--radius-sm)',
     fontWeight: 'bold'
   },
   statusConnected: {
-    color: '#4ade80',
-    fontSize: '20px'
+    color: 'var(--color-status-connected)',
+    fontSize: 'var(--font-size-xl)'
   },
   statusDisconnected: {
-    color: '#f87171',
-    fontSize: '20px'
+    color: 'var(--color-status-disconnected)',
+    fontSize: 'var(--font-size-xl)'
   },
   startButton: {
     width: '100%',
-    padding: '16px',
-    fontSize: '20px',
+    padding: 'var(--space-lg)',
+    fontSize: 'var(--font-size-xl)',
     backgroundColor: '#10b981',
-    color: '#ffffff',
+    color: 'var(--color-text-primary)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-md)',
     cursor: 'pointer',
     fontWeight: 'bold'
   },
   footer: {
     position: 'fixed' as const,
-    bottom: '20px',
-    left: '20px',
-    fontSize: '12px',
-    color: '#666666'
+    bottom: 'var(--space-xl)',
+    left: 'var(--space-xl)',
+    fontSize: 'var(--font-size-xs)',
+    color: 'var(--color-text-disabled)'
   }
 }

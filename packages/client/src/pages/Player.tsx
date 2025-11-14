@@ -86,102 +86,102 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     minHeight: '100vh',
-    padding: '20px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    backgroundColor: '#1a1a1a',
-    color: '#ffffff'
+    padding: 'var(--space-xl)',
+    fontFamily: 'var(--font-family)',
+    backgroundColor: 'var(--color-bg-dark)',
+    color: 'var(--color-text-primary)'
   },
   header: {
     textAlign: 'center' as const,
-    marginBottom: '40px'
+    marginBottom: 'var(--space-3xl)'
   },
   nickname: {
-    fontSize: '32px',
+    fontSize: 'var(--font-size-4xl)',
     fontWeight: 'bold',
-    marginBottom: '8px'
+    marginBottom: 'var(--space-sm)'
   },
   roomCode: {
-    fontSize: '14px',
-    color: '#888888'
+    fontSize: 'var(--font-size-sm)',
+    color: 'var(--color-text-muted)'
   },
   content: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '20px',
+    gap: 'var(--space-xl)',
     maxWidth: '500px',
     width: '100%',
     margin: '0 auto'
   },
   waitingCard: {
-    padding: '40px 20px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '16px',
+    padding: 'var(--space-3xl) var(--space-xl)',
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)',
     textAlign: 'center' as const
   },
   waitingIcon: {
-    fontSize: '64px',
-    marginBottom: '20px'
+    fontSize: 'var(--font-size-jumbo-4xl)',
+    marginBottom: 'var(--space-xl)'
   },
   waitingText: {
-    fontSize: '24px',
-    marginBottom: '12px',
+    fontSize: 'var(--font-size-2xl)',
+    marginBottom: 'var(--space-md)',
     fontWeight: 'bold'
   },
   waitingSubtext: {
-    fontSize: '16px',
-    color: '#aaaaaa'
+    fontSize: 'var(--font-size-base)',
+    color: 'var(--color-text-secondary)'
   },
   gameCard: {
-    padding: '40px 20px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '16px',
+    padding: 'var(--space-3xl) var(--space-xl)',
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)',
     textAlign: 'center' as const
   },
   gameText: {
-    fontSize: '24px',
+    fontSize: 'var(--font-size-2xl)',
     fontWeight: 'bold'
   },
   scoreCard: {
-    padding: '30px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '16px',
+    padding: 'var(--space-2xl)',
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)',
     textAlign: 'center' as const
   },
   scoreLabel: {
-    fontSize: '16px',
-    color: '#aaaaaa',
-    marginBottom: '12px'
+    fontSize: 'var(--font-size-base)',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-md)'
   },
   scoreValue: {
-    fontSize: '48px',
+    fontSize: 'var(--font-size-5xl)',
     fontWeight: 'bold',
-    color: '#3b82f6'
+    color: 'var(--color-accent-blue)'
   },
   footer: {
-    marginTop: '40px',
-    paddingTop: '20px',
-    borderTop: '1px solid #3a3a3a'
+    marginTop: 'var(--space-3xl)',
+    paddingTop: 'var(--space-xl)',
+    borderTop: '1px solid var(--color-bg-light)'
   },
   statusRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: '14px',
-    color: '#888888'
+    fontSize: 'var(--font-size-sm)',
+    color: 'var(--color-text-muted)'
   },
   statusConnected: {
-    color: '#4ade80'
+    color: 'var(--color-status-connected)'
   },
   statusDisconnected: {
-    color: '#f87171'
+    color: 'var(--color-status-disconnected)'
   },
   error: {
-    padding: '20px',
-    backgroundColor: '#7f1d1d',
-    color: '#fca5a5',
-    borderRadius: '8px',
+    padding: 'var(--space-xl)',
+    backgroundColor: 'var(--color-error-bg)',
+    color: 'var(--color-error-text)',
+    borderRadius: 'var(--radius-md)',
     textAlign: 'center' as const,
-    fontSize: '18px'
+    fontSize: 'var(--font-size-lg)'
   }
 }
