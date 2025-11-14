@@ -1,15 +1,23 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
 import { EvilJK } from '../components/EvilJK'
-import type { RoomUpdateMessage } from '@jkbox/shared'
+import { Countdown } from '../components/Countdown'
+import type { RoomUpdateMessage, LobbyCountdownMessage } from '@jkbox/shared'
+
+const GAME_NAMES: Record<string, string> = {
+  'fake-facts': 'Fake Facts',
+  'cinephile': 'Cinephile',
+  'joker-poker': 'Joker Poker',
+}
 
 export function Player() {
   const { roomId } = useParams<{ roomId: string }>()
   const { socket, isConnected } = useSocket()
   const { currentPlayer, room, setRoom } = useGameStore()
+  const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
 
   useEffect(() => {
     if (!socket) return
@@ -19,10 +27,18 @@ export function Player() {
       setRoom(message.room)
     }
 
+    // Listen for countdown messages
+    const handleCountdown = (message: LobbyCountdownMessage) => {
+      const gameName = GAME_NAMES[message.selectedGame] || message.selectedGame
+      setCountdown({ count: message.countdown, game: gameName })
+    }
+
     socket.on('room:update', handleRoomUpdate)
+    socket.on('lobby:countdown', handleCountdown)
 
     return () => {
       socket.off('room:update', handleRoomUpdate)
+      socket.off('lobby:countdown', handleCountdown)
     }
   }, [socket, setRoom])
 
@@ -76,7 +92,12 @@ export function Player() {
       </div>
 
       {/* Evil JK corner mascot (smaller for mobile) */}
-      <EvilJK variant="corner" />
+      {!countdown && <EvilJK variant="corner" />}
+
+      {/* Countdown overlay */}
+      {countdown && (
+        <Countdown count={countdown.count} gameName={countdown.game} variant="player" />
+      )}
     </div>
   )
 }

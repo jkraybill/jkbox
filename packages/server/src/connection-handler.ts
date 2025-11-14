@@ -7,7 +7,9 @@ import type {
   Player,
   LobbyVoteGameMessage,
   LobbyReadyToggleMessage,
-  LobbyVotingUpdateMessage
+  LobbyVotingUpdateMessage,
+  LobbyCountdownMessage,
+  GameId
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
@@ -229,11 +231,10 @@ export class ConnectionHandler {
       // Broadcast voting update
       this.broadcastVotingUpdate(mapping.roomId)
 
-      // If all ready, start countdown (TODO: implement countdown logic)
+      // If all ready, start countdown
       const votingState = handler.getVotingState()
       if (votingState.allReady && votingState.selectedGame) {
-        // TODO: Trigger countdown (Issue #22)
-        console.log(`All ready! Starting countdown for ${votingState.selectedGame}`)
+        this.startCountdown(mapping.roomId, votingState.selectedGame)
       }
     } catch (error) {
       socket.emit('error', {
@@ -242,6 +243,38 @@ export class ConnectionHandler {
         message: error instanceof Error ? error.message : 'Failed to toggle ready'
       })
     }
+  }
+
+  /**
+   * Start countdown for game launch
+   */
+  private async startCountdown(roomId: string, selectedGame: GameId): Promise<void> {
+    const COUNTDOWN_FROM = 5
+
+    // Emit countdown messages (5, 4, 3, 2, 1, 0)
+    for (let i = COUNTDOWN_FROM; i >= 0; i--) {
+      const countdownMessage: LobbyCountdownMessage = {
+        type: 'lobby:countdown',
+        countdown: i,
+        selectedGame
+      }
+
+      this.io.to(roomId).emit('lobby:countdown', countdownMessage)
+
+      // Wait 1 second between counts
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
+
+    // After countdown, start the game
+    // TODO: Implement game start logic (this will be part of the actual game modules)
+    console.log(`Starting game ${selectedGame} in room ${roomId}`)
+
+    // Reset voting handler for next round
+    const handler = this.getVotingHandler(roomId)
+    handler.reset()
+    this.broadcastVotingUpdate(roomId)
   }
 
   /**

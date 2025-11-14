@@ -5,12 +5,21 @@ import { useGameStore } from '../store/game-store'
 import { useSocket } from '../lib/use-socket'
 import { JumbotronVoting } from '../components/JumbotronVoting'
 import { EvilJK } from '../components/EvilJK'
+import { Countdown } from '../components/Countdown'
+import type { LobbyCountdownMessage } from '@jkbox/shared'
+
+const GAME_NAMES: Record<string, string> = {
+  'fake-facts': 'Fake Facts',
+  'cinephile': 'Cinephile',
+  'joker-poker': 'Joker Poker',
+}
 
 export function Jumbotron() {
   const { roomId } = useParams<{ roomId: string }>()
   const { room, setRoom } = useGameStore()
   const { socket, isConnected } = useSocket()
   const [showIntro, setShowIntro] = useState(true)
+  const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
 
   const joinUrl = `${window.location.origin}/join/${roomId}`
 
@@ -28,8 +37,15 @@ export function Jumbotron() {
       setRoom(message.room)
     })
 
+    // Listen for countdown messages
+    socket.on('lobby:countdown', (message: LobbyCountdownMessage) => {
+      const gameName = GAME_NAMES[message.selectedGame] || message.selectedGame
+      setCountdown({ count: message.countdown, game: gameName })
+    })
+
     return () => {
       socket.off('room:update')
+      socket.off('lobby:countdown')
     }
   }, [socket, roomId, isConnected, setRoom])
 
@@ -82,7 +98,12 @@ export function Jumbotron() {
       {showIntro && <EvilJK variant="intro" onIntroComplete={() => setShowIntro(false)} />}
 
       {/* Evil JK corner mascot (persistent, animated) */}
-      {!showIntro && <EvilJK variant="corner" />}
+      {!showIntro && !countdown && <EvilJK variant="corner" />}
+
+      {/* Countdown overlay */}
+      {countdown && (
+        <Countdown count={countdown.count} gameName={countdown.game} variant="jumbotron" />
+      )}
     </div>
   )
 }
