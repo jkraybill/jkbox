@@ -18,6 +18,14 @@ export type {
   GameModule
 } from './game'
 
+// Voting types
+export type {
+  GameId,
+  GameVote,
+  PlayerReadyState,
+  RoomVotingState
+} from './voting'
+
 // WebSocket message types
 export type {
   // Client messages
@@ -29,8 +37,11 @@ export type {
   AdminResumeTimerMessage,
   AdminSkipPhaseMessage,
   AdminDelegateMessage,
+  LobbyVoteGameMessage,
+  LobbyReadyToggleMessage,
   ClientMessage,
   // Server messages
+  JoinSuccessMessage,
   RoomUpdateMessage,
   GameStateMessage,
   RoundPhaseChangeMessage,
@@ -40,5 +51,7 @@ export type {
   RoundResultsMessage,
   ReconnectSuccessMessage,
   ErrorMessage,
+  LobbyVotingUpdateMessage,
+  LobbyCountdownMessage,
   ServerMessage
 } from './messages'

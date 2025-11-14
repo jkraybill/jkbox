@@ -3,6 +3,7 @@
 import type { Room } from './room'
 import type { Player } from './player'
 import type { GameConfig, RoundResults, GamePhase } from './game'
+import type { GameId, RoomVotingState } from './voting'
 
 // ============================================================================
 // Client → Server Messages
@@ -55,6 +56,16 @@ export interface WatchMessage {
   roomId: string
 }
 
+export interface LobbyVoteGameMessage {
+  type: 'lobby:vote-game'
+  gameId: GameId
+}
+
+export interface LobbyReadyToggleMessage {
+  type: 'lobby:ready-toggle'
+  isReady: boolean
+}
+
 export type ClientMessage =
   | JoinMessage
   | SubmitMessage
@@ -65,6 +76,8 @@ export type ClientMessage =
   | AdminSkipPhaseMessage
   | AdminDelegateMessage
   | WatchMessage
+  | LobbyVoteGameMessage
+  | LobbyReadyToggleMessage
 
 // ============================================================================
 // Server → Client Messages
@@ -125,6 +138,17 @@ export interface ErrorMessage {
   message: string
 }
 
+export interface LobbyVotingUpdateMessage {
+  type: 'lobby:voting-update'
+  votingState: RoomVotingState
+}
+
+export interface LobbyCountdownMessage {
+  type: 'lobby:countdown'
+  countdown: number  // Seconds remaining (5, 4, 3, 2, 1, 0)
+  selectedGame: GameId
+}
+
 export type ServerMessage =
   | JoinSuccessMessage
   | RoomUpdateMessage
@@ -135,3 +159,5 @@ export type ServerMessage =
   | RoundResultsMessage
   | ReconnectSuccessMessage
   | ErrorMessage
+  | LobbyVotingUpdateMessage
+  | LobbyCountdownMessage
