@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
+import { LobbyVoting } from '../components/LobbyVoting'
 import type { RoomUpdateMessage } from '@jkbox/shared'
 
 export function Player() {
@@ -40,14 +41,8 @@ export function Player() {
       </div>
 
       <div style={styles.content}>
-        {room?.state === 'lobby' && (
-          <div style={styles.waitingCard}>
-            <div style={styles.waitingIcon}>⏳</div>
-            <div style={styles.waitingText}>Waiting for game to start...</div>
-            <div style={styles.waitingSubtext}>
-              The host will start the game when everyone's ready
-            </div>
-          </div>
+        {room?.state === 'lobby' && roomId && currentPlayer && (
+          <LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
         )}
 
         {room?.state === 'playing' && (

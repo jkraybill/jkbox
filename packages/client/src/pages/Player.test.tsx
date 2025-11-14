@@ -53,14 +53,15 @@ describe('Player', () => {
     expect(screen.getByText(/Alice/)).toBeDefined()
   })
 
-  it('should show waiting message in lobby state', () => {
+  it('should show voting UI in lobby state', () => {
     render(
       <BrowserRouter>
         <Player />
       </BrowserRouter>
     )
 
-    expect(screen.getByText(/waiting/i)).toBeDefined()
+    expect(screen.getByText(/Choose Your Game/i)).toBeDefined()
+    expect(screen.getByText(/Good to Go\?/i)).toBeDefined()
   })
 
   it('should show connection status', () => {
