@@ -15,6 +15,7 @@ program
   .description('Classify unclassified articles as weird/not weird using Ollama')
   .option('--batch-size <n>', 'Number of articles to process', '100')
   .option('--limit <n>', 'Maximum articles to classify (default: all)', '0')
+  .option('--random', 'Randomize article order (default: sorted by pub_date DESC)', false)
   .parse()
 
 const options = program.opts()
@@ -73,11 +74,12 @@ async function main() {
     }
 
     // Fetch unclassified articles
+    const orderBy = options.random ? 'RANDOM()' : 'pub_date DESC'
     const articlesResult = await pool.query<Article>(
       `SELECT id, title, description
        FROM articles
        WHERE is_weird IS NULL
-       ORDER BY pub_date DESC
+       ORDER BY ${orderBy}
        LIMIT $1`,
       [toClassify]
     )
