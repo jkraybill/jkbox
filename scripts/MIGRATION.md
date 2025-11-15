@@ -48,8 +48,8 @@ chmod +x scripts/*.sh
 # Import data from tarball
 ./scripts/import-data.sh path/to/jkbox-migration-YYYYMMDD-HHMMSS.tar.gz
 
-# Install Ollama models (~15 min, 3.96 GB)
-ollama pull llama3.2:latest
+# Install Ollama models (~15 min, 9.93 GB)
+ollama pull qwen2.5:14b
 ollama pull mxbai-embed-large:latest
 ollama pull nomic-embed-text:latest
 
@@ -168,7 +168,7 @@ rm -rf .gordo-memory/
 ### Ollama models not working
 Models aren't included in tarball (too large). Pull them manually:
 ```bash
-ollama pull llama3.2:latest
+ollama pull qwen2.5:14b
 ollama pull mxbai-embed-large:latest
 ollama pull nomic-embed-text:latest
 ```
@@ -180,8 +180,8 @@ ollama pull nomic-embed-text:latest
 **Node modules** - Reinstall with `npm install` (platform-specific binaries)
 
 **Ollama models** - Re-pull manually (~15 min download)
-- llama3.2:latest (1.92 GB)
-- mxbai-embed-large:latest (639 MB)
+- qwen2.5:14b (9.0 GB)
+- mxbai-embed-large:latest (669 MB)
 - nomic-embed-text:latest (261 MB)
 
 **Build artifacts** - Rebuild with `npm run build`

@@ -1,6 +1,6 @@
 {
   "provider": "ollama",
-  "model": "llama3.2:latest",
+  "model": "qwen2.5:14b",
   "endpoint": "http://localhost:11434",
   "temperature": 0.3,
   "maxTokens": 200
