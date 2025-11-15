@@ -668,21 +668,21 @@ STATE: Queensland`
         const content = 'Test content'
         const pubDate = new Date('2020-01-01')
 
-        // Create LLM with valid URL but port that won't respond (connection will fail/timeout)
-        const badLlm = new LocalLLM({
-          provider: 'ollama',
-          model: 'qwen2.5:14b',
-          endpoint: 'http://localhost:9999', // Valid URL but nothing listening on port 9999
-          temperature: 0.1,
-          maxTokens: 100,
-        })
+        // Mock the Ollama generate method to throw an error
+        const originalGenerate = llm['client'].generate
+        vi.spyOn(llm['client'], 'generate').mockRejectedValue(new Error('Network error'))
 
-        const result = await badLlm.extractSpacetime(title, content, pubDate)
+        try {
+          const result = await llm.extractSpacetime(title, content, pubDate)
 
-        // Should fall back gracefully
-        expect(result.eventYear).toBe(2020) // Falls back to pubDate
-        expect(result.locationCity).toBeNull()
-        expect(result.locationState).toBeNull()
+          // Should fall back gracefully
+          expect(result.eventYear).toBe(2020) // Falls back to pubDate
+          expect(result.locationCity).toBeNull()
+          expect(result.locationState).toBeNull()
+        } finally {
+          // Restore original method
+          vi.spyOn(llm['client'], 'generate').mockRestore()
+        }
       }, 15000)
     })
   })
