@@ -738,7 +738,9 @@ Final answers: ["her pet cheetah", "the dragon", "Pippin", "200 helium balloons"
 
 === OUTPUT FORMAT ===
 
-Return ONLY valid JSON:
+CRITICAL: You MUST generate EXACTLY 5 house answers. NOT 4. NOT 6. EXACTLY 5.
+
+After validating each answer by writing out the complete sentence, return ONLY valid JSON:
 
 {
   "houseAnswers": ["answer1", "answer2", "answer3", "answer4", "answer5"]
@@ -751,6 +753,12 @@ Each answer MUST be:
 4. Weird + funny (not just "category appropriate")
 5. Concise (no gratuitous adjectives)
 6. Varied (not 3+ of the same joke type)
+
+PROCESS:
+1. Test candidates until you have EXACTLY 5 accepted answers
+2. If a candidate fails validation, test another one
+3. STOP when you have 5 accepted answers
+4. Return the JSON with those 5 answers
 
 Generate the 5 house answers now (and validate each one by writing out the complete sentence):`
 
@@ -827,18 +835,19 @@ Generate the 5 house answers now (and validate each one by writing out the compl
       // Deduplicate while preserving order
       const uniqueAnswers = [...new Set(acceptedAnswers)]
 
-      // If we found exactly 5 accepted answers, use those
-      if (uniqueAnswers.length === 5) {
+      // If we found 5+ accepted answers, use the first 5
+      if (uniqueAnswers.length >= 5) {
+        const finalAnswers = uniqueAnswers.slice(0, 5)
         const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
         console.log('ℹ️  Extracted house answers from validation text (no JSON found)')
-        console.log('   Answers:', uniqueAnswers)
+        console.log(`   Found ${uniqueAnswers.length} answers, using first 5:`, finalAnswers)
         return {
-          houseAnswers: uniqueAnswers,
+          houseAnswers: finalAnswers,
           cost,
         }
       }
 
-      // Otherwise, fail with the original error
+      // Otherwise, fail with the original error (too few answers is a quality issue)
       throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${uniqueAnswers.length}/5). First 500 chars:\n${text.substring(0, 500)}...`)
     }
   }
