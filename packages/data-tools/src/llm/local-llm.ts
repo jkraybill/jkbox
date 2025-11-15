@@ -151,21 +151,38 @@ REASONING: <brief explanation>`
    * Target: ~50 words, focusing on the weird/funny details
    */
   async summarize(title: string, content: string): Promise<string> {
-    const prompt = `Summarize this weird news article in about 50 words. Focus on the most interesting, funny, or surprising details that would make good trivia questions. Be concise but capture the essence of what makes this story weird.
+    const prompt = `Extract the key bizarre details from this weird news article for a trivia game.
+
+Focus on:
+1. SPECIFIC details (exact objects, animals, numbers, actions)
+2. The ABSURD/UNEXPECTED element (what makes this weird)
+3. WHO did WHAT (concrete actions, not vague descriptions)
+4. WHERE and WHEN (location, timeframe)
+
+DO NOT include:
+- Vague generalizations
+- Background context
+- Opinions or commentary
+- Unnecessary adjectives
+
+Examples of GOOD summaries:
+- "A woman was found dead on a bus in Brazil with 26 iPhones glued to her body. Police arrested two suspects in the smuggling operation."
+- "Firefighters in Oklahoma rescued a cow that fell into a backyard swimming pool."
+- "A shelter dog named Chase was caught on security cameras repeatedly escaping his kennel by scaling the door."
 
 Article Title: ${title}
 
 Content: ${content.substring(0, 2000)}
 
-Write a ~50 word summary:`
+Write a concise 40-60 word summary with SPECIFIC details:`
 
     try {
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
         options: {
-          temperature: 0.7,
-          num_predict: 100,
+          temperature: 0.3, // Lower temp for factual extraction
+          num_predict: 120, // Slightly more tokens for detailed summary
         },
       })
 

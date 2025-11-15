@@ -404,6 +404,18 @@ export class DatabaseQueries {
   }
 
   /**
+   * Update article summary (cache for reuse)
+   */
+  async updateArticleSummary(articleId: string, summary: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE articles
+       SET article_summary = $2
+       WHERE id = $1`,
+      [articleId, summary]
+    )
+  }
+
+  /**
    * Insert a new Fake Facts question
    */
   async insertQuestion(question: FakeFactsQuestionInsert): Promise<string> {

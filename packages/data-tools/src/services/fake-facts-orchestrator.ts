@@ -99,9 +99,19 @@ export class FakeFactsOrchestrator {
         contentText = fetchedContent.mainText
       }
 
-      // Step 2: Summarize with Ollama
-      const summary = await this.ollama.summarize(article.title, contentText)
-      this.stats.ollamaInferences++
+      // Step 2: Get or generate summary
+      let summary: string
+      if (article.articleSummary && article.articleSummary.length > 20) {
+        // Use cached summary
+        summary = article.articleSummary
+      } else {
+        // Generate and cache new summary
+        summary = await this.ollama.summarize(article.title, contentText)
+        this.stats.ollamaInferences++
+
+        // Cache summary for future use
+        await this.db.updateArticleSummary(article.id!, summary)
+      }
 
       // Step 3: Evaluate candidate with Ollama
       const evaluation = await this.ollama.evaluateCandidate(article.title, summary)
