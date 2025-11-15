@@ -352,10 +352,11 @@ export class FakeFactsOrchestrator {
 
     try {
 
-      // STEP 2: Score all 10 with Ollama
-      if (verbose) console.log('🏆 Step 2: Scoring candidates with Ollama...')
-      const scores = await this.ollama.scoreArticleCandidates(candidatesWithSummaries)
-      this.stats.ollamaInferences++
+      // STEP 2: Score all 10 with Claude (winner of bakeoff!)
+      if (verbose) console.log('🏆 Step 2: Scoring candidates with Claude...')
+      const scoringResult = await this.claude.scoreArticleCandidates(candidatesWithSummaries)
+      const scores = scoringResult.scores
+      this.stats.totalCost += scoringResult.cost
 
       if (verbose) {
         console.log('\n  Scores:')
@@ -438,7 +439,7 @@ export class FakeFactsOrchestrator {
       // Shuffle to avoid position bias
       const shuffled = generatedQuestions.sort(() => Math.random() - 0.5)
 
-      const judgment = await this.ollama.judgeQuestions(
+      const judgmentResult = await this.claude.judgeQuestions(
         {
           question: shuffled[0]!.question,
           correctAnswer: shuffled[0]!.correctAnswer,
@@ -450,7 +451,8 @@ export class FakeFactsOrchestrator {
           houseAnswers: shuffled[1]!.houseAnswers,
         }
       )
-      this.stats.ollamaInferences++
+      const judgment = judgmentResult
+      this.stats.totalCost += judgmentResult.cost
 
       const winnerIndex = judgment.winner - 1
       const winner = shuffled[winnerIndex]!
