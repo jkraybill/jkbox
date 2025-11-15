@@ -703,39 +703,54 @@ Generate the 5 house answers now (and validate each one by writing out the compl
       // Fallback: Extract validated answers from the validation text
       // Claude may have shown its work without including final JSON
       const acceptedAnswers: string[] = []
-      const processedNumbers = new Set<number>()
 
-      // Pattern 1: Look for "ACCEPT" lines with the answer (includes revised versions)
-      const acceptPattern = /## Testing House Answer (\d+)(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      // Try multiple patterns to handle different formatting styles
+
+      // Pattern 1: ## Testing House Answer N: "answer" ... ✅ **ACCEPT**
+      const pattern1 = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
       let match
-      while ((match = acceptPattern.exec(text)) !== null) {
-        const answerNum = parseInt(match[1]!, 10)
-        const answer = match[2]!
+      while ((match = pattern1.exec(text)) !== null) {
+        if (match[1]) acceptedAnswers.push(match[1])
+      }
 
-        // For revised answers, this will overwrite the original rejected version
-        if (!processedNumbers.has(answerNum)) {
-          acceptedAnswers.push(answer)
-          processedNumbers.add(answerNum)
-        } else {
-          // Replace the rejected version with the revised one
-          const idx = Array.from(processedNumbers).indexOf(answerNum)
-          acceptedAnswers[idx] = answer
+      // Pattern 2: **Testing "answer":** ... ✓ (or ✅)
+      if (acceptedAnswers.length < 5) {
+        acceptedAnswers.length = 0 // Reset if first pattern didn't get all 5
+        const pattern2 = /\*\*Testing "([^"]+)":\*\*[\s\S]*?→ ✓/g
+        while ((match = pattern2.exec(text)) !== null) {
+          if (match[1]) acceptedAnswers.push(match[1])
         }
       }
 
+      // Pattern 3: Look for any quoted answers followed by acceptance indicators
+      if (acceptedAnswers.length < 5) {
+        acceptedAnswers.length = 0
+        const pattern3 = /"([^"]+)"[\s\S]{0,200}?(?:✅|✓)[\s\S]{0,50}?(?:ACCEPT|Grammar: Correct)/gi
+        while ((match = pattern3.exec(text)) !== null) {
+          const answer = match[1]!
+          // Filter out noise (questions, reasoning text)
+          if (answer.length < 50 && !answer.includes('In 19') && !answer.includes('citing')) {
+            acceptedAnswers.push(answer)
+          }
+        }
+      }
+
+      // Deduplicate while preserving order
+      const uniqueAnswers = [...new Set(acceptedAnswers)]
+
       // If we found exactly 5 accepted answers, use those
-      if (acceptedAnswers.length === 5) {
+      if (uniqueAnswers.length === 5) {
         const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
         console.log('ℹ️  Extracted house answers from validation text (no JSON found)')
-        console.log('   Answers:', acceptedAnswers)
+        console.log('   Answers:', uniqueAnswers)
         return {
-          houseAnswers: acceptedAnswers,
+          houseAnswers: uniqueAnswers,
           cost,
         }
       }
 
       // Otherwise, fail with the original error
-      throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${acceptedAnswers.length}/5): ${text.substring(0, 500)}...`)
+      throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${uniqueAnswers.length}/5). First 500 chars:\n${text.substring(0, 500)}...`)
     }
   }
 

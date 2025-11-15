@@ -227,4 +227,71 @@ describe('ClaudeService cost calculation', () => {
       expect(ratio).toBeLessThan(4)
     })
   })
+
+  describe('House answer validation fallback extraction', () => {
+    it('should extract answers from ## Testing format (original)', () => {
+      const validationText = `
+## Testing House Answer 1: "his manifesto"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "a single banana"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 3: "toilet paper"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 4: "a participation trophy"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 5: "beef jerky"
+→ ✅ **ACCEPT**
+`
+      // This tests the pattern extraction logic
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      expect(answers).toHaveLength(5)
+      expect(answers).toEqual([
+        'his manifesto',
+        'a single banana',
+        'toilet paper',
+        'a participation trophy',
+        'beef jerky'
+      ])
+    })
+
+    it('should extract answers from **Testing format (new)', () => {
+      const validationText = `
+**Testing "explosive diarrhea":**
+→ Complete sentence: "In 1983, Detroit lawyer Leonard Jaques missed a court date, citing explosive diarrhea"
+→ ✓ Grammar: Correct
+
+**Testing "a family emergency":**
+→ ✓ Grammar: Correct
+
+**Testing "alien abduction":**
+→ ✓ Grammar: Correct
+
+**Testing "his therapist's advice":**
+→ ✓ Grammar: Correct
+
+**Testing "divine intervention":**
+→ ✓ Grammar: Correct
+`
+      // This tests the new pattern
+      const pattern = /\*\*Testing "([^"]+)":\*\*[\s\S]*?→ ✓/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      expect(answers).toHaveLength(5)
+      expect(answers[0]).toBe('explosive diarrhea')
+    })
+  })
 })
