@@ -379,7 +379,7 @@ CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 ✅ GOOD: "Jimmy Hoffa's coordinates" (3 words)
 
 ❌ BAD: "the combination to her therapist's safe" (6 words!)
-✅ GOOD: "her therapist's safe combo" (4 words) or "safe combination" (2 words)
+✅ GOOD: "her therapist's safe combo" (4 words) or "her safe combination" (3 words)
 
 ❌ BAD: "compromising political cartoons" (3 words but wordy)
 ✅ GOOD: "political cartoons" (2 words)
