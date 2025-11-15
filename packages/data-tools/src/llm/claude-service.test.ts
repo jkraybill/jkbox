@@ -435,6 +435,63 @@ describe('ClaudeService cost calculation', () => {
       expect(uniqueAnswers).toEqual(['his evil twin', 'a demon', 'Satan', 'his therapist'])
     })
 
+    it('should NOT extract single letters like "a" (regression test)', () => {
+      const validationText = `
+## Testing House Answer 1: "a"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "a cobra"
+→ ✅ **ACCEPT**
+`
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      // Should extract both, but "a" should be filtered out (too short)
+      expect(answers).toContain('a')
+      expect(answers).toContain('a cobra')
+
+      // In real code, we should filter out single-letter answers
+      const filtered = answers.filter(a => a.length > 1)
+      expect(filtered).not.toContain('a')
+      expect(filtered).toContain('a cobra')
+    })
+
+    it('should extract from new Testing Candidate format', () => {
+      const validationText = `
+**Testing Candidate 1: "a Cessna"**
+→ Complete sentence: "At the University of Florida, a professor built a "brain" using 25,000 rat neurons that learned to fly a Cessna"
+→ ✓ Grammar: Correct (article "a" works with Cessna)
+→ ✓ Semantics: Makes sense
+
+**Testing Candidate 2: "a Boeing 747"**
+→ ✓ Grammar: Correct
+→ ✓ Semantics: Makes sense
+
+**Testing Candidate 3: "a helicopter"**
+→ ✓ Grammar: Correct
+
+**Testing Candidate 4: "a drone"**
+→ ✓ Grammar: Correct
+
+**Testing Candidate 5: "a spaceship"**
+→ ✓ Grammar: Correct
+`
+      // New pattern for "Testing Candidate" format
+      const pattern = /\*\*Testing Candidate \d+: "([^"]+)"\*\*[\s\S]*?→ ✓/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      expect(answers).toHaveLength(5)
+      expect(answers).toEqual(['a Cessna', 'a Boeing 747', 'a helicopter', 'a drone', 'a spaceship'])
+    })
+
     it('should handle mixed validation formats (multiple patterns)', () => {
       const validationText = `
 ## Testing House Answer 1: "his evil twin"

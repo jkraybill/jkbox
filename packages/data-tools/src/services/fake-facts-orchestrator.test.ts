@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { Pool } from 'pg'
-import { FakeFactsOrchestrator } from './fake-facts-orchestrator'
+import { FakeFactsOrchestrator, extractCommonPrefix } from './fake-facts-orchestrator'
 import { DatabaseQueries } from '../storage/db/queries'
 import { LocalLLM } from '../llm/local-llm'
 import { ClaudeService } from '../llm/claude-service'
@@ -444,5 +444,96 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       expect(stats).toHaveProperty('errorDetails')
       expect(stats).toHaveProperty('rejectionReasons')
     })
+  })
+})
+
+// Unit tests for common prefix extraction (no DB required)
+describe('FakeFactsOrchestrator - extractCommonPrefix (Unit)', () => {
+
+  it('should move common prefix "a " from all answers to question', () => {
+    const question = 'learned to fly _____'
+    const realAnswer = 'a Cessna'
+    const houseAnswers = ['a Boeing 747', 'a helicopter', 'a drone', 'a spaceship', 'a glider']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    expect(result.question).toBe('learned to fly a _____')
+    expect(result.realAnswer).toBe('Cessna')
+    expect(result.houseAnswers).toEqual(['Boeing 747', 'helicopter', 'drone', 'spaceship', 'glider'])
+  })
+
+  it('should move common prefix "the " from all answers to question', () => {
+    const question = 'was arrested by _____'
+    const realAnswer = 'the police'
+    const houseAnswers = ['the FBI', 'the sheriff', 'the coast guard', 'the military', 'the rangers']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    expect(result.question).toBe('was arrested by the _____')
+    expect(result.realAnswer).toBe('police')
+    expect(result.houseAnswers).toEqual(['FBI', 'sheriff', 'coast guard', 'military', 'rangers'])
+  })
+
+  it('should NOT move prefix if not all answers have it', () => {
+    const question = 'was found with _____'
+    const realAnswer = 'a cobra'
+    const houseAnswers = ['a python', 'snakes', 'his pet', 'stolen goods', 'a gun']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    // Should remain unchanged since not all answers start with "a "
+    expect(result.question).toBe('was found with _____')
+    expect(result.realAnswer).toBe('a cobra')
+    expect(result.houseAnswers).toEqual(['a python', 'snakes', 'his pet', 'stolen goods', 'a gun'])
+  })
+
+  it('should handle no common prefix', () => {
+    const question = 'was caught _____'
+    const realAnswer = 'stealing'
+    const houseAnswers = ['running', 'hiding', 'escaping', 'lying', 'cheating']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    expect(result.question).toBe('was caught _____')
+    expect(result.realAnswer).toBe('stealing')
+    expect(result.houseAnswers).toEqual(['running', 'hiding', 'escaping', 'lying', 'cheating'])
+  })
+
+  it('should handle answers with only one word (no space after prefix)', () => {
+    const question = 'was using _____'
+    const realAnswer = 'cocaine'
+    const houseAnswers = ['heroin', 'meth', 'drugs', 'steroids', 'marijuana']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    // No prefix to extract since no space after first word
+    expect(result.question).toBe('was using _____')
+    expect(result.realAnswer).toBe('cocaine')
+    expect(result.houseAnswers).toEqual(['heroin', 'meth', 'drugs', 'steroids', 'marijuana'])
+  })
+
+  it('should handle empty strings gracefully', () => {
+    const question = 'did something with _____'
+    const realAnswer = ''
+    const houseAnswers = ['', '', '', '', '']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    expect(result.question).toBe('did something with _____')
+    expect(result.realAnswer).toBe('')
+    expect(result.houseAnswers).toEqual(['', '', '', '', ''])
+  })
+
+  it('should handle multi-word prefixes correctly (only extract first word)', () => {
+    const question = 'was riding _____'
+    const realAnswer = 'a stolen car'
+    const houseAnswers = ['a stolen bike', 'a red car', 'a motorcycle', 'a skateboard', 'a scooter']
+
+    const result = extractCommonPrefix(question, realAnswer, houseAnswers)
+
+    // Should only extract "a " not "a stolen "
+    expect(result.question).toBe('was riding a _____')
+    expect(result.realAnswer).toBe('stolen car')
+    expect(result.houseAnswers).toEqual(['stolen bike', 'red car', 'motorcycle', 'skateboard', 'scooter'])
   })
 })

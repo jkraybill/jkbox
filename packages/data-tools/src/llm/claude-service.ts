@@ -829,11 +829,20 @@ Generate the 5 house answers now (and validate each one by writing out the compl
         }
       }
 
-      // Pattern 4: Fuzzy - Look for any quoted answers followed by acceptance indicators
+      // Pattern 4: **Testing Candidate N: "answer"** ... → ✓ (new format)
       if (acceptedAnswers.length < 5) {
         acceptedAnswers.length = 0
-        const pattern4 = /"([^"]+)"[\s\S]{0,200}?(?:✅|✓)[\s\S]{0,50}?(?:ACCEPT|Grammar|check)/gi
+        const pattern4 = /\*\*Testing Candidate \d+: "([^"]+)"\*\*[\s\S]*?→ ✓/g
         while ((match = pattern4.exec(text)) !== null) {
+          if (match[1]) acceptedAnswers.push(match[1])
+        }
+      }
+
+      // Pattern 5: Fuzzy - Look for any quoted answers followed by acceptance indicators
+      if (acceptedAnswers.length < 5) {
+        acceptedAnswers.length = 0
+        const pattern5 = /"([^"]+)"[\s\S]{0,200}?(?:✅|✓)[\s\S]{0,50}?(?:ACCEPT|Grammar|check)/gi
+        while ((match = pattern5.exec(text)) !== null) {
           const answer = match[1]!
           // Filter out noise (questions, reasoning text)
           if (answer.length < 50 && !answer.includes('In 19') && !answer.includes('citing')) {
@@ -845,12 +854,15 @@ Generate the 5 house answers now (and validate each one by writing out the compl
       // Deduplicate while preserving order
       const uniqueAnswers = [...new Set(acceptedAnswers)]
 
-      // If we found 5+ accepted answers, use the first 5
-      if (uniqueAnswers.length >= 5) {
-        const finalAnswers = uniqueAnswers.slice(0, 5)
+      // Filter out single-letter answers and very short nonsense (minimum 2 chars)
+      const filtered = uniqueAnswers.filter(a => a.length > 1)
+
+      // If we found 5+ accepted answers (after filtering), use the first 5
+      if (filtered.length >= 5) {
+        const finalAnswers = filtered.slice(0, 5)
         const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
         console.log('ℹ️  Extracted house answers from validation text (no JSON found)')
-        console.log(`   Found ${uniqueAnswers.length} answers, using first 5:`, finalAnswers)
+        console.log(`   Found ${uniqueAnswers.length} answers (${filtered.length} after filtering), using first 5:`, finalAnswers)
         return {
           houseAnswers: finalAnswers,
           cost,
@@ -858,7 +870,7 @@ Generate the 5 house answers now (and validate each one by writing out the compl
       }
 
       // Otherwise, fail with the original error (too few answers is a quality issue)
-      throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${uniqueAnswers.length}/5). First 500 chars:\n${text.substring(0, 500)}...`)
+      throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${filtered.length}/5 after filtering, ${uniqueAnswers.length} before). First 500 chars:\n${text.substring(0, 500)}...`)
     }
   }
 

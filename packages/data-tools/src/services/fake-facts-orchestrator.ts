@@ -172,6 +172,18 @@ export class FakeFactsOrchestrator {
         sampleAnswers
       )
 
+      // Step 6.5: Extract common prefix if all answers start with same word
+      const extracted = extractCommonPrefix(
+        questionResult.question,
+        questionResult.realAnswer,
+        houseAnswersResult.houseAnswers
+      )
+
+      // Update results with extracted versions
+      questionResult.question = extracted.question
+      questionResult.realAnswer = extracted.realAnswer
+      houseAnswersResult.houseAnswers = extracted.houseAnswers
+
       // Calculate total cost from actual API usage
       const totalCost = questionResult.cost + houseAnswersResult.cost
 
@@ -573,5 +585,49 @@ export class FakeFactsOrchestrator {
    */
   getStats(): ProcessingStats {
     return { ...this.stats }
+  }
+}
+
+/**
+ * Helper function: Extract common prefix from all answers and move to question
+ *
+ * If the real answer AND all house answers start with the same word (e.g., "a " or "the "),
+ * this function moves that word into the question and removes it from all answers.
+ *
+ * Example:
+ *   Input: question="learned to fly _____", realAnswer="a Cessna", houseAnswers=["a Boeing 747", "a helicopter", ...]
+ *   Output: question="learned to fly a _____", realAnswer="Cessna", houseAnswers=["Boeing 747", "helicopter", ...]
+ */
+export function extractCommonPrefix(
+  question: string,
+  realAnswer: string,
+  houseAnswers: string[]
+): { question: string; realAnswer: string; houseAnswers: string[] } {
+  const allAnswers = [realAnswer, ...houseAnswers]
+
+  // Find first word of first answer
+  const firstWord = allAnswers[0]?.split(' ')[0]
+
+  // Check if first word exists and all answers start with it (followed by space)
+  if (!firstWord || firstWord.length === 0) {
+    return { question, realAnswer, houseAnswers }
+  }
+
+  const prefix = firstWord + ' '
+  const allStartWithPrefix = allAnswers.every(a => a.startsWith(prefix))
+
+  if (!allStartWithPrefix) {
+    return { question, realAnswer, houseAnswers }
+  }
+
+  // Move prefix to question and strip from answers
+  const newQuestion = question.replace('_____', `${firstWord} _____`)
+  const newRealAnswer = realAnswer.substring(prefix.length)
+  const newHouseAnswers = houseAnswers.map(a => a.substring(prefix.length))
+
+  return {
+    question: newQuestion,
+    realAnswer: newRealAnswer,
+    houseAnswers: newHouseAnswers,
   }
 }
