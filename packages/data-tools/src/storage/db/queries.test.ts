@@ -879,4 +879,134 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
       expect(gameQuestion).toBeNull()
     })
   })
+
+  describe('Spacetime Metadata', () => {
+    let articleId: string
+
+    beforeEach(async () => {
+      // Insert a test article
+      const article: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed',
+        title: 'Test Article for Spacetime',
+        description: 'A test article',
+        content: 'Test content',
+        link: 'https://example.com/article',
+        author: 'Test Author',
+        pubDate: new Date('2004-08-22'),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 90,
+        categories: ['test'],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: 'us',
+        contentHash: null,
+      }
+
+      articleId = (await db.insertArticle(article)) as string
+    })
+
+    it('should update spacetime metadata for article', async () => {
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: 2004,
+        locationCity: 'Annapolis',
+        locationState: 'Maryland',
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      expect(article).toBeTruthy()
+      expect(article?.eventYear).toBe(2004)
+      expect(article?.locationCity).toBe('Annapolis')
+      expect(article?.locationState).toBe('Maryland')
+    })
+
+    it('should handle partial spacetime metadata (year only)', async () => {
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: 1996,
+        locationCity: null,
+        locationState: null,
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      expect(article?.eventYear).toBe(1996)
+      expect(article?.locationCity).toBeNull()
+      expect(article?.locationState).toBeNull()
+    })
+
+    it('should handle partial spacetime metadata (state only)', async () => {
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: null,
+        locationCity: null,
+        locationState: 'Colorado',
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      expect(article?.eventYear).toBeNull()
+      expect(article?.locationCity).toBeNull()
+      expect(article?.locationState).toBe('Colorado')
+    })
+
+    it('should handle city + state without year', async () => {
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: null,
+        locationCity: 'Brisbane',
+        locationState: 'Queensland',
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      expect(article?.eventYear).toBeNull()
+      expect(article?.locationCity).toBe('Brisbane')
+      expect(article?.locationState).toBe('Queensland')
+    })
+
+    it('should handle all NULL spacetime metadata', async () => {
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: null,
+        locationCity: null,
+        locationState: null,
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      expect(article?.eventYear).toBeNull()
+      expect(article?.locationCity).toBeNull()
+      expect(article?.locationState).toBeNull()
+    })
+
+    it('should allow updating spacetime metadata multiple times', async () => {
+      // First update
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: 2000,
+        locationCity: 'Wrong City',
+        locationState: 'Wrong State',
+      })
+
+      // Second update (correction)
+      await db.updateSpacetimeMetadata(articleId, {
+        eventYear: 2004,
+        locationCity: 'Annapolis',
+        locationState: 'Maryland',
+      })
+
+      const articles = await db.getArticles({ articleIds: [articleId] })
+      const article = articles[0]
+
+      // Should have the latest values
+      expect(article?.eventYear).toBe(2004)
+      expect(article?.locationCity).toBe('Annapolis')
+      expect(article?.locationState).toBe('Maryland')
+    })
+  })
 })

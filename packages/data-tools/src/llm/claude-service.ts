@@ -223,6 +223,10 @@ BAD: "John Wilkes Booth hiding under her bed" → GOOD: "John Wilkes Booth"
 
 BAD: "the police force" (3 words, too formal/verbose) → GOOD: "the police" (2 words, natural!)
 BAD: "his opponent's campaign button" (4 words!) → GOOD: "his opponent's button" (3 words)
+BAD: "laser-cut it into pieces" (4 words, redundant!) → GOOD: "laser-cut it" (2 words!)
+  → Why: "into pieces" is implied by "laser-cut" - drunk people don't type extra words!
+BAD: "a 21-year-old man" (3 words but verbose) → GOOD: "a young man" OR "a 21 year old"
+  → Why: Pick simpler phrasing OR remove gender if age is the key detail
 BAD: "her father's death date" (4 words, wordy) → GOOD: Rephrase question so blank is shorter
 BAD: "the coordinates to his burial site" (6 words!) → GOOD: Rephrase question
 BAD: "involuntary lethal injection" (3 words but verbose) → GOOD: "lethal injection"
@@ -618,6 +622,12 @@ Players will type what they THINK, not verbose descriptions. Optimize for matchi
 
 ❌ BAD: "his opponent's campaign button" (4 words!) → Drunk people don't type this!
 ✅ GOOD: "his opponent's button" (3 words, much better)
+
+❌ BAD: "laser-cut it into pieces" (4 words, redundant!) → "into pieces" is implied!
+✅ GOOD: "laser-cut it" (2 words, punchy!)
+
+❌ BAD: "a 21-year-old man" (3 words but verbose) → Too specific for a house answer!
+✅ GOOD: "a young man" OR "a 21 year old" (simpler, more natural)
 
 ❌ BAD: "the coordinates to Jimmy Hoffa's burial site" (7 words!)
 ✅ GOOD: "Jimmy Hoffa's coordinates" (3 words)

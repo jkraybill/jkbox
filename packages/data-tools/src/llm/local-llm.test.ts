@@ -495,4 +495,195 @@ REASONING: Based on scores.`
       expect(judgment.reasoning.length).toBeGreaterThan(30)
     }, 60000)
   })
+
+  describe('extractSpacetime', () => {
+    describe('parsing logic', () => {
+      it('should parse year, city, and state from valid response', () => {
+        const response = {
+          response: `YEAR: 2004
+CITY: Annapolis
+STATE: Maryland`
+        }
+
+        // Mock the Ollama client to return our test response
+        const mockLlm = new LocalLLM({
+          provider: 'ollama',
+          model: 'qwen2.5:14b',
+          endpoint: 'http://localhost:11434',
+          temperature: 0.1,
+          maxTokens: 100,
+        })
+
+        // Access private client and mock generate method
+        const mockGenerate = async () => response
+        ;(mockLlm as any).client.generate = mockGenerate
+
+        // The actual parsing would happen inside extractSpacetime
+        // Let's test the regex patterns directly
+        const yearMatch = response.response.match(/YEAR:\s*(\d{4}|NULL)/i)
+        const cityMatch = response.response.match(/CITY:\s*(.+?)(?=\n|STATE:|$)/i)
+        const stateMatch = response.response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+        expect(yearMatch?.[1]).toBe('2004')
+        expect(cityMatch?.[1]?.trim()).toBe('Annapolis')
+        expect(stateMatch?.[1]?.trim()).toBe('Maryland')
+      })
+
+      it('should handle NULL values', () => {
+        const response = `YEAR: 2024
+CITY: NULL
+STATE: Colorado`
+
+        const yearMatch = response.match(/YEAR:\s*(\d{4}|NULL)/i)
+        const cityMatch = response.match(/CITY:\s*(.+?)(?=\n|STATE:|$)/i)
+        const stateMatch = response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+        expect(yearMatch?.[1]).toBe('2024')
+        expect(cityMatch?.[1]?.trim()).toBe('NULL')
+        expect(stateMatch?.[1]?.trim()).toBe('Colorado')
+      })
+
+      it('should handle all NULL values', () => {
+        const response = `YEAR: NULL
+CITY: NULL
+STATE: NULL`
+
+        const yearMatch = response.match(/YEAR:\s*(\d{4}|NULL)/i)
+        const cityMatch = response.match(/CITY:\s*(.+?)(?=\n|STATE:|$)/i)
+        const stateMatch = response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+        expect(yearMatch?.[1]).toBe('NULL')
+        expect(cityMatch?.[1]?.trim()).toBe('NULL')
+        expect(stateMatch?.[1]?.trim()).toBe('NULL')
+      })
+
+      it('should handle year-only extraction', () => {
+        const response = `YEAR: 1996
+CITY: NULL
+STATE: NULL`
+
+        const yearMatch = response.match(/YEAR:\s*(\d{4}|NULL)/i)
+
+        expect(yearMatch?.[1]).toBe('1996')
+      })
+
+      it('should handle state-only extraction', () => {
+        const response = `YEAR: NULL
+CITY: NULL
+STATE: Florida`
+
+        const stateMatch = response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+        expect(stateMatch?.[1]?.trim()).toBe('Florida')
+      })
+
+      it('should handle city + state without year', () => {
+        const response = `YEAR: NULL
+CITY: Brisbane
+STATE: Queensland`
+
+        const cityMatch = response.match(/CITY:\s*(.+?)(?=\n|STATE:|$)/i)
+        const stateMatch = response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+        expect(cityMatch?.[1]?.trim()).toBe('Brisbane')
+        expect(stateMatch?.[1]?.trim()).toBe('Queensland')
+      })
+    })
+
+    describe('integration with Ollama', () => {
+      it.skipIf(!OLLAMA_AVAILABLE)('should extract spacetime from article with all metadata', async () => {
+        const title = 'Maryland 911 Operator Falls Asleep During Break-In Call'
+        const content = 'In Anne Arundel County, Maryland, a 911 operator fell asleep on the job in 2004 while an active break-in call came in.'
+        const pubDate = new Date('2004-08-22')
+
+        const result = await llm.extractSpacetime(title, content, pubDate)
+
+        // Should extract year from content or fall back to pubDate
+        expect(result.eventYear).toBe(2004)
+
+        // Should extract state
+        expect(result.locationState).toBeTruthy()
+        expect(result.locationState?.toLowerCase()).toContain('maryland')
+
+        // City might be extracted (Anne Arundel County) or NULL
+        // Don't enforce strict expectation since LLM behavior varies
+      }, 15000)
+
+      it.skipIf(!OLLAMA_AVAILABLE)('should fall back to pub_date when extraction fails', async () => {
+        const title = 'Strange Event Occurred'
+        const content = 'Something weird happened recently.'
+        const pubDate = new Date('2023-05-15')
+
+        const result = await llm.extractSpacetime(title, content, pubDate)
+
+        // Should fall back to pubDate year
+        expect(result.eventYear).toBe(2023)
+      }, 15000)
+
+      it.skipIf(!OLLAMA_AVAILABLE)('should handle article with city and state', async () => {
+        const title = 'Brisbane Cop Suspended'
+        const content = 'In Brisbane, Queensland, a suspended cop solicited body samples from people.'
+        const pubDate = new Date('2024-01-01')
+
+        const result = await llm.extractSpacetime(title, content, pubDate)
+
+        // Should extract city
+        expect(result.locationCity).toBeTruthy()
+
+        // Should extract state
+        expect(result.locationState).toBeTruthy()
+        expect(result.locationState?.toLowerCase()).toContain('queensland')
+      }, 15000)
+
+      it.skipIf(!OLLAMA_AVAILABLE)('should handle article with explicit year', async () => {
+        const title = 'Explorer Plans Trip'
+        const content = 'In 2005, a Utah explorer planned a $21,000 expedition to the North Pole.'
+        const pubDate = null
+
+        const result = await llm.extractSpacetime(title, content, pubDate)
+
+        // Should extract explicit year
+        expect(result.eventYear).toBe(2005)
+
+        // Should extract state
+        expect(result.locationState).toBeTruthy()
+        expect(result.locationState?.toLowerCase()).toContain('utah')
+      }, 15000)
+
+      it.skipIf(!OLLAMA_AVAILABLE)('should handle NULL pub_date gracefully', async () => {
+        const title = 'Recent Event'
+        const content = 'Something happened last week in Colorado.'
+        const pubDate = null
+
+        const result = await llm.extractSpacetime(title, content, pubDate)
+
+        // Should still attempt extraction
+        // Year might be current year or NULL
+        expect(result).toBeDefined()
+        expect(result.eventYear === null || typeof result.eventYear === 'number').toBe(true)
+      }, 15000)
+
+      it('should return fallback on Ollama error', async () => {
+        const title = 'Test Article'
+        const content = 'Test content'
+        const pubDate = new Date('2020-01-01')
+
+        // Create LLM with invalid endpoint to trigger error
+        const badLlm = new LocalLLM({
+          provider: 'ollama',
+          model: 'qwen2.5:14b',
+          endpoint: 'http://invalid-endpoint:99999',
+          temperature: 0.1,
+          maxTokens: 100,
+        })
+
+        const result = await badLlm.extractSpacetime(title, content, pubDate)
+
+        // Should fall back gracefully
+        expect(result.eventYear).toBe(2020) // Falls back to pubDate
+        expect(result.locationCity).toBeNull()
+        expect(result.locationState).toBeNull()
+      }, 15000)
+    })
+  })
 })

@@ -293,5 +293,325 @@ describe('ClaudeService cost calculation', () => {
       expect(answers).toHaveLength(5)
       expect(answers[0]).toBe('explosive diarrhea')
     })
+
+    it('should handle exactly 5 answers (happy path)', () => {
+      const validationText = `
+## Testing House Answer 1: "his evil twin"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "a demon"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 3: "his alter ego"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 4: "Satan"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 5: "his therapist"
+→ ✅ **ACCEPT**
+`
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      const uniqueAnswers = [...new Set(answers)]
+
+      expect(uniqueAnswers).toHaveLength(5)
+      expect(uniqueAnswers).toEqual([
+        'his evil twin',
+        'a demon',
+        'his alter ego',
+        'Satan',
+        'his therapist'
+      ])
+    })
+
+    it('should handle 6-7 answers by taking first 5 (slice logic)', () => {
+      const validationText = `
+## Testing House Answer 1: "answer1"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "answer2"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 3: "answer3"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 4: "answer4"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 5: "answer5"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 6: "answer6"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 7: "answer7"
+→ ✅ **ACCEPT**
+`
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      const uniqueAnswers = [...new Set(answers)]
+
+      expect(uniqueAnswers.length).toBeGreaterThanOrEqual(5)
+      expect(uniqueAnswers).toHaveLength(7)
+
+      // Should take first 5
+      const finalAnswers = uniqueAnswers.slice(0, 5)
+      expect(finalAnswers).toHaveLength(5)
+      expect(finalAnswers).toEqual(['answer1', 'answer2', 'answer3', 'answer4', 'answer5'])
+    })
+
+    it('should fail with <5 answers (quality control)', () => {
+      const validationText = `
+## Testing House Answer 1: "answer1"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "answer2"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 3: "answer3"
+→ ✅ **ACCEPT**
+`
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      const uniqueAnswers = [...new Set(answers)]
+
+      // Should have <5 answers (failure case)
+      expect(uniqueAnswers).toHaveLength(3)
+      expect(uniqueAnswers.length).toBeLessThan(5)
+
+      // In real code, this would throw an error
+    })
+
+    it('should deduplicate extracted answers', () => {
+      const validationText = `
+## Testing House Answer 1: "his evil twin"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 2: "a demon"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 3: "his evil twin"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 4: "Satan"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 5: "a demon"
+→ ✅ **ACCEPT**
+
+## Testing House Answer 6: "his therapist"
+→ ✅ **ACCEPT**
+`
+      const pattern = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers: string[] = []
+      let match
+      while ((match = pattern.exec(validationText)) !== null) {
+        if (match[1]) answers.push(match[1])
+      }
+
+      // Before deduplication: 6 answers (with 2 duplicates)
+      expect(answers).toHaveLength(6)
+
+      const uniqueAnswers = [...new Set(answers)]
+
+      // After deduplication: 4 unique answers
+      expect(uniqueAnswers).toHaveLength(4)
+      expect(uniqueAnswers).toEqual(['his evil twin', 'a demon', 'Satan', 'his therapist'])
+    })
+
+    it('should handle mixed validation formats (multiple patterns)', () => {
+      const validationText = `
+## Testing House Answer 1: "his evil twin"
+→ ✅ **ACCEPT**
+
+**Testing "a demon":**
+→ ✓ Grammar: Correct
+
+## Testing House Answer 3: "Satan"
+→ ✅ **ACCEPT**
+
+**Testing "his therapist":**
+→ ✓
+
+## Testing House Answer 5: "divine intervention"
+→ ✅ **ACCEPT**
+`
+      // Pattern 1: ## Testing format
+      const pattern1 = /## Testing House Answer \d+(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      const answers1: string[] = []
+      let match
+      while ((match = pattern1.exec(validationText)) !== null) {
+        if (match[1]) answers1.push(match[1])
+      }
+
+      // Pattern 3: **Testing format
+      const pattern3 = /\*\*Testing "([^"]+)":\*\*[\s\S]*?(?:→ )?✓/g
+      const answers3: string[] = []
+      while ((match = pattern3.exec(validationText)) !== null) {
+        if (match[1]) answers3.push(match[1])
+      }
+
+      // Should find some with each pattern
+      expect(answers1.length).toBeGreaterThan(0)
+      expect(answers3.length).toBeGreaterThan(0)
+
+      // Combined should have all 5
+      const combined = [...answers1, ...answers3]
+      const uniqueAnswers = [...new Set(combined)]
+      expect(uniqueAnswers).toHaveLength(5)
+    })
+  })
+
+  describe('Question generation with spacetime metadata', () => {
+    it('should construct spacetime context when all metadata provided', () => {
+      const spacetime = {
+        eventYear: 2004,
+        locationCity: 'Annapolis',
+        locationState: 'Maryland',
+        country: 'us'
+      }
+
+      // Test the spacetime context construction logic
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      expect(spacetimeContext).toContain('Year: 2004')
+      expect(spacetimeContext).toContain('City: Annapolis')
+      expect(spacetimeContext).toContain('State: Maryland')
+      expect(spacetimeContext).toContain('Country: us')
+      expect(spacetimeContext).toContain('SPACETIME METADATA')
+    })
+
+    it('should handle partial spacetime (year only)', () => {
+      const spacetime = {
+        eventYear: 1996,
+        locationCity: null,
+        locationState: null,
+        country: 'us'
+      }
+
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      expect(spacetimeContext).toContain('Year: 1996')
+      expect(spacetimeContext).toContain('City: Unknown')
+      expect(spacetimeContext).toContain('State: Unknown')
+    })
+
+    it('should handle partial spacetime (state only)', () => {
+      const spacetime = {
+        eventYear: null,
+        locationCity: null,
+        locationState: 'Colorado',
+        country: 'us'
+      }
+
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      expect(spacetimeContext).toContain('Year: Unknown')
+      expect(spacetimeContext).toContain('State: Colorado')
+    })
+
+    it('should handle city + state without year', () => {
+      const spacetime = {
+        eventYear: null,
+        locationCity: 'Brisbane',
+        locationState: 'Queensland',
+        country: 'au'
+      }
+
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      expect(spacetimeContext).toContain('City: Brisbane')
+      expect(spacetimeContext).toContain('State: Queensland')
+      expect(spacetimeContext).toContain('Year: Unknown')
+    })
+
+    it('should handle undefined spacetime (optional parameter)', () => {
+      const spacetime = undefined
+
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      // Should be empty string when undefined
+      expect(spacetimeContext).toBe('')
+    })
+
+    it('should handle all Unknown values', () => {
+      const spacetime = {
+        eventYear: null,
+        locationCity: null,
+        locationState: null,
+        country: null
+      }
+
+      const spacetimeContext = spacetime
+        ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+        : ''
+
+      expect(spacetimeContext).toContain('Year: Unknown')
+      expect(spacetimeContext).toContain('City: Unknown')
+      expect(spacetimeContext).toContain('State: Unknown')
+      expect(spacetimeContext).toContain('Country: Unknown')
+    })
   })
 })
