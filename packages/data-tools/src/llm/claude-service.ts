@@ -184,9 +184,17 @@ BAD: "In Florida, a man stabbed his friend during an argument over a 'bankrupt' 
 GOOD: "In Florida, a man stabbed his friend during an argument about whether Donald Trump was _____"
 → Wide open! Could be: "bankrupt", "a man", "alive", "a lizard person", etc.
 
-=== KEEP REAL ANSWERS CONCISE ===
+=== KEEP REAL ANSWERS CONCISE & PUNCHY ===
 
 CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
+
+MANDATORY VALIDATION: After generating an answer, ask yourself:
+1. "Would a player actually type ALL these words?"
+2. "Are there any redundant or unnecessary modifiers?"
+3. "Can I remove ANY word without losing the essence?"
+4. "Does this sound NATURAL - like something a human would actually say?"
+
+If yes to #2 or #3, or no to #4 → REVISE to be shorter and more natural!
 
 Remove unnecessary specificity from real answers:
 
@@ -197,6 +205,18 @@ BAD: "John Wilkes Booth hiding under her bed" → GOOD: "John Wilkes Booth"
 BAD: "her father's death date" (4 words, wordy) → GOOD: Rephrase question so blank is shorter
 BAD: "the coordinates to his burial site" (6 words!) → GOOD: Rephrase question
 BAD: "involuntary lethal injection" (3 words but verbose) → GOOD: "lethal injection"
+
+CRITICAL: Remove REDUNDANT modifiers (when the adjective is inherent to the noun):
+
+BAD: "the biblical 10 Lost Tribes" (5 words! "biblical" is redundant - Lost Tribes ARE biblical)
+  → GOOD: "the Lost Tribes" (3 words, punchy)
+  → GOOD: "biblical tribes" (2 words, even better!)
+
+BAD: "frozen ice" → GOOD: "ice" (ice is inherently frozen)
+BAD: "illegal contraband" → GOOD: "contraband" (contraband is inherently illegal)
+BAD: "circular ring" → GOOD: "ring" (rings are inherently circular)
+
+THINK: What's the SHORTEST form that preserves the comedy and surprise?
 
 === CRITICAL: NO COMPOUND ANSWERS WITH "OR" ===
 
@@ -549,6 +569,14 @@ The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories". Dark/se
 
 CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 
+MANDATORY VALIDATION FOR EACH HOUSE ANSWER: Ask yourself:
+1. "Would a player actually type ALL these words?"
+2. "Are there any redundant or unnecessary modifiers?"
+3. "Can I remove ANY word without losing the fun?"
+4. "Does this sound NATURAL - like something a human would actually say?"
+
+If yes to #2 or #3, or no to #4 → REVISE to be shorter and more natural!
+
 Players will type what they THINK, not verbose descriptions. Optimize for matching!
 
 ❌ BAD: "a can of hair spray" → Players type "hairspray" or "hair spray", NEVER "a can of hair spray"
@@ -571,6 +599,11 @@ Players will type what they THINK, not verbose descriptions. Optimize for matchi
 
 ❌ BAD: "vintage lawnmower"
 ✅ GOOD: "lawnmower"
+
+CRITICAL: Remove REDUNDANT modifiers (adjective inherent to the noun):
+❌ BAD: "the biblical 10 Lost Tribes" → ✅ GOOD: "the Lost Tribes" or "biblical tribes"
+❌ BAD: "frozen ice" → ✅ GOOD: "ice"
+❌ BAD: "illegal contraband" → ✅ GOOD: "contraband"
 
 RULE: If the article mentions "a can of X", the answer is just "X" (or "a can" if that's the surprising part).
 
