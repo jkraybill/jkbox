@@ -668,11 +668,11 @@ STATE: Queensland`
         const content = 'Test content'
         const pubDate = new Date('2020-01-01')
 
-        // Create LLM with invalid endpoint to trigger error
+        // Create LLM with valid URL but port that won't respond (connection will fail/timeout)
         const badLlm = new LocalLLM({
           provider: 'ollama',
           model: 'qwen2.5:14b',
-          endpoint: 'http://invalid-endpoint:99999',
+          endpoint: 'http://localhost:9999', // Valid URL but nothing listening on port 9999
           temperature: 0.1,
           maxTokens: 100,
         })
