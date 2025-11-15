@@ -47,6 +47,7 @@ CREATE TABLE articles (
   fake_facts_processed BOOLEAN DEFAULT FALSE,
   fake_facts_processed_at TIMESTAMP,
   fake_facts_eligible BOOLEAN,
+  fake_facts_rejection_reason TEXT,
   last_considered TIMESTAMP,
   article_summary TEXT,
 

@@ -15,7 +15,14 @@ const SAFE_TEST_DB_PATTERNS = [
 function isDatabaseSafeForTests(dbUrl: string | undefined): boolean {
   if (!dbUrl) return false
 
-  const dbName = dbUrl.split('/').pop()?.split('?')[0]
+  // Extract database name from postgresql:///dbname or postgresql://host:port/dbname
+  // Split on '/' and find the first non-empty segment after '//'
+  const parts = dbUrl.split('/')
+  const dbNameWithParams = parts.find((part, i) => i >= 2 && part && part !== '')
+  if (!dbNameWithParams) return false
+
+  // Remove query params (?host=...)
+  const dbName = dbNameWithParams.split('?')[0]
   if (!dbName) return false
 
   return SAFE_TEST_DB_PATTERNS.some(pattern => pattern.test(dbName))

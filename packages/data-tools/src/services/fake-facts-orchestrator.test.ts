@@ -9,7 +9,7 @@ import type { LocalLLMConfig } from '../llm/types'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
-const TEST_DATABASE_URL = process.env.DATABASE_URL
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const OLLAMA_AVAILABLE = process.env.SKIP_OLLAMA_TESTS !== 'true'
 
 // Skip these tests if no database or Ollama configured
