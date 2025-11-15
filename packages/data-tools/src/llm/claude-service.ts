@@ -198,6 +198,22 @@ BAD: "her father's death date" (4 words, wordy) → GOOD: Rephrase question so b
 BAD: "the coordinates to his burial site" (6 words!) → GOOD: Rephrase question
 BAD: "involuntary lethal injection" (3 words but verbose) → GOOD: "lethal injection"
 
+=== CRITICAL: NO COMPOUND ANSWERS WITH "OR" ===
+
+Players will NEVER type compound answers. Pick ONE specific answer.
+
+❌ NEVER DO THIS:
+- "concrete or hot asphalt" → Players type "concrete" or "asphalt", never "concrete or hot asphalt"
+- "a cat or dog" → Players type "cat" or "dog"
+- "heroin or cocaine" → Players type "heroin" or "cocaine"
+
+✅ PICK THE MOST SPECIFIC/INTERESTING ONE:
+- "concrete" (simpler, more common)
+- "a cat" (pick one)
+- "heroin" (darker, funnier)
+
+If the article mentions multiple things, pick the SINGLE most surprising/funny/specific one as the answer.
+
 === FAMOUS PEOPLE = OBSCURE STORIES ONLY ===
 
 If the article is about a celebrity or famous person (Trump, Obama, Elon, etc.), the story MUST be obscure and surprising.
