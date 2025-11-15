@@ -188,8 +188,10 @@ GOOD: "In Florida, a man stabbed his friend during an argument about whether Don
 
 CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 
+**REFERENCE PLAYER:** Imagine a drunk person at a party, typing on their phone. They won't type verbose phrases like "his opponent's campaign button" (they'd type "his opponent's button") or "the police force" (they'd type "the police"). Keep it SHORT and NATURAL.
+
 MANDATORY VALIDATION: After generating an answer, ask yourself:
-1. "Would a player actually type ALL these words?"
+1. "Would a DRUNK PERSON AT A PARTY actually type ALL these words on their phone?"
 2. "Are there any redundant or unnecessary modifiers?"
 3. "Can I remove ANY word without losing the essence?"
 4. "Does this sound NATURAL - like something a human would actually say?"
@@ -202,6 +204,8 @@ BAD: "a bald JD Vance meme" → GOOD: "a JD Vance meme"
 BAD: "a VP of manufacturing named Omead Afshar" → GOOD: "a VP of manufacturing"
 BAD: "John Wilkes Booth hiding under her bed" → GOOD: "John Wilkes Booth"
 
+BAD: "the police force" (3 words, too formal/verbose) → GOOD: "the police" (2 words, natural!)
+BAD: "his opponent's campaign button" (4 words!) → GOOD: "his opponent's button" (3 words)
 BAD: "her father's death date" (4 words, wordy) → GOOD: Rephrase question so blank is shorter
 BAD: "the coordinates to his burial site" (6 words!) → GOOD: Rephrase question
 BAD: "involuntary lethal injection" (3 words but verbose) → GOOD: "lethal injection"
@@ -569,8 +573,10 @@ The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories". Dark/se
 
 CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 
+**REFERENCE PLAYER:** Imagine a drunk person at a party, typing on their phone. They won't type verbose phrases like "his opponent's campaign button" (they'd type "his opponent's button") or "the police force" (they'd type "the police"). Keep it SHORT and NATURAL.
+
 MANDATORY VALIDATION FOR EACH HOUSE ANSWER: Ask yourself:
-1. "Would a player actually type ALL these words?"
+1. "Would a DRUNK PERSON AT A PARTY actually type ALL these words on their phone?"
 2. "Are there any redundant or unnecessary modifiers?"
 3. "Can I remove ANY word without losing the fun?"
 4. "Does this sound NATURAL - like something a human would actually say?"
@@ -581,6 +587,12 @@ Players will type what they THINK, not verbose descriptions. Optimize for matchi
 
 ❌ BAD: "a can of hair spray" → Players type "hairspray" or "hair spray", NEVER "a can of hair spray"
 ✅ GOOD: "hair spray" or "hairspray" (what players actually type)
+
+❌ BAD: "the police force" (too formal/verbose) → Players type "the police"
+✅ GOOD: "the police" (natural, conversational)
+
+❌ BAD: "his opponent's campaign button" (4 words!) → Drunk people don't type this!
+✅ GOOD: "his opponent's button" (3 words, much better)
 
 ❌ BAD: "the coordinates to Jimmy Hoffa's burial site" (7 words!)
 ✅ GOOD: "Jimmy Hoffa's coordinates" (3 words)
