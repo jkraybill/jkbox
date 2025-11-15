@@ -495,6 +495,204 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
 
       expect(limited.length).toBeLessThanOrEqual(2)
     })
+
+    it('should prioritize articles with null last_considered first', async () => {
+      // Insert articles with different last_considered values
+      const article2: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed.xml',
+        title: 'Article with old last_considered',
+        description: 'Old consideration',
+        content: null,
+        link: 'https://example.com/old',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 80,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      }
+
+      const article3: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed.xml',
+        title: 'Article with recent last_considered',
+        description: 'Recent consideration',
+        content: null,
+        link: 'https://example.com/recent',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 85,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      }
+
+      const oldId = await db.insertArticle(article2) as string
+      const recentId = await db.insertArticle(article3) as string
+
+      // Set last_considered timestamps
+      await pool.query(`UPDATE articles SET last_considered = NOW() - INTERVAL '2 days' WHERE id = $1`, [oldId])
+      await pool.query(`UPDATE articles SET last_considered = NOW() - INTERVAL '1 hour' WHERE id = $1`, [recentId])
+
+      // testArticleId has NULL last_considered
+
+      const unprocessed = await db.getUnprocessedArticles(10)
+
+      // Articles with NULL last_considered should come first
+      const nullConsideredArticles = unprocessed.filter(a => a.lastConsidered === null)
+      expect(nullConsideredArticles.length).toBeGreaterThan(0)
+
+      // After NULL articles, should be sorted by last_considered ASC (oldest first)
+      const nonNullArticles = unprocessed.filter(a => a.lastConsidered !== null)
+      if (nonNullArticles.length >= 2) {
+        for (let i = 0; i < nonNullArticles.length - 1; i++) {
+          const current = nonNullArticles[i]!.lastConsidered!
+          const next = nonNullArticles[i + 1]!.lastConsidered!
+          expect(new Date(current).getTime()).toBeLessThanOrEqual(new Date(next).getTime())
+        }
+      }
+    })
+
+    it('should only return weird articles', async () => {
+      // Insert non-weird article
+      await db.insertArticle({
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed.xml',
+        title: 'Not weird article',
+        description: 'Boring',
+        content: null,
+        link: 'https://example.com/boring',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: false,
+        weirdConfidence: 10,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      })
+
+      const unprocessed = await db.getUnprocessedArticles(10)
+
+      // All returned articles should be weird
+      expect(unprocessed.every(a => a.isWeird === true)).toBe(true)
+    })
+  })
+
+  describe('updateLastConsidered', () => {
+    it('should update last_considered timestamp for single article', async () => {
+      const beforeUpdate = new Date()
+
+      await db.updateLastConsidered([testArticleId])
+
+      const result = await pool.query('SELECT last_considered FROM articles WHERE id = $1', [testArticleId])
+      const lastConsidered = result.rows[0]?.last_considered
+
+      expect(lastConsidered).toBeTruthy()
+      expect(new Date(lastConsidered).getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime())
+    })
+
+    it('should update last_considered for multiple articles', async () => {
+      // Insert additional articles
+      const article2: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed.xml',
+        title: 'Article 2',
+        description: 'Desc 2',
+        content: null,
+        link: 'https://example.com/2',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 80,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      }
+
+      const article3: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed.xml',
+        title: 'Article 3',
+        description: 'Desc 3',
+        content: null,
+        link: 'https://example.com/3',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 85,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      }
+
+      const id2 = await db.insertArticle(article2) as string
+      const id3 = await db.insertArticle(article3) as string
+
+      const beforeUpdate = new Date()
+
+      await db.updateLastConsidered([testArticleId, id2, id3])
+
+      const result = await pool.query(
+        'SELECT id, last_considered FROM articles WHERE id = ANY($1::uuid[])',
+        [[testArticleId, id2, id3]]
+      )
+
+      expect(result.rows.length).toBe(3)
+      result.rows.forEach(row => {
+        expect(row.last_considered).toBeTruthy()
+        expect(new Date(row.last_considered).getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime())
+      })
+    })
+
+    it('should handle empty array gracefully', async () => {
+      await expect(db.updateLastConsidered([])).resolves.not.toThrow()
+    })
+
+    it('should update timestamp even if article was previously considered', async () => {
+      // Set initial last_considered
+      await pool.query(`UPDATE articles SET last_considered = NOW() - INTERVAL '1 day' WHERE id = $1`, [testArticleId])
+
+      const beforeResult = await pool.query('SELECT last_considered FROM articles WHERE id = $1', [testArticleId])
+      const beforeTimestamp = beforeResult.rows[0]?.last_considered
+
+      // Wait a bit to ensure different timestamp
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      await db.updateLastConsidered([testArticleId])
+
+      const afterResult = await pool.query('SELECT last_considered FROM articles WHERE id = $1', [testArticleId])
+      const afterTimestamp = afterResult.rows[0]?.last_considered
+
+      expect(new Date(afterTimestamp).getTime()).toBeGreaterThan(new Date(beforeTimestamp).getTime())
+    })
   })
 
   describe('markArticleAsProcessed', () => {

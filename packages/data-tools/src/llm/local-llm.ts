@@ -204,6 +204,545 @@ Write a concise 40-60 word summary with SPECIFIC details:`
   }
 
   /**
+   * Extract individual weird news stories from a News of the Weird compilation
+   * Returns array of {title, content} for each story
+   */
+  /**
+   * Estimate reasonable story count from input content structure
+   */
+  private estimateStoryCount(content: string): { min: number; max: number } {
+    // Count paragraph breaks (double newlines)
+    const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 50).length
+
+    // Count section headers (all-caps lines)
+    const sectionHeaders = content.split('\n')
+      .filter(line => {
+        const trimmed = line.trim()
+        return trimmed.length > 5 &&
+               trimmed.length < 100 &&
+               trimmed === trimmed.toUpperCase() &&
+               /^[A-Z\s-]+$/.test(trimmed)
+      }).length
+
+    // Use the higher of the two as baseline
+    const baseline = Math.max(paragraphs, sectionHeaders)
+
+    // Reasonable range: baseline to 2x baseline
+    // (Some stories might be multi-paragraph, some single)
+    return {
+      min: Math.max(1, Math.floor(baseline * 0.3)),
+      max: Math.max(baseline * 2, 15) // At least 15 max
+    }
+  }
+
+  async extractStories(compilationContent: string): Promise<{
+    stories: Array<{ title: string; content: string }>
+    valid: boolean
+    validationError?: string
+  }> {
+    const prompt = `You are extracting individual weird news stories from a "News of the Weird" weekly compilation.
+
+Each weekly column contains multiple individual weird news stories. Your task is to:
+1. Identify each distinct weird news story
+2. Generate a punchy, specific headline for each story (like a tabloid headline)
+3. Extract the full text of that story
+
+Guidelines for headlines:
+- Be SPECIFIC and CONCRETE (include key details like numbers, animals, objects, locations)
+- Make it punchy and attention-grabbing (like "63-year-old predicts future by throwing asparagus")
+- Include the WEIRD element in the headline
+- Keep it concise (aim for 8-15 words)
+- DON'T use generic phrases like "Man does weird thing"
+- DON'T repeat the same story multiple times
+- DON'T make up stories that aren't in the text
+
+Compilation text:
+${compilationContent.substring(0, 10000)}
+
+IMPORTANT: Extract ONLY the distinct stories present in the compilation. Most columns have 8-12 stories. Don't hallucinate or repeat!
+
+Extract ALL individual stories and respond in this EXACT format:
+
+STORY 1
+TITLE: <punchy headline here>
+CONTENT: <full story text here>
+
+STORY 2
+TITLE: <punchy headline here>
+CONTENT: <full story text here>
+
+(continue for all stories found)`
+
+    try {
+      const response = await this.client.generate({
+        model: this.config.model,
+        prompt,
+        options: {
+          temperature: 0.4,
+          num_predict: 4000, // Increased for 8-12 stories
+        },
+      })
+
+      const stories = this.parseStoriesResponse(response.response)
+
+      // Validate against input content structure
+      const expectedRange = this.estimateStoryCount(compilationContent)
+      if (stories.length > expectedRange.max) {
+        return {
+          stories,
+          valid: false,
+          validationError: `Extracted ${stories.length} stories but input suggests ${expectedRange.min}-${expectedRange.max} (likely hallucination)`,
+        }
+      }
+
+      // Validate for other hallucination patterns
+      const validation = this.validateStoryExtraction(stories)
+
+      return {
+        stories,
+        valid: validation.valid,
+        validationError: validation.reason,
+      }
+    } catch (error) {
+      throw new Error(`Ollama story extraction failed: ${error}`)
+    }
+  }
+
+  private parseStoriesResponse(response: string): Array<{ title: string; content: string }> {
+    const stories: Array<{ title: string; content: string }> = []
+
+    // Split by STORY markers
+    const storyBlocks = response.split(/STORY \d+/i).filter(block => block.trim())
+
+    for (const block of storyBlocks) {
+      const titleMatch = block.match(/TITLE:\s*(.+?)(?:\n|CONTENT:)/is)
+      const contentMatch = block.match(/CONTENT:\s*(.+?)(?:\n\n|$)/is)
+
+      if (titleMatch && contentMatch) {
+        stories.push({
+          title: titleMatch[1].trim(),
+          content: contentMatch[1].trim(),
+        })
+      }
+    }
+
+    return stories
+  }
+
+  /**
+   * Validate extracted stories to detect hallucinations/errors
+   * Returns true if extraction looks valid, false if suspicious
+   */
+  private validateStoryExtraction(stories: Array<{ title: string; content: string }>): {
+    valid: boolean
+    reason?: string
+  } {
+    // Check 1: At least one story
+    if (stories.length === 0) {
+      return { valid: false, reason: 'No stories extracted' }
+    }
+
+    // NOTE: Story count is now validated against input in extractStories()
+    // No hard cap here anymore
+
+    // Check 2: Detect repetitive/duplicate titles (sign of hallucination)
+    const titleSimilarities = new Map<number, number>() // index -> count of similar titles
+
+    for (let i = 0; i < stories.length; i++) {
+      const title1 = stories[i]!.title.toLowerCase()
+      let similarCount = 0
+
+      for (let j = 0; j < stories.length; j++) {
+        if (i === j) continue
+        const title2 = stories[j]!.title.toLowerCase()
+
+        // Check for high similarity (starts with same words, or shares many words)
+        const words1 = title1.split(/\s+/).slice(0, 5) // First 5 words
+        const words2 = title2.split(/\s+/).slice(0, 5)
+        const overlap = words1.filter(w => words2.includes(w)).length
+
+        if (overlap >= 3) { // Lowered from 4 to catch "Man Survives...", "Man dies after..." patterns
+          similarCount++
+        }
+      }
+
+      titleSimilarities.set(i, similarCount)
+    }
+
+    // If more than 25% of titles are very similar, likely hallucination (lowered from 30%)
+    const maxSimilar = Math.max(...titleSimilarities.values())
+    if (maxSimilar > stories.length * 0.25) {
+      return {
+        valid: false,
+        reason: `Too many repetitive titles detected (${maxSimilar}/${stories.length}), likely hallucination`,
+      }
+    }
+
+    // Check 2b: Detect common title prefixes (hallucination pattern)
+    // Flag if: (1) 2 back-to-back with same prefix, OR (2) 3+ total with same prefix
+    const prefixCounts = new Map<string, number>()
+    const prefixes: string[] = []
+
+    for (const story of stories) {
+      const prefix = story.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ') // First 2 words
+      prefixes.push(prefix)
+      prefixCounts.set(prefix, (prefixCounts.get(prefix) || 0) + 1)
+    }
+
+    // Check for back-to-back duplicates
+    for (let i = 0; i < prefixes.length - 1; i++) {
+      if (prefixes[i] === prefixes[i + 1]) {
+        return {
+          valid: false,
+          reason: `Back-to-back duplicate titles with prefix "${prefixes[i]}" (positions ${i + 1}, ${i + 2}), likely hallucination`,
+        }
+      }
+    }
+
+    // Check for 3+ occurrences of same prefix
+    for (const [prefix, count] of prefixCounts.entries()) {
+      if (count >= 3) {
+        return {
+          valid: false,
+          reason: `Too many titles with same prefix "${prefix}" (${count} occurrences), likely hallucination`,
+        }
+      }
+    }
+
+    // Check 3: Detect if titles are suspiciously short/long
+    const avgTitleLength = stories.reduce((sum, s) => sum + s.title.length, 0) / stories.length
+    if (avgTitleLength < 10) {
+      return { valid: false, reason: 'Titles suspiciously short' }
+    }
+
+    // Check 4: Detect if content is suspiciously short (likely incomplete extraction)
+    const avgContentLength = stories.reduce((sum, s) => sum + s.content.length, 0) / stories.length
+    if (avgContentLength < 20) {
+      return { valid: false, reason: 'Story content too short, likely incomplete extraction' }
+    }
+
+    return { valid: true }
+  }
+
+  /**
+   * Score multiple article candidates for question generation potential
+   * Returns scores 0-100 with reasoning for each
+   */
+  async scoreArticleCandidates(
+    candidates: Array<{ id: string; title: string; summary: string }>
+  ): Promise<Array<{ id: string; score: number; reasoning: string }>> {
+    const prompt = `You are evaluating weird news articles for a trivia game called "Fake Facts".
+
+This is an ADULTS-ONLY game. Dark humor, sexual content, violence, and controversial topics are ENCOURAGED as long as they're funny.
+
+For each article, FIRST provide critical analysis, THEN score on multiple dimensions.
+
+GOOD candidates have:
+✓ Oddly SPECIFIC details (numbers, names, objects, animals, locations)
+✓ Multiple comedy angles
+✓ Open-ended facts (blank can be filled multiple ways)
+✓ Little-known, unexpected facts
+✓ Inherently funny or absurd
+✓ Dark humor (death, violence, sex, drugs, crime - all fair game if funny!)
+
+BAD candidates have:
+✗ Generic or vague (no specific details)
+✗ Well-known people or events
+✗ Depressing/sad without ANY humor
+✗ Too simple or obvious
+
+CRITICAL: Do NOT penalize articles for adult/dark content. "A man was arrested for [sexual act]" or "Woman killed [bizarre thing]" are GREAT if they have specific, absurd details. The game embraces dark comedy.
+
+Articles to score:
+${candidates.map((c, i) => `
+[${i + 1}] ${c.title}
+Summary: ${c.summary}
+`).join('\n')}
+
+For EACH article, respond in this EXACT format:
+
+ARTICLE 1
+ANALYSIS: <1-2 sentences of critical analysis - what makes this good/bad for trivia?>
+SCORES:
+{
+  "specificity": <0-100, how specific/concrete are the details?>,
+  "surprise": <0-100, how unexpected/surprising is this?>,
+  "openEndedness": <0-100, how many ways could a blank be filled?>,
+  "humor": <0-100, how funny/absurd is this?>,
+  "overall": <0-100, overall score for question generation potential>
+}
+
+ARTICLE 2
+ANALYSIS: <1-2 sentences of critical analysis>
+SCORES:
+{
+  "specificity": <0-100>,
+  "surprise": <0-100>,
+  "openEndedness": <0-100>,
+  "humor": <0-100>,
+  "overall": <0-100>
+}
+
+(continue for all articles)`
+
+    try {
+      console.log('\n' + '='.repeat(80))
+      console.log('🤖 OLLAMA SCORING REQUEST')
+      console.log('='.repeat(80))
+      console.log('Model:', this.config.model)
+      console.log('Temperature:', 0.35)
+      console.log('Max Tokens:', 3000)
+      console.log('\nPrompt:')
+      console.log(prompt)
+      console.log('='.repeat(80) + '\n')
+
+      const response = await this.client.generate({
+        model: this.config.model,
+        prompt,
+        options: {
+          temperature: 0.35,
+          num_predict: 3000,
+        },
+      })
+
+      console.log('\n' + '='.repeat(80))
+      console.log('📥 OLLAMA SCORING RESPONSE')
+      console.log('='.repeat(80))
+      console.log(response.response)
+      console.log('='.repeat(80) + '\n')
+
+      return this.parseArticleScores(response.response, candidates)
+    } catch (error) {
+      console.error('\n❌ OLLAMA SCORING ERROR:', error)
+      throw new Error(`Ollama candidate scoring failed: ${error}`)
+    }
+  }
+
+  private parseArticleScores(
+    response: string,
+    candidates: Array<{ id: string }>
+  ): Array<{ id: string; score: number; reasoning: string }> {
+    const scores: Array<{ id: string; score: number; reasoning: string }> = []
+    const articleBlocks = response.split(/ARTICLE \d+/i).filter(b => b.trim())
+
+    for (let i = 0; i < Math.min(articleBlocks.length, candidates.length); i++) {
+      const block = articleBlocks[i]!
+      const candidate = candidates[i]!
+
+      // Extract analysis
+      const analysisMatch = block.match(/ANALYSIS:\s*(.+?)(?=SCORES:|$)/is)
+      const analysis = analysisMatch?.[1]?.trim() || 'No analysis provided'
+
+      // Extract JSON scores
+      const scoresMatch = block.match(/SCORES:\s*(\{[\s\S]*?\})/i)
+      let overallScore = 0
+
+      if (scoresMatch) {
+        try {
+          // Clean up the JSON (remove comments)
+          const jsonStr = scoresMatch[1]!.replace(/,\s*\/\/[^\n]*/g, '').replace(/\/\/[^\n]*/g, '')
+          const scoreObj = JSON.parse(jsonStr)
+          overallScore = scoreObj.overall || 0
+        } catch {
+          // Fallback: try to find overall score directly
+          const overallMatch = block.match(/"overall":\s*(\d+)/i)
+          overallScore = overallMatch ? parseInt(overallMatch[1]!, 10) : 0
+        }
+      }
+
+      scores.push({
+        id: candidate.id,
+        score: overallScore,
+        reasoning: analysis,
+      })
+    }
+
+    return scores
+  }
+
+  /**
+   * Judge two questions head-to-head, pick the better one
+   */
+  async judgeQuestions(
+    question1: { question: string; correctAnswer: string; houseAnswers: string[] },
+    question2: { question: string; correctAnswer: string; houseAnswers: string[] }
+  ): Promise<{ winner: 1 | 2; reasoning: string }> {
+    const prompt = `You are judging two trivia questions for "Fake Facts" game.
+
+This is an ADULTS-ONLY game. Dark humor, sexual content, violence, and controversial topics are ENCOURAGED as long as they're funny.
+
+FIRST critically analyze EACH question. THEN score each on multiple dimensions. FINALLY pick the winner.
+
+Criteria for a GREAT question:
+✓ SPECIFIC and concrete (not vague)
+✓ SURPRISING and unexpected
+✓ Open-ended (multiple plausible answers)
+✓ Funny/absurd (dark humor is GOOD - death, sex, violence, drugs all fair game!)
+✓ Clear and easy to understand
+✓ House answers are creative, funny, AND grammatically correct
+
+CRITICAL: Do NOT penalize questions for adult/dark content. Questions about death, sex, violence, drugs, crime, etc. are ENCOURAGED if they're funny and specific. This is comedy for adults.
+
+CRITICAL: All house answers MUST be grammatically compatible with the question.
+Examples:
+- Question: "In Texas, a man was arrested for stealing _____"
+  ✓ GOOD: "a fire truck" (article included, grammatically fits)
+  ✗ BAD: "fire truck" (missing article "a", grammatically wrong)
+
+- Question: "In 2024, researchers discovered that _____ can recognize themselves in mirrors"
+  ✓ GOOD: "dolphins" (plural, fits)
+  ✗ BAD: "a dolphin" (singular doesn't fit with "themselves")
+
+Question 1:
+Q: ${question1.question}
+Correct: ${question1.correctAnswer}
+House: ${question1.houseAnswers.join(', ')}
+
+Question 2:
+Q: ${question2.question}
+Correct: ${question2.correctAnswer}
+House: ${question2.houseAnswers.join(', ')}
+
+Respond in this EXACT format:
+
+QUESTION 1 ANALYSIS:
+<2-3 sentences critically analyzing this question - strengths, weaknesses, grammar issues>
+
+QUESTION 1 SCORES:
+{
+  "specificity": <0-100, how specific/concrete?>,
+  "surprise": <0-100, how unexpected/surprising?>,
+  "openEndedness": <0-100, how many plausible answers?>,
+  "humor": <0-100, how funny/absurd?>,
+  "clarity": <0-100, how clear/easy to understand?>,
+  "houseAnswerQuality": <0-100, are house answers creative AND grammatically correct?>,
+  "overall": <0-100, overall quality>
+}
+
+QUESTION 2 ANALYSIS:
+<2-3 sentences critically analyzing this question>
+
+QUESTION 2 SCORES:
+{
+  "specificity": <0-100>,
+  "surprise": <0-100>,
+  "openEndedness": <0-100>,
+  "humor": <0-100>,
+  "clarity": <0-100>,
+  "houseAnswerQuality": <0-100>,
+  "overall": <0-100>
+}
+
+WINNER: 1 or 2
+REASONING: <2-3 sentences explaining why based on the scores above>`
+
+    try {
+      console.log('\n' + '='.repeat(80))
+      console.log('⚖️  OLLAMA JUDGING REQUEST')
+      console.log('='.repeat(80))
+      console.log('Model:', this.config.model)
+      console.log('Temperature:', 0.35)
+      console.log('Max Tokens:', 1500)
+      console.log('\nPrompt:')
+      console.log(prompt)
+      console.log('='.repeat(80) + '\n')
+
+      const response = await this.client.generate({
+        model: this.config.model,
+        prompt,
+        options: {
+          temperature: 0.35,
+          num_predict: 1500,
+        },
+      })
+
+      console.log('\n' + '='.repeat(80))
+      console.log('📥 OLLAMA JUDGING RESPONSE')
+      console.log('='.repeat(80))
+      console.log(response.response)
+      console.log('='.repeat(80) + '\n')
+
+      return this.parseQuestionJudgment(response.response)
+    } catch (error) {
+      console.error('\n❌ OLLAMA JUDGING ERROR:', error)
+      throw new Error(`Ollama question judging failed: ${error}`)
+    }
+  }
+
+  private parseQuestionJudgment(response: string): { winner: 1 | 2; reasoning: string } {
+    // Extract analyses
+    const q1AnalysisMatch = response.match(/QUESTION 1 ANALYSIS:\s*(.+?)(?=QUESTION 1 SCORES:|$)/is)
+    const q2AnalysisMatch = response.match(/QUESTION 2 ANALYSIS:\s*(.+?)(?=QUESTION 2 SCORES:|$)/is)
+
+    // Extract scores to determine winner based on overall scores
+    const q1ScoresMatch = response.match(/QUESTION 1 SCORES:\s*(\{[\s\S]*?\})/i)
+    const q2ScoresMatch = response.match(/QUESTION 2 SCORES:\s*(\{[\s\S]*?\})/i)
+
+    let q1Overall = 0
+    let q2Overall = 0
+
+    if (q1ScoresMatch) {
+      try {
+        const jsonStr = q1ScoresMatch[1]!.replace(/,\s*\/\/[^\n]*/g, '').replace(/\/\/[^\n]*/g, '')
+        const scoreObj = JSON.parse(jsonStr)
+        q1Overall = scoreObj.overall || 0
+      } catch {
+        const overallMatch = q1ScoresMatch[1]!.match(/"overall":\s*(\d+)/i)
+        q1Overall = overallMatch ? parseInt(overallMatch[1]!, 10) : 0
+      }
+    }
+
+    if (q2ScoresMatch) {
+      try {
+        const jsonStr = q2ScoresMatch[1]!.replace(/,\s*\/\/[^\n]*/g, '').replace(/\/\/[^\n]*/g, '')
+        const scoreObj = JSON.parse(jsonStr)
+        q2Overall = scoreObj.overall || 0
+      } catch {
+        const overallMatch = q2ScoresMatch[1]!.match(/"overall":\s*(\d+)/i)
+        q2Overall = overallMatch ? parseInt(overallMatch[1]!, 10) : 0
+      }
+    }
+
+    // Extract explicit winner
+    const winnerMatch = response.match(/WINNER:\s*([12])/i)
+    const explicitWinner = winnerMatch?.[1] === '2' ? 2 : 1
+
+    // Use explicit winner, but validate against scores
+    let winner: 1 | 2 = explicitWinner
+
+    // If scores strongly disagree with explicit winner, use score-based winner
+    if (Math.abs(q1Overall - q2Overall) > 20) {
+      const scoreBasedWinner = q2Overall > q1Overall ? 2 : 1
+      if (scoreBasedWinner !== explicitWinner) {
+        // Trust the scores more than the explicit winner if they strongly disagree
+        winner = scoreBasedWinner
+      }
+    }
+
+    // Extract reasoning
+    const reasoningMatch = response.match(/REASONING:\s*(.+?)$/is)
+    const explicitReasoning = reasoningMatch?.[1]?.trim()
+
+    // Build comprehensive reasoning from analyses and explicit reasoning
+    const q1Analysis = q1AnalysisMatch?.[1]?.trim() || ''
+    const q2Analysis = q2AnalysisMatch?.[1]?.trim() || ''
+
+    let reasoning = ''
+    if (explicitReasoning) {
+      reasoning = explicitReasoning
+    } else {
+      // Fallback: use analysis of winner
+      reasoning = winner === 1 ? q1Analysis : q2Analysis
+    }
+
+    if (!reasoning) {
+      reasoning = `Winner scored ${winner === 1 ? q1Overall : q2Overall} vs ${winner === 1 ? q2Overall : q1Overall}`
+    }
+
+    return { winner, reasoning }
+  }
+
+  /**
    * Evaluate if article is a good candidate for Fake Facts questions
    */
   async evaluateCandidate(title: string, summary: string): Promise<CandidateEvaluation> {

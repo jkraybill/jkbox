@@ -270,6 +270,17 @@ export class DatabaseQueries {
   }
 
   /**
+   * Check if article exists by source URL
+   */
+  async articleExistsByUrl(sourceUrl: string): Promise<boolean> {
+    const result = await this.pool.query(
+      'SELECT EXISTS(SELECT 1 FROM articles WHERE source_url = $1) as exists',
+      [sourceUrl]
+    )
+    return result.rows[0]?.exists ?? false
+  }
+
+  /**
    * Get articles by source
    */
   async getArticlesBySource(
@@ -371,17 +382,32 @@ export class DatabaseQueries {
 
   /**
    * Get unprocessed articles for Fake Facts generation
+   * Sorted by last_considered (nulls first), then random
    */
   async getUnprocessedArticles(limit: number = 10): Promise<Article[]> {
     const result = await this.pool.query(
       `SELECT * FROM articles
        WHERE (fake_facts_processed = false OR fake_facts_processed IS NULL)
        AND is_weird = true
-       ORDER BY pub_date DESC
+       ORDER BY last_considered ASC NULLS FIRST, RANDOM()
        LIMIT $1`,
       [limit]
     )
     return result.rows.map(this.mapArticleRow)
+  }
+
+  /**
+   * Update last_considered timestamp for multiple articles
+   */
+  async updateLastConsidered(articleIds: string[]): Promise<void> {
+    if (articleIds.length === 0) return
+
+    await this.pool.query(
+      `UPDATE articles
+       SET last_considered = NOW()
+       WHERE id = ANY($1::uuid[])`,
+      [articleIds]
+    )
   }
 
   /**

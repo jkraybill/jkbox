@@ -77,16 +77,75 @@ export class ClaudeService {
   }
 
   /**
-   * Generate a blanked-out question from article title and summary
+   * Generate a blanked-out question from article title and content
    */
   async generateQuestion(
     title: string,
-    summary: string
-  ): Promise<QuestionGenerationResult> {
+    content: string
+  ): Promise<QuestionGenerationResult & { cost: number }> {
     const prompt = `Given this weird news article, create a fun trivia question with a blanked-out word or phrase.
 
 Article Title: "${title}"
-Summary: ${summary}
+Article Content: ${content}
+
+=== CRITICAL: STICK TO THE FACTS ===
+
+EVERY FACT in your question and answer MUST come directly from the article content above.
+
+DO NOT:
+- Invent details not in the article
+- Change facts or paraphrase in ways that alter meaning
+- Generalize specific details ("lawn mower" → "equipment")
+- Add your own interpretation
+
+=== HANDLING LONG LISTS: SUBSETS ARE ENCOURAGED ===
+
+If the article contains a long list (3+ items), you have two good options:
+
+OPTION 1: Use a SUBSET (pick the most interesting/surprising item)
+- Article: "threatened punishment for those who shave like Elvis Presley, Sylvester Stallone, and the U.S. Marines"
+- ✅ GOOD: "In 1996, a Somali court threatened to punish men who shave like which famous musician?"
+  Answer: "Elvis Presley"
+  → Reworked question to imply selection from larger set, takes most surprising item
+
+- Article: "The park banned dogs, bicycles, and skateboards"
+- ✅ GOOD: "What wheeled item did the park ban?"
+  Answer: "skateboards" (or "bicycles")
+  → Question implies there are other banned items, selects one
+
+OPTION 2: Use fill-in-the-blank for list completion (only if comedically strong)
+- Article: "arrested with cocaine, heroin, and a live alligator"
+- ✅ GOOD: "Police found cocaine, heroin, and _____ in his car"
+  Answer: "a live alligator"
+  → Works because the punchline item is absurd
+
+❌ AVOID: Including full long lists in answers
+- "Elvis Presley, Sylvester Stallone, and the U.S. Marines" (7 words - too long!)
+
+When using subsets, REWORD the question to imply it's a selection from a larger set:
+- "which celebrity did X mention?"
+- "what animal did the zoo report missing?"
+- "which item was found in the suspect's car?"
+
+This makes it clear you're asking about ONE thing, not omitting facts.
+
+=== NEVER GENERALIZE OR VAGUE-IFY ===
+
+- Article: "arrested for stealing a lawn mower"
+  ✅ GOOD: "arrested for stealing a lawn mower"
+  ❌ BAD: "arrested for stealing lawn equipment" (too general!)
+
+- Article: "claimed she saw Bigfoot"
+  ✅ GOOD: "claimed she saw Bigfoot"
+  ❌ BAD: "claimed she saw a mysterious creature" (lost the specific detail!)
+
+- Article: "built a 12-foot statue made of cheese"
+  ✅ GOOD: "a 12-foot cheese statue"
+  ❌ BAD: "a giant cheese sculpture" (lost the 12-foot detail!)
+
+Keep specific numbers, specific names, specific objects. Don't genericize.
+
+VERIFY: Re-read the article to confirm your answer is factually present (exact match or legitimate subset).
 
 === CRITICAL: OPEN-ENDEDNESS IS EVERYTHING ===
 
@@ -144,10 +203,19 @@ If the article is about a celebrity or famous person (Trump, Obama, Elon, etc.),
 
 === SPACETIME CONTEXT ===
 
-Include location and/or time:
+CRITICAL: Include location and/or time to avoid temporal confusion.
+
+For HISTORICAL EVENTS or PAST CURRENT EVENTS, the YEAR is MANDATORY:
+- ❌ BAD: "In August, a man climbed a tower demanding to be Bob Dole's running mate"
+  → Extremely misleading! This was 1996, not recent.
+- ✅ GOOD: "In August 1996, a man climbed a tower demanding to be Bob Dole's running mate"
+
+For RECENT EVENTS (within 2 years), month/season is fine:
 - "In 2024, a Norwegian tourist..."
-- "In Rome, an American tourist..."
 - "Last winter in Texas..."
+- "In Rome last March..."
+
+When in doubt, INCLUDE THE YEAR. It's better to over-specify than mislead players about when something happened.
 
 === GRAMMAR & ARTICLES ===
 
@@ -237,11 +305,14 @@ Generate the question now:`
     // Parse JSON response
     try {
       const result = this.extractJSON(text) as any
+      const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+
       return {
         question: result.question,
         realAnswer: result.realAnswer,
         blank: result.blank,
         postscript: result.postscript,
+        cost,
       }
     } catch (error) {
       throw new Error(`Failed to parse Claude response as JSON: ${text}`)
@@ -253,11 +324,11 @@ Generate the question now:`
    */
   async generateHouseAnswers(
     title: string,
-    summary: string,
+    content: string,
     question: string,
     realAnswer: string,
     sampleRealAnswers?: string[]
-  ): Promise<HouseAnswersResult> {
+  ): Promise<HouseAnswersResult & { cost: number }> {
     const samplesSection = sampleRealAnswers && sampleRealAnswers.length > 0
       ? `\nStyle Examples (from other real answers in our database):
 ${sampleRealAnswers.map(a => `- "${a}"`).join('\n')}
@@ -268,10 +339,36 @@ Notice how these are concise and direct, without unnecessary adjectives.\n`
     const prompt = `Generate 5 plausible but wrong answers for this trivia question.
 
 Article Title: "${title}"
-Summary: ${summary}
+Article Content: ${content}
 Question: "${question}"
 Real Answer: "${realAnswer}"
 ${samplesSection}
+
+=== CRITICAL: HOUSE ANSWERS MUST BE WRONG ===
+
+House answers must be WRONG - they cannot match the real answer.
+
+If the real answer is a SUBSET of a larger list in the article, house answers CAN use other items from that list:
+
+Example 1 - Subset question:
+Article: "threatened punishment for those who shave like Elvis Presley, Sylvester Stallone, and the U.S. Marines"
+Question: "In 1996, a Somali court threatened to punish men who shave like which famous musician?"
+Real Answer: "Elvis Presley"
+
+✅ GOOD House Answers:
+- "Sylvester Stallone" (other item from the list - wrong answer to THIS question)
+- "Michael Jackson"
+- "Frank Sinatra"
+- "the Village People"
+- "Freddie Mercury"
+
+Example 2 - Full answer (not subset):
+Real Answer: "a lawn mower"
+
+❌ BAD House Answer: "a lawn mower" (identical!)
+✅ GOOD House Answers: "a bicycle", "hedge trimmers", "a riding mower"
+
+The key rule: House answer ≠ Real answer. If the question is asking for a subset/selection, other items from the source list are fair game as wrong answers.
 
 === CRITICAL: VALIDATE BY WRITING OUT COMPLETE FILLED-IN SENTENCES ===
 
@@ -354,6 +451,8 @@ Testing "a vintage watch":
 
 === BE WEIRD + FUNNY, NOT JUST "PLAUSIBLE" ===
 
+This is an ADULTS-ONLY game. Dark humor, sexual content, violence, drugs, crime - all ENCOURAGED as long as it's funny.
+
 House answers must be entertaining, not just category-appropriate.
 
 Question: "In 2024, a Norwegian tourist was denied US entry after border control found _____ on his phone"
@@ -364,12 +463,13 @@ Real Answer: "a JD Vance meme"
 - "satirical AI-generated content" (corporate speak, boring)
 
 ✅ GREAT house answers:
-- "clown porn" (absurd, funny, weird)
+- "clown porn" (absurd, funny, weird, adult content is GOOD)
 - "pictures of flour" (random, weird, funny)
 - "a wasp nest" (what?? perfect absurdity)
-- "semen" (dark humor, surprising)
+- "semen" (dark humor, surprising, sexual content is GOOD)
+- "decapitation videos" (dark but absurd in context)
 
-The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories".
+The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories". Dark/sexual/violent humor is ENCOURAGED.
 
 === KEEP ANSWERS SHORT & PUNCHY ===
 
@@ -519,8 +619,11 @@ Generate the 5 house answers now (and validate each one by writing out the compl
     // Parse JSON response
     try {
       const result = this.extractJSON(text) as any
+      const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+
       return {
         houseAnswers: result.houseAnswers,
+        cost,
       }
     } catch (error) {
       throw new Error(`Failed to parse Claude response as JSON: ${text}`)
@@ -528,12 +631,163 @@ Generate the 5 house answers now (and validate each one by writing out the compl
   }
 
   /**
-   * Get approximate cost for a response
+   * Score article candidates (for bakeoff comparison with Ollama)
+   */
+  async scoreArticleCandidates(
+    candidates: Array<{ id: string; title: string; summary: string }>
+  ): Promise<{ scores: Array<{ id: string; score: number; reasoning: string }>; cost: number }> {
+    const prompt = `You are evaluating weird news articles for a trivia game called "Fake Facts".
+
+This is an ADULTS-ONLY game. Dark humor, sexual content, violence, and controversial topics are ENCOURAGED as long as they're funny.
+
+For each article, FIRST provide critical analysis, THEN score on multiple dimensions.
+
+GOOD candidates have:
+✓ Oddly SPECIFIC details (numbers, names, objects, animals, locations)
+✓ Multiple comedy angles
+✓ Open-ended facts (blank can be filled multiple ways)
+✓ Little-known, unexpected facts
+✓ Inherently funny or absurd
+✓ Dark humor (death, violence, sex, drugs, crime - all fair game if funny!)
+
+BAD candidates have:
+✗ Generic or vague (no specific details)
+✗ Well-known people or events
+✗ Depressing/sad without ANY humor
+✗ Too simple or obvious
+
+CRITICAL: Do NOT penalize articles for adult/dark content. The game embraces dark comedy.
+
+Articles to score:
+${candidates.map((c, i) => `
+[${i + 1}] ${c.title}
+Summary: ${c.summary}
+`).join('\n')}
+
+For EACH article, respond in this EXACT format:
+
+ARTICLE 1
+ANALYSIS: <1-2 sentences of critical analysis>
+SCORES:
+{
+  "specificity": <0-100>,
+  "surprise": <0-100>,
+  "openEndedness": <0-100>,
+  "humor": <0-100>,
+  "overall": <0-100>
+}
+
+ARTICLE 2
+ANALYSIS: <1-2 sentences>
+SCORES:
+{
+  "specificity": <0-100>,
+  "surprise": <0-100>,
+  "openEndedness": <0-100>,
+  "humor": <0-100>,
+  "overall": <0-100>
+}
+
+(continue for all articles)`
+
+    console.log('\n' + '='.repeat(80))
+    console.log('🧠 CLAUDE SCORING REQUEST')
+    console.log('='.repeat(80))
+    console.log('Model:', this.config.model)
+    console.log('Temperature:', 0.35)
+    console.log('Max Tokens:', 3000)
+    console.log('\nPrompt:')
+    console.log(prompt)
+    console.log('='.repeat(80) + '\n')
+
+    const response = await this.client.messages.create({
+      model: this.config.model,
+      max_tokens: 3000,
+      temperature: 0.35,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+    console.log('\n' + '='.repeat(80))
+    console.log('📥 CLAUDE SCORING RESPONSE')
+    console.log('='.repeat(80))
+    console.log(text)
+    console.log('='.repeat(80) + '\n')
+
+    // Parse scores
+    const scores: Array<{ id: string; score: number; reasoning: string }> = []
+
+    const articleBlocks = text.split(/ARTICLE \d+/).filter(b => b.trim())
+
+    for (let i = 0; i < articleBlocks.length && i < candidates.length; i++) {
+      const block = articleBlocks[i]!
+      const candidate = candidates[i]!
+
+      // Extract analysis
+      const analysisMatch = block.match(/ANALYSIS:\s*(.+?)(?=SCORES:|$)/is)
+      const reasoning = analysisMatch?.[1]?.trim() || 'No analysis provided'
+
+      // Extract overall score from JSON
+      let overallScore = 0
+      const scoresMatch = block.match(/SCORES:\s*(\{[\s\S]*?\})/i)
+      if (scoresMatch) {
+        try {
+          const jsonStr = scoresMatch[1]!
+            .replace(/,\s*\/\/[^\n]*/g, '')
+            .replace(/\/\/[^\n]*/g, '')
+          const scoreObj = JSON.parse(jsonStr)
+          overallScore = scoreObj.overall || 0
+        } catch {
+          // Fallback: regex
+          const overallMatch = block.match(/"overall":\s*(\d+)/i)
+          overallScore = overallMatch ? parseInt(overallMatch[1]!, 10) : 0
+        }
+      }
+
+      scores.push({
+        id: candidate.id,
+        score: overallScore,
+        reasoning,
+      })
+    }
+
+    // Calculate cost
+    const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+
+    return { scores, cost }
+  }
+
+  /**
+   * Get cost for a response based on the model being used
    */
   calculateCost(inputTokens: number, outputTokens: number): number {
-    // Claude 3.5 Haiku pricing: $0.25/MTok input, $1.25/MTok output
-    const INPUT_COST_PER_MILLION = 0.25
-    const OUTPUT_COST_PER_MILLION = 1.25
+    // Pricing per million tokens based on model
+    let INPUT_COST_PER_MILLION: number
+    let OUTPUT_COST_PER_MILLION: number
+
+    if (this.config.model.includes('haiku')) {
+      // Claude 3.5 Haiku pricing
+      INPUT_COST_PER_MILLION = 0.25
+      OUTPUT_COST_PER_MILLION = 1.25
+    } else if (this.config.model.includes('sonnet')) {
+      // Claude 3.5 Sonnet / Sonnet 4.5 pricing
+      INPUT_COST_PER_MILLION = 3.00
+      OUTPUT_COST_PER_MILLION = 15.00
+    } else if (this.config.model.includes('opus')) {
+      // Claude 3 Opus pricing
+      INPUT_COST_PER_MILLION = 15.00
+      OUTPUT_COST_PER_MILLION = 75.00
+    } else {
+      // Default to Sonnet pricing (safest assumption)
+      INPUT_COST_PER_MILLION = 3.00
+      OUTPUT_COST_PER_MILLION = 15.00
+    }
 
     const inputCost = (inputTokens / 1_000_000) * INPUT_COST_PER_MILLION
     const outputCost = (outputTokens / 1_000_000) * OUTPUT_COST_PER_MILLION
