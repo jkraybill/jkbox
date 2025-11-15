@@ -3,7 +3,6 @@ import 'dotenv/config'
 import { Command } from 'commander'
 import { Pool } from 'pg'
 import chalk from 'chalk'
-import cliProgress from 'cli-progress'
 import { LocalLLM } from '../llm/local-llm'
 import type { LocalLLMConfig } from '../llm/types'
 import { readFileSync } from 'fs'
@@ -85,15 +84,6 @@ async function main() {
 
     const articles = articlesResult.rows
 
-    // Progress bar
-    const progressBar = new cliProgress.SingleBar({
-      format: 'Progress |' + chalk.cyan('{bar}') + '| {percentage}% | {value}/{total} | {status}',
-      barCompleteChar: '\u2588',
-      barIncompleteChar: '\u2591',
-    })
-
-    progressBar.start(articles.length, 0, { status: 'Starting...' })
-
     let weirdCount = 0
     let notWeirdCount = 0
     let errorCount = 0
@@ -105,6 +95,8 @@ async function main() {
       const batch = articles.slice(i, Math.min(i + batchSize, articles.length))
 
       for (const article of batch) {
+        const articleNum = i + batch.indexOf(article) + 1
+
         try {
           const description = article.description || ''
           const result = await ollama.classify(article.title, description)
@@ -124,19 +116,33 @@ async function main() {
             notWeirdCount++
           }
 
-          progressBar.increment(1, {
-            status: result.isWeird ? chalk.green('Weird') : chalk.gray('Normal'),
-          })
+          // Show detailed output for each article
+          const verdictColor = result.isWeird ? chalk.green : chalk.gray
+          const verdictText = result.isWeird ? 'WEIRD' : 'NOT WEIRD'
+          const titleTruncated = article.title.length > 80
+            ? article.title.substring(0, 77) + '...'
+            : article.title
+
+          console.log(
+            chalk.blue(`[${articleNum}/${articles.length}]`) + ' ' +
+            chalk.white(titleTruncated) + ' - ' +
+            verdictColor(verdictText) + ' - ' +
+            chalk.yellow(`${result.confidence}%`)
+          )
         } catch (error) {
           errorCount++
-          progressBar.increment(1, {
-            status: chalk.red('Error'),
-          })
+          const titleTruncated = article.title.length > 80
+            ? article.title.substring(0, 77) + '...'
+            : article.title
+
+          console.log(
+            chalk.blue(`[${articleNum}/${articles.length}]`) + ' ' +
+            chalk.white(titleTruncated) + ' - ' +
+            chalk.red('ERROR')
+          )
         }
       }
     }
-
-    progressBar.stop()
 
     console.log(chalk.blue('\n📊 Classification Results:\n'))
     console.log(chalk.green(`  Weird: ${weirdCount}`))
