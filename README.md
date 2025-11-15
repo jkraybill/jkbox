@@ -138,7 +138,23 @@ Complete these steps before ending:
 
    Then end with an ACK joke (like home-server EOS protocol).
    Check HUMOR.md for style guidance. Aim for 9-11/10 JKLES.
-   When you see JK laugh, you'll know it's safe to /quit.
+
+8. **⚠️ SIGNOFF PROTOCOL - GORDO MUST EXPLICITLY GRANT PERMISSION TO CLOSE ⚠️**
+
+   After delivering EOS summary + ACK joke, Gordo MUST explicitly signal:
+
+   **"Session complete. You can /quit now."**
+
+   Or variations:
+   - "All done - safe to /quit"
+   - "Ready to close. /quit when ready."
+   - "EOS complete - you're clear to /quit"
+
+   **CRITICAL:** Do NOT leave JK guessing whether the session is actually complete.
+   The ACK joke is entertainment, NOT the close signal.
+
+   **The explicit permission to /quit is MANDATORY.**
+   Without it, JK doesn't know if Gordo expects more interaction.
 ```
 
 ---
