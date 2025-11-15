@@ -141,7 +141,7 @@ export class FakeFactsOrchestrator {
         questionText: questionResult.question,
         blankText: questionResult.blank,
         postscript: questionResult.postscript,
-        generatorModel: 'claude-3-5-haiku-20241022',
+        generatorModel: this.claude.getModel(),
         generationCost: 0.003, // Approximate, could be calculated from tokens
       }
 
@@ -164,7 +164,7 @@ export class FakeFactsOrchestrator {
           answerText: text,
           isReal: false,
           answerOrder: index + 1,
-          generatorModel: 'claude-3-5-haiku-20241022',
+          generatorModel: this.claude.getModel(),
         })
       )
 

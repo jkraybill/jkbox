@@ -37,6 +37,13 @@ export class ClaudeService {
   }
 
   /**
+   * Get the model name being used
+   */
+  getModel(): string {
+    return this.config.model
+  }
+
+  /**
    * Extract JSON from text that might have explanatory text after the JSON
    */
   private extractJSON(text: string): unknown {
