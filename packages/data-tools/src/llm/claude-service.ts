@@ -549,8 +549,16 @@ The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories". Dark/se
 
 CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 
+Players will type what they THINK, not verbose descriptions. Optimize for matching!
+
+❌ BAD: "a can of hair spray" → Players type "hairspray" or "hair spray", NEVER "a can of hair spray"
+✅ GOOD: "hair spray" or "hairspray" (what players actually type)
+
 ❌ BAD: "the coordinates to Jimmy Hoffa's burial site" (7 words!)
 ✅ GOOD: "Jimmy Hoffa's coordinates" (3 words)
+
+❌ BAD: "a bottle of whiskey" → Players type "whiskey"
+✅ GOOD: "whiskey"
 
 ❌ BAD: "the combination to her therapist's safe" (6 words!)
 ✅ GOOD: "her therapist's safe combo" (4 words) or "her safe combination" (3 words)
@@ -564,7 +572,9 @@ CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 ❌ BAD: "vintage lawnmower"
 ✅ GOOD: "lawnmower"
 
-If the real answer is long, match its length/style. But aim for PUNCHY and CONCISE.
+RULE: If the article mentions "a can of X", the answer is just "X" (or "a can" if that's the surprising part).
+
+If the real answer is long, match its length/style. But aim for PUNCHY and CONCISE and MATCHABLE.
 
 === VARIETY IS CRITICAL ===
 
@@ -713,20 +723,29 @@ Generate the 5 house answers now (and validate each one by writing out the compl
         if (match[1]) acceptedAnswers.push(match[1])
       }
 
-      // Pattern 2: **Testing "answer":** ... ✓ (or ✅)
+      // Pattern 2: ## Testing House Answer N: "answer" ... ✅ **Grammar check:** (new format)
       if (acceptedAnswers.length < 5) {
-        acceptedAnswers.length = 0 // Reset if first pattern didn't get all 5
-        const pattern2 = /\*\*Testing "([^"]+)":\*\*[\s\S]*?→ ✓/g
+        acceptedAnswers.length = 0
+        const pattern2 = /## Testing House Answer \d+: "([^"]+)"[\s\S]*?✅ \*\*Grammar check:\*\*/g
         while ((match = pattern2.exec(text)) !== null) {
           if (match[1]) acceptedAnswers.push(match[1])
         }
       }
 
-      // Pattern 3: Look for any quoted answers followed by acceptance indicators
+      // Pattern 3: **Testing "answer":** ... ✓ or → ✓
       if (acceptedAnswers.length < 5) {
         acceptedAnswers.length = 0
-        const pattern3 = /"([^"]+)"[\s\S]{0,200}?(?:✅|✓)[\s\S]{0,50}?(?:ACCEPT|Grammar: Correct)/gi
+        const pattern3 = /\*\*Testing "([^"]+)":\*\*[\s\S]*?(?:→ )?✓/g
         while ((match = pattern3.exec(text)) !== null) {
+          if (match[1]) acceptedAnswers.push(match[1])
+        }
+      }
+
+      // Pattern 4: Fuzzy - Look for any quoted answers followed by acceptance indicators
+      if (acceptedAnswers.length < 5) {
+        acceptedAnswers.length = 0
+        const pattern4 = /"([^"]+)"[\s\S]{0,200}?(?:✅|✓)[\s\S]{0,50}?(?:ACCEPT|Grammar|check)/gi
+        while ((match = pattern4.exec(text)) !== null) {
           const answer = match[1]!
           // Filter out noise (questions, reasoning text)
           if (answer.length < 50 && !answer.includes('In 19') && !answer.includes('citing')) {
