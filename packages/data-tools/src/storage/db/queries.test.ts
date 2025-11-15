@@ -497,6 +497,28 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
     })
 
     it('should prioritize articles with null last_considered first', async () => {
+      // Insert article with NULL last_considered
+      const article1: ArticleInsert = {
+        sourceType: 'rss',
+        sourceId: 'test-feed',
+        sourceUrl: 'https://example.com/feed-null.xml',
+        title: 'Article with NULL last_considered',
+        description: 'Never considered',
+        content: null,
+        link: 'https://example.com/null',
+        author: null,
+        pubDate: new Date(),
+        collectedAt: new Date(),
+        isWeird: true,
+        weirdConfidence: 90,
+        categories: [],
+        engagementScore: null,
+        qualityScore: null,
+        language: 'en',
+        country: null,
+        contentHash: null,
+      }
+
       // Insert articles with different last_considered values
       const article2: ArticleInsert = {
         sourceType: 'rss',
@@ -540,14 +562,13 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         contentHash: null,
       }
 
+      const nullId = await db.insertArticle(article1) as string
       const oldId = await db.insertArticle(article2) as string
       const recentId = await db.insertArticle(article3) as string
 
-      // Set last_considered timestamps
+      // Set last_considered timestamps (article1 remains NULL)
       await pool.query(`UPDATE articles SET last_considered = NOW() - INTERVAL '2 days' WHERE id = $1`, [oldId])
       await pool.query(`UPDATE articles SET last_considered = NOW() - INTERVAL '1 hour' WHERE id = $1`, [recentId])
-
-      // testArticleId has NULL last_considered
 
       const unprocessed = await db.getUnprocessedArticles(10)
 

@@ -72,20 +72,39 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         country: 'US',
         contentHash: null,
         articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
-        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       const insertedCount = await db.insertArticles(articles)
       expect(insertedCount).toBe(15) // Verify all articles were inserted
 
-      // Debug: Check if articles are actually queryable
-      const unprocessed = await db.getUnprocessedArticles(20)
-      console.log(`DEBUG: Found ${unprocessed.length} unprocessed articles`)
-      if (unprocessed.length === 0) {
-        const allArticles = await pool.query('SELECT id, is_weird, fake_facts_processed FROM articles')
-        console.log(`DEBUG: Total articles in DB: ${allArticles.rows.length}`)
-        console.log('DEBUG: Articles:', allArticles.rows)
-      }
+      // Mock Claude API calls to avoid real API calls in tests
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({
+          id: c.id,
+          score: 90 - i * 5, // Descending scores
+          reasoning: `Test reasoning for ${c.title}`,
+        })),
+        cost: 0.001,
+      }))
+
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`,
+        realAnswer: 'test answer',
+        postscript: 'test postscript',
+        blank: '_____',
+        cost: 0.002,
+      }))
+
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake answer 1', 'fake answer 2', 'fake answer 3'],
+        cost: 0.001,
+      }))
+
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1,
+        reasoning: 'Test judging reasoning',
+        cost: 0.001,
+      }))
 
       // Run batch processing
       const stats = await orchestrator.processBatch(10, false)
@@ -96,9 +115,8 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       // Should generate exactly 1 question (winner of 2 finalists)
       expect(stats.questionsGenerated).toBe(1)
 
-      // Should have used Ollama for scoring and judging
-      // 1 for scoring 10 candidates + 1 for judging 2 questions = 2
-      expect(stats.ollamaInferences).toBeGreaterThanOrEqual(2)
+      // Ollama not used when summaries are cached
+      expect(stats.ollamaInferences).toBe(0)
 
       // Should have no errors
       expect(stats.errors).toBe(0)
@@ -129,6 +147,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       }))
 
       await db.insertArticles(articles)
+
+      // Mock Claude API calls
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({ id: c.id, score: 90 - i * 5, reasoning: `Test ${c.title}` })),
+        cost: 0.001,
+      }))
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`, realAnswer: 'test answer', postscript: 'test', blank: '_____', cost: 0.002,
+      }))
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
+      }))
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1, reasoning: 'Test', cost: 0.001,
+      }))
 
       const beforeRun = new Date()
 
@@ -203,6 +236,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
 
       await db.insertArticles(newArticles)
 
+      // Mock Claude API calls
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({ id: c.id, score: 90 - i * 5, reasoning: `Test ${c.title}` })),
+        cost: 0.001,
+      }))
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`, realAnswer: 'test answer', postscript: 'test', blank: '_____', cost: 0.002,
+      }))
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
+      }))
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1, reasoning: 'Test', cost: 0.001,
+      }))
+
       await orchestrator.processBatch(10, false)
 
       // Check that the 10 new articles (with null last_considered) were processed
@@ -240,6 +288,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       }))
 
       await db.insertArticles(articles)
+
+      // Mock Claude API calls
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({ id: c.id, score: 90 - i * 5, reasoning: `Test ${c.title}` })),
+        cost: 0.001,
+      }))
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`, realAnswer: 'test answer', postscript: 'test', blank: '_____', cost: 0.002,
+      }))
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
+      }))
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1, reasoning: 'Test', cost: 0.001,
+      }))
 
       await orchestrator.processBatch(10, false)
 
@@ -284,6 +347,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       }))
 
       await db.insertArticles(articles)
+
+      // Mock Claude API calls
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({ id: c.id, score: 90 - i * 5, reasoning: `Test ${c.title}` })),
+        cost: 0.001,
+      }))
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`, realAnswer: 'test answer', postscript: 'test', blank: '_____', cost: 0.002,
+      }))
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake 1', 'fake 2', 'fake 3', 'fake 4', 'fake 5'], cost: 0.001,
+      }))
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1, reasoning: 'Test', cost: 0.001,
+      }))
 
       await orchestrator.processBatch(10, false)
 
@@ -334,6 +412,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       }))
 
       await db.insertArticles(articles)
+
+      // Mock Claude API calls
+      vi.spyOn(claude, 'scoreArticleCandidates').mockImplementation(async (candidates) => ({
+        scores: candidates.map((c, i) => ({ id: c.id, score: 90 - i * 5, reasoning: `Test ${c.title}` })),
+        cost: 0.001,
+      }))
+      vi.spyOn(claude, 'generateQuestion').mockImplementation(async (title) => ({
+        question: `Test question for ${title}`, realAnswer: 'test answer', postscript: 'test', blank: '_____', cost: 0.002,
+      }))
+      vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
+        houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
+      }))
+      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+        winner: 1, reasoning: 'Test', cost: 0.001,
+      }))
 
       const stats = await orchestrator.processBatch(10, false)
 

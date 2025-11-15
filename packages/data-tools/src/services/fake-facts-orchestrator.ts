@@ -295,13 +295,21 @@ export class FakeFactsOrchestrator {
         break
       }
 
-      if (verbose && fetchAttempts === 1) {
-        console.log(`  Fetched ${candidates.length} initial candidates\n`)
-      } else if (verbose) {
-        console.log(`  Fetching ${candidates.length} more candidates (${candidatesWithSummaries.length}/10 usable so far)\n`)
+      // Filter out articles we've already fetched in this batch
+      const newCandidates = candidates.filter(c => !allCandidateIds.includes(c.id!))
+
+      if (newCandidates.length === 0) {
+        if (verbose) console.log(`  ⚠️  No new candidates (all already fetched)`)
+        break
       }
 
-      for (const article of candidates) {
+      if (verbose && fetchAttempts === 1) {
+        console.log(`  Fetched ${newCandidates.length} initial candidates\n`)
+      } else if (verbose) {
+        console.log(`  Fetching ${newCandidates.length} more candidates (${candidatesWithSummaries.length}/10 usable so far)\n`)
+      }
+
+      for (const article of newCandidates) {
         allCandidateIds.push(article.id!)
 
         if (verbose) {

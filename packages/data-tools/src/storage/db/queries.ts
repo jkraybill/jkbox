@@ -223,8 +223,8 @@ export class DatabaseQueries {
           author, pub_date, collected_at,
           is_weird, weird_confidence, categories,
           engagement_score, quality_score,
-          language, country, content_hash
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+          language, country, content_hash, article_summary
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         ON CONFLICT (content_hash) DO NOTHING
         RETURNING id`,
         [
@@ -246,6 +246,7 @@ export class DatabaseQueries {
           article.language,
           article.country,
           contentHash,
+          article.articleSummary ?? null,
         ]
       )
       // Returns null if duplicate (ON CONFLICT DO NOTHING)
@@ -581,6 +582,7 @@ export class DatabaseQueries {
       fullContentFetchedAt: row.full_content_fetched_at
         ? new Date(row.full_content_fetched_at)
         : null,
+      lastConsidered: row.last_considered ? new Date(row.last_considered) : null,
       // Spacetime metadata
       eventYear: row.event_year,
       locationCity: row.location_city,
