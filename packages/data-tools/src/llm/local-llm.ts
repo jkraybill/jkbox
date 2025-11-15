@@ -20,11 +20,13 @@ export class LocalLLM {
    */
   async classify(title: string, description: string): Promise<ClassificationResult> {
     const prompt = this.buildPrompt(title, description)
+    const systemPrompt = `You are a strict content classifier for "Fake Facts" - an adults-only trivia game. Your job: identify genuinely WEIRD, absurd, surprising stories that will make people laugh. Be EXTREMELY strict - most stories are NOT weird. Dark humor is GOOD. Sexual/violent/drug content is WELCOME if it's funny and bizarre. Default to NO unless you're confident it's truly weird and entertaining.`
 
     try {
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: this.config.temperature,
           num_predict: this.config.maxTokens,
@@ -226,10 +228,13 @@ Content: ${content.substring(0, 2000)}
 
 Write a concise 40-60 word summary with SPECIFIC details:`
 
+    const systemPrompt = `You are summarizing weird news articles for a trivia game. Focus on the bizarre, specific, funny details that make the story memorable. Extract concrete facts: names, numbers, objects, actions. Make it entertaining while staying factual.`
+
     try {
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: 0.3, // Lower temp for factual extraction
           num_predict: 120, // Slightly more tokens for detailed summary
@@ -312,10 +317,13 @@ CONTENT: <full story text here>
 
 (continue for all stories found)`
 
+    const systemPrompt = `You are extracting individual weird news stories from News of the Weird compilations for a trivia game. Find each distinct bizarre story. Focus on stories with specific, funny, absurd details that would make great trivia questions. Preserve the weirdness and humor in each extraction.`
+
     try {
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: 0.4,
           num_predict: 4000, // Increased for 8-12 stories
@@ -535,9 +543,12 @@ SCORES:
       console.log(prompt)
       console.log('='.repeat(80) + '\n')
 
+      const systemPrompt = `You are scoring weird news articles for a trivia game. Identify stories that are genuinely bizarre, surprising, and funny. Prioritize: oddly specific details, absurd situations, dark humor, unexpected twists. This is adults-only entertainment - sexual/violent/drug content is GOOD if it's funny. Be enthusiastic about the weirdest, funniest stories.`
+
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: 0.35,
           num_predict: 3000,
@@ -686,9 +697,12 @@ REASONING: <2-3 sentences explaining why based on the scores above>`
       console.log(prompt)
       console.log('='.repeat(80) + '\n')
 
+      const systemPrompt = `You are judging trivia questions for "Fake Facts" - an adults-only party game. Pick the question that will make players LAUGH THE HARDEST. Prioritize: dark humor, surprise, absurd specificity, shock value, innovative comedy. Sexual/violent/drug content is GOOD if funny. Champion weird, fresh, unexpected questions. Reject boring or generic options.`
+
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: 0.35,
           num_predict: 1500,
@@ -816,10 +830,13 @@ VERDICT: YES or NO
 CONFIDENCE: <number 0-100>
 REASON: <brief explanation>`
 
+    const systemPrompt = `You are generating trivia questions for "Fake Facts" - an adults-only party game. Create questions that maximize laughter and surprise. Focus on the bizarre, unexpected, funny details. Dark humor is ENCOURAGED. Sexual/violent/drug content is WELCOME if comedic. Make questions that make people say "WHAT?!" and laugh. Be enthusiastic and creative.`
+
     try {
       const response = await this.client.generate({
         model: this.config.model,
         prompt,
+        system: systemPrompt,
         options: {
           temperature: 0.5,
           num_predict: 150,
