@@ -336,6 +336,18 @@ ${sampleRealAnswers.map(a => `- "${a}"`).join('\n')}
 Notice how these are concise and direct, without unnecessary adjectives.\n`
       : ''
 
+    const systemPrompt = `You are generating fake "house answers" for an adults-only trivia game.
+
+CRITICAL VALIDATION REQUIREMENT:
+For EVERY house answer you generate, you MUST write out the COMPLETE filled-in sentence and verify:
+1. Grammatically correct (articles, verb agreement, etc.)
+2. Semantically coherent (makes logical sense)
+3. Verb constraints satisfied (e.g., "unleashing" requires unleashable things)
+
+DO NOT output any house answer until you have validated it by writing the complete sentence.
+
+This is MANDATORY. If you skip this validation, the game will break.`
+
     const prompt = `Generate 5 plausible but wrong answers for this trivia question.
 
 Article Title: "${title}"
@@ -343,6 +355,47 @@ Article Content: ${content}
 Question: "${question}"
 Real Answer: "${realAnswer}"
 ${samplesSection}
+
+=== MANDATORY STEP-BY-STEP PROCESS ===
+
+For EACH potential house answer:
+
+STEP 1: Write the COMPLETE filled-in sentence
+STEP 2: Check grammar (articles, verb agreement, plural/singular)
+STEP 3: Check semantics (does this make logical sense?)
+STEP 4: Check verb constraints (does the verb work with this answer?)
+STEP 5: Only if ALL checks pass → include in final list
+
+DO NOT SKIP STEPS. You MUST validate EVERY answer before including it.
+
+Example of BROKEN house answers (NEVER do this):
+Question: "attempting to super glue his penis to his _____"
+❌ BAD: "the baseball bat"
+  → COMPLETE: "attempting to super glue his penis to his the baseball bat"
+  → GRAMMAR FAIL: Double article "to his the" is broken English!
+  → REJECT
+
+❌ BAD: "her car"
+  → COMPLETE: "attempting to super glue his penis to his her car"
+  → GRAMMAR FAIL: "his her car" is nonsensical!
+  → REJECT
+
+✅ GOOD: "his car"
+  → COMPLETE: "attempting to super glue his penis to his car"
+  → ✓ Grammar correct, semantics valid, weird and funny!
+  → ACCEPT
+
+Example 2:
+Question: "a black bear was caught on security camera stealing _____"
+❌ BAD: "the HOA president"
+  → COMPLETE: "a black bear was caught on security camera stealing the HOA president"
+  → SEMANTIC FAIL: Bears don't "steal" people. You steal objects, not humans.
+  → REJECT
+
+✅ GOOD: "the HOA president's grill"
+  → COMPLETE: "a black bear was caught on security camera stealing the HOA president's grill"
+  → ✓ Grammar correct, semantics valid (bears CAN steal grills), funny!
+  → ACCEPT
 
 === CRITICAL: HOUSE ANSWERS MUST BE WRONG ===
 
@@ -604,7 +657,7 @@ Generate the 5 house answers now (and validate each one by writing out the compl
       model: this.config.model,
       max_tokens: this.config.houseAnswers.maxTokens,
       temperature: this.config.houseAnswers.temperature,
-      system: this.config.houseAnswers.systemPrompt,
+      system: systemPrompt, // Use our custom system prompt with validation requirements
       messages: [
         {
           role: 'user',
