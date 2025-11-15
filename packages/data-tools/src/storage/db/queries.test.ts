@@ -916,13 +916,16 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: 'Maryland',
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
       expect(article).toBeTruthy()
-      expect(article?.eventYear).toBe(2004)
-      expect(article?.locationCity).toBe('Annapolis')
-      expect(article?.locationState).toBe('Maryland')
+      expect(article?.event_year).toBe(2004)
+      expect(article?.location_city).toBe('Annapolis')
+      expect(article?.location_state).toBe('Maryland')
     })
 
     it('should handle partial spacetime metadata (year only)', async () => {
@@ -932,12 +935,15 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: null,
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
-      expect(article?.eventYear).toBe(1996)
-      expect(article?.locationCity).toBeNull()
-      expect(article?.locationState).toBeNull()
+      expect(article?.event_year).toBe(1996)
+      expect(article?.location_city).toBeNull()
+      expect(article?.location_state).toBeNull()
     })
 
     it('should handle partial spacetime metadata (state only)', async () => {
@@ -947,12 +953,15 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: 'Colorado',
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
-      expect(article?.eventYear).toBeNull()
-      expect(article?.locationCity).toBeNull()
-      expect(article?.locationState).toBe('Colorado')
+      expect(article?.event_year).toBeNull()
+      expect(article?.location_city).toBeNull()
+      expect(article?.location_state).toBe('Colorado')
     })
 
     it('should handle city + state without year', async () => {
@@ -962,12 +971,15 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: 'Queensland',
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
-      expect(article?.eventYear).toBeNull()
-      expect(article?.locationCity).toBe('Brisbane')
-      expect(article?.locationState).toBe('Queensland')
+      expect(article?.event_year).toBeNull()
+      expect(article?.location_city).toBe('Brisbane')
+      expect(article?.location_state).toBe('Queensland')
     })
 
     it('should handle all NULL spacetime metadata', async () => {
@@ -977,12 +989,15 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: null,
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
-      expect(article?.eventYear).toBeNull()
-      expect(article?.locationCity).toBeNull()
-      expect(article?.locationState).toBeNull()
+      expect(article?.event_year).toBeNull()
+      expect(article?.location_city).toBeNull()
+      expect(article?.location_state).toBeNull()
     })
 
     it('should allow updating spacetime metadata multiple times', async () => {
@@ -1000,13 +1015,16 @@ describeDb('DatabaseQueries - Fake Facts (Integration)', () => {
         locationState: 'Maryland',
       })
 
-      const articles = await db.getArticles({ articleIds: [articleId] })
-      const article = articles[0]
+      const result = await pool.query(
+        'SELECT event_year, location_city, location_state FROM articles WHERE id = $1',
+        [articleId]
+      )
+      const article = result.rows[0]
 
       // Should have the latest values
-      expect(article?.eventYear).toBe(2004)
-      expect(article?.locationCity).toBe('Annapolis')
-      expect(article?.locationState).toBe('Maryland')
+      expect(article?.event_year).toBe(2004)
+      expect(article?.location_city).toBe('Annapolis')
+      expect(article?.location_state).toBe('Maryland')
     })
   })
 })
