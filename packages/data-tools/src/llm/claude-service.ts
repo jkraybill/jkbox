@@ -17,6 +17,11 @@ export interface ClaudeConfig {
     maxTokens: number
     systemPrompt: string
   }
+  judging?: {
+    temperature: number
+    maxTokens: number
+    systemPrompt: string
+  }
 }
 
 export class ClaudeService {
@@ -755,8 +760,9 @@ SCORES:
 
     const response = await this.client.messages.create({
       model: this.config.model,
-      max_tokens: 3000,
-      temperature: 0.35,
+      max_tokens: this.config.judging?.maxTokens || 3000,
+      temperature: this.config.judging?.temperature || 0.35,
+      system: this.config.judging?.systemPrompt || 'You are judging trivia questions for quality and entertainment value.',
       messages: [
         {
           role: 'user',
