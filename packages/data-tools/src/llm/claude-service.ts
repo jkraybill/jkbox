@@ -888,4 +888,83 @@ SCORES:
 
     return inputCost + outputCost
   }
+
+  /**
+   * Judge between two trivia questions (head-to-head comparison)
+   */
+  async judgeQuestions(
+    question1: { question: string; correctAnswer: string; houseAnswers: string[] },
+    question2: { question: string; correctAnswer: string; houseAnswers: string[] }
+  ): Promise<{ winner: 1 | 2; reasoning: string; cost: number }> {
+    const prompt = `You are judging two trivia questions for "Fake Facts" - an adults-only party game.
+
+Pick the question that will make players LAUGH THE HARDEST.
+
+CRITICAL: This is ADULTS-ONLY comedy. Dark humor, sexual content, violence, controversial topics are ENCOURAGED as long as they're funny. Do NOT penalize questions for adult content.
+
+Criteria for a GREAT question:
+✓ SPECIFIC and concrete (not vague)
+✓ SURPRISING and unexpected
+✓ Open-ended (multiple plausible answers)
+✓ Funny/absurd (dark humor is GOOD - death, sex, violence, drugs all fair game!)
+✓ Clear and easy to understand
+✓ House answers are creative, funny, AND grammatically correct
+
+CRITICAL: All house answers MUST be grammatically compatible with the question.
+
+Question 1:
+${question1.question}
+Correct Answer: ${question1.correctAnswer}
+House Answers: ${question1.houseAnswers.join(', ')}
+
+Question 2:
+${question2.question}
+Correct Answer: ${question2.correctAnswer}
+House Answers: ${question2.houseAnswers.join(', ')}
+
+Analyze each question on:
+1. Specificity (concrete vs vague)
+2. Surprise factor (unexpected vs predictable)
+3. Open-endedness (multiple plausible answers)
+4. Comedy value (funny, absurd, dark humor welcome)
+5. Clarity (easy to understand)
+6. House answer quality (creative, funny, grammatically correct)
+
+Then pick the WINNER (1 or 2) and explain why.
+
+Respond in this EXACT format:
+WINNER: 1 or 2
+REASONING: <your detailed reasoning>`
+
+    const systemPrompt = this.config.judging?.systemPrompt || 'You are judging trivia questions for quality and entertainment value.'
+
+    const response = await this.client.messages.create({
+      model: this.config.model,
+      max_tokens: this.config.judging?.maxTokens || 1500,
+      temperature: this.config.judging?.temperature || 0.35,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+    // Parse winner and reasoning
+    const winnerMatch = text.match(/WINNER:\s*([12])/i)
+    const reasoningMatch = text.match(/REASONING:\s*(.+?)$/is)
+
+    if (!winnerMatch) {
+      throw new Error(`Failed to parse winner from Claude response: ${text}`)
+    }
+
+    const winner = parseInt(winnerMatch[1]!, 10) as 1 | 2
+    const reasoning = reasoningMatch?.[1]?.trim() || 'No reasoning provided'
+    const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+
+    return { winner, reasoning, cost }
+  }
 }
