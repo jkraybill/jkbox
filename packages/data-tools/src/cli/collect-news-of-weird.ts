@@ -91,8 +91,13 @@ async function main() {
       console.log(chalk.blue(`\n[${i + 1}/${urlsToProcess.length}]`))
       console.log(chalk.gray(`  URL: ${url}`))
 
-      // Check if we already have this URL
-      const exists = await db.articleExistsByUrl(url)
+      // Check if we already have this URL (or any stories from this URL)
+      // News of Weird articles have multiple stories, stored as url#story-0, url#story-1, etc.
+      const existingCount = await pool.query(
+        'SELECT COUNT(*) FROM articles WHERE source_url LIKE $1',
+        [`${url}%`]
+      )
+      const exists = parseInt(existingCount.rows[0]?.count || '0', 10) > 0
       if (exists) {
         totalSkipped++
         console.log(chalk.gray(`  ⊘ Already collected (skipping)`))

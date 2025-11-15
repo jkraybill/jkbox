@@ -56,30 +56,44 @@ export class LocalLLM {
   private buildPrompt(title: string, description: string): string {
     return `You are classifying news articles for a trivia game that uses WEIRD/OFFBEAT/SURPRISING stories.
 
+=== CRITICAL: BE EXTREMELY STRICT ===
+
+Most stories are NOT weird. You should classify as WEIRD only if the story is genuinely bizarre, absurd, or makes you say "WHAT?!"
+
+DEFAULT TO NO. Only say YES if you're confident it's truly weird.
+
 === WHAT MAKES A GOOD "WEIRD" ARTICLE ===
 
-✅ ACCEPT if it has:
+✅ ACCEPT if it has ALL of these:
 1. BIZARRE and oddly specific details (not just "unusual for the context")
 2. UNEXPECTED and surprising (not predictable consequences)
 3. Absurd visuals or situations (makes you laugh or say "what?!")
 4. Clear, concrete factual hook (NOT vague or generic)
 5. Little-known story (NOT famous events everyone knows)
+6. INHERENTLY ABSURD (not just ironic, not just unfortunate)
 
 Key test: Is this INHERENTLY weird, or just "ironic given context"?
 - "Cow in swimming pool" = WEIRD (inherently absurd)
-- "Hunter killed by animal he was hunting" = NOT WEIRD (expected risk)
+- "Hunter killed by animal he was hunting" = NOT WEIRD (expected risk, just ironic)
 
-❌ REJECT if it's:
-1. Generic/vague headlines ("Assorted Stupidity #118", "Florida Man Does Something")
-2. Well-known events (famous trials, viral stories everyone heard about)
-3. Celebrity news that's boring (unless truly bizarre)
-4. Political news (UNLESS genuinely absurd, like "Mayor arrested for impersonating Elvis")
-5. Sad/tragic stories without comedy angle
-6. Lists without specific focus
-7. Opinion pieces or think pieces
-8. Depressing corporate/workplace dystopia (even if unusual, not funny)
-9. Simple misunderstandings or mistakes (unless the outcome is absurd)
-10. Crime stories that are just crimes (assault, theft, etc. - not inherently weird)
+=== AUTOMATIC REJECTIONS (NEVER CLASSIFY AS WEIRD) ===
+
+❌ ALWAYS REJECT if it's:
+1. **Deaths from natural causes, old age, illness** - "Carny dies at 94", "Actor dies of cancer"
+2. **Normal life events** - births, retirements, anniversaries, obituaries
+3. **Predictable accidents** - car crashes, falls, drownings (unless bizarre circumstances)
+4. **Simple crimes** - theft, assault, robbery (unless method is absurd)
+5. **Celebrity doing normal things** - actor retires, musician tours, athlete trains
+6. **Political news** (UNLESS genuinely absurd like "Mayor arrested dressed as Elvis")
+7. **Generic/vague headlines** - "Assorted Stupidity", "Florida Man Does Something"
+8. **Well-known viral events** - everyone already heard about it
+9. **Sad/tragic without humor** - child dies, house burns down, family tragedy
+10. **Workplace dystopia** - Amazon workers peeing in bottles, warehouse injuries
+11. **Simple mistakes/misunderstandings** - wrong address, autocorrect fail, mix-up
+12. **Lists without specific focus** - "10 weird facts about pandas"
+13. **Opinion pieces** - hot takes, editorials, analysis
+14. **Medical conditions** - rare diseases, genetic disorders (not weird, just medical)
+15. **Coincidences** - two people with same name, birthday coincidence (not weird enough)
 
 === EXAMPLES OF GREAT "WEIRD" ARTICLES ===
 
@@ -96,8 +110,11 @@ Key test: Is this INHERENTLY weird, or just "ironic given context"?
 
 === EXAMPLES OF BAD ARTICLES (REJECT) ===
 
+❌ "Carny Star Melvin Burkhart Dies at 94"
+   → BAD: Death from old age. Normal obituary. Not weird at all.
+
 ❌ "Texas trophy hunter killed by buffalo he was stalking in South Africa"
-   → BAD: Hunter killed by wild animal is not unexpected or inherently funny (even though it has irony)
+   → BAD: Hunter killed by wild animal is expected risk, just ironic. Not inherently weird.
 
 ❌ "Shelter dog named Chase caught on camera scaling kennel door"
    → BAD: Not surprising, not weird (even though open-ended)
@@ -120,24 +137,46 @@ Key test: Is this INHERENTLY weird, or just "ironic given context"?
 ❌ "Five weird facts about pandas"
    → BAD: List article, too vague
 
+❌ "Man dies in car accident on Highway 101"
+   → BAD: Predictable accident, tragic but not weird
+
+❌ "Woman gives birth to twins on her birthday"
+   → BAD: Coincidence, not weird enough
+
+❌ "Actor retires after 40-year career"
+   → BAD: Normal life event, not weird
+
+❌ "Store robbed at gunpoint, suspect arrested"
+   → BAD: Simple crime, not weird (even if unfortunate)
+
 === YOUR TASK ===
 
 Article Title: "${title}"
 Description: "${description || 'No description'}"
 
-Classify this article. Ask yourself:
+Classify this article. FIRST check for AUTOMATIC REJECTIONS:
+- Is this a death from natural causes/old age? → REJECT
+- Is this a normal life event (birth, retirement, obituary)? → REJECT
+- Is this a predictable accident or simple crime? → REJECT
+- Is this just a coincidence or simple mistake? → REJECT
+- Is this celebrity doing something normal? → REJECT
+- Is this political news without absurdity? → REJECT
+- Is this sad/tragic without humor? → REJECT
+
+If not automatically rejected, then ask:
 - Is there a BIZARRE, oddly specific detail?
 - Is it INHERENTLY weird (not just "ironic given context")?
 - Does it create an absurd visual or situation?
 - Would someone say "WHAT?!" when they hear it?
 - Is it truly UNEXPECTED (not a predictable consequence)?
 - Is it FUNNY or absurd (not just depressing/sad)?
-- Is it more than just a simple mistake or misunderstanding?
+
+REMEMBER: Most stories are NOT weird. DEFAULT TO NO unless you're confident it's truly bizarre.
 
 Answer in this EXACT format:
 VERDICT: YES or NO
 CONFIDENCE: <number 0-100>
-REASONING: <brief explanation>`
+REASONING: <brief explanation - if NO, state which automatic rejection applies>`
   }
 
   private parseResponse(response: string): ClassificationResult {
