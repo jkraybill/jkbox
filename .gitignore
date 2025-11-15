@@ -54,3 +54,8 @@ content-packs/
 # Migration tarballs (contain sensitive .env files)
 *.tar.gz
 jkbox-migration-*.tar.gz
+
+# Backup files from migration scripts
+scripts/.env.backup
+scripts/.gordo-memory.backup/
+scripts/packages/
