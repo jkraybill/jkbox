@@ -442,6 +442,23 @@ export class DatabaseQueries {
   }
 
   /**
+   * Update spacetime metadata for an article
+   */
+  async updateSpacetimeMetadata(
+    articleId: string,
+    metadata: { eventYear?: number | null; locationCity?: string | null; locationState?: string | null }
+  ): Promise<void> {
+    await this.pool.query(
+      `UPDATE articles
+       SET event_year = $2,
+           location_city = $3,
+           location_state = $4
+       WHERE id = $1`,
+      [articleId, metadata.eventYear, metadata.locationCity, metadata.locationState]
+    )
+  }
+
+  /**
    * Insert a new Fake Facts question
    */
   async insertQuestion(question: FakeFactsQuestionInsert): Promise<string> {
@@ -564,6 +581,10 @@ export class DatabaseQueries {
       fullContentFetchedAt: row.full_content_fetched_at
         ? new Date(row.full_content_fetched_at)
         : null,
+      // Spacetime metadata
+      eventYear: row.event_year,
+      locationCity: row.location_city,
+      locationState: row.location_state,
     }
   }
 

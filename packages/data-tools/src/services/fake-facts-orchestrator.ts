@@ -113,6 +113,24 @@ export class FakeFactsOrchestrator {
         await this.db.updateArticleSummary(article.id!, summary)
       }
 
+      // Step 2.5: Extract spacetime metadata if not already present
+      if (!article.eventYear && !article.locationCity && !article.locationState) {
+        const spacetime = await this.ollama.extractSpacetime(
+          article.title,
+          contentText,
+          article.pubDate
+        )
+        this.stats.ollamaInferences++
+
+        // Cache spacetime metadata
+        await this.db.updateSpacetimeMetadata(article.id!, spacetime)
+
+        // Update article object for immediate use
+        article.eventYear = spacetime.eventYear
+        article.locationCity = spacetime.locationCity
+        article.locationState = spacetime.locationState
+      }
+
       // Step 3: Evaluate candidate with Ollama
       const evaluation = await this.ollama.evaluateCandidate(article.title, summary)
       this.stats.ollamaInferences++
@@ -130,8 +148,17 @@ export class FakeFactsOrchestrator {
         }
       }
 
-      // Step 4: Generate question with Claude
-      const questionResult = await this.claude.generateQuestion(article.title, summary)
+      // Step 4: Generate question with Claude (with spacetime context)
+      const questionResult = await this.claude.generateQuestion(
+        article.title,
+        summary,
+        {
+          eventYear: article.eventYear,
+          locationCity: article.locationCity,
+          locationState: article.locationState,
+          country: article.country,
+        }
+      )
 
       // Step 5: Get sample real answers to show Claude the style
       const sampleAnswers = await this.getSampleRealAnswers(5)

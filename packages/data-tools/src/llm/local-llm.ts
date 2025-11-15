@@ -248,6 +248,83 @@ Write a concise 40-60 word summary with SPECIFIC details:`
   }
 
   /**
+   * Extract spacetime metadata (year, city, state) from article
+   */
+  async extractSpacetime(
+    title: string,
+    content: string,
+    pubDate?: Date | null
+  ): Promise<{ eventYear: number | null; locationCity: string | null; locationState: string | null }> {
+    const fallbackYear = pubDate ? pubDate.getFullYear() : null
+
+    const prompt = `Extract spacetime metadata from this news article.
+
+Article Title: ${title}
+Article Content: ${content.substring(0, 1500)}
+
+Extract:
+1. YEAR the event occurred (not when it was published)
+2. CITY where it happened (just the city name)
+3. STATE/PROVINCE (just the state/province, like "Florida" or "Queensland")
+
+If you can't find something, output NULL.
+
+Respond in this EXACT format:
+YEAR: <year or NULL>
+CITY: <city or NULL>
+STATE: <state or NULL>
+
+Examples:
+- "In 2004, a Maryland 911 operator..." → YEAR: 2004, CITY: NULL, STATE: Maryland
+- "A Brisbane cop..." → YEAR: NULL, CITY: Brisbane, STATE: Queensland
+- "In Colorado last week..." → YEAR: ${new Date().getFullYear()}, CITY: NULL, STATE: Colorado`
+
+    const systemPrompt = 'You extract spacetime metadata from news articles. Be precise and factual.'
+
+    try {
+      const response = await this.client.generate({
+        model: this.config.model,
+        prompt,
+        system: systemPrompt,
+        options: {
+          temperature: 0.1, // Very low temp for extraction
+          num_predict: 100,
+        },
+      })
+
+      // Parse response
+      const yearMatch = response.response.match(/YEAR:\s*(\d{4}|NULL)/i)
+      const cityMatch = response.response.match(/CITY:\s*(.+?)(?=\n|STATE:|$)/i)
+      const stateMatch = response.response.match(/STATE:\s*(.+?)(?=\n|$)/i)
+
+      const eventYear = yearMatch?.[1] !== 'NULL' && yearMatch?.[1]
+        ? parseInt(yearMatch[1], 10)
+        : fallbackYear
+
+      const locationCity = cityMatch?.[1]?.trim() !== 'NULL' && cityMatch?.[1]?.trim()
+        ? cityMatch[1].trim()
+        : null
+
+      const locationState = stateMatch?.[1]?.trim() !== 'NULL' && stateMatch?.[1]?.trim()
+        ? stateMatch[1].trim()
+        : null
+
+      return {
+        eventYear,
+        locationCity,
+        locationState,
+      }
+    } catch (error) {
+      // Fallback to pub_date if extraction fails
+      return {
+        eventYear: fallbackYear,
+        locationCity: null,
+        locationState: null,
+      }
+    }
+  }
+
+  /**
    * Extract individual weird news stories from a News of the Weird compilation
    * Returns array of {title, content} for each story
    */

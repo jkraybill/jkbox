@@ -86,13 +86,30 @@ export class ClaudeService {
    */
   async generateQuestion(
     title: string,
-    content: string
+    content: string,
+    spacetime?: {
+      eventYear?: number | null
+      locationCity?: string | null
+      locationState?: string | null
+      country?: string | null
+    }
   ): Promise<QuestionGenerationResult & { cost: number }> {
+    // Build spacetime context string
+    const spacetimeContext = spacetime
+      ? `
+SPACETIME METADATA (use this for temporal/location context):
+- Year: ${spacetime.eventYear || 'Unknown'}
+- City: ${spacetime.locationCity || 'Unknown'}
+- State: ${spacetime.locationState || 'Unknown'}
+- Country: ${spacetime.country || 'Unknown'}
+`
+      : ''
+
     const prompt = `Given this weird news article, create a fun trivia question with a blanked-out word or phrase.
 
 Article Title: "${title}"
 Article Content: ${content}
-
+${spacetimeContext}
 === CRITICAL: STICK TO THE FACTS ===
 
 EVERY FACT in your question and answer MUST come directly from the article content above.
@@ -249,6 +266,14 @@ If the article is about a celebrity or famous person (Trump, Obama, Elon, etc.),
 === SPACETIME CONTEXT ===
 
 CRITICAL: Include location and/or time to avoid temporal confusion.
+
+**USE THE SPACETIME METADATA PROVIDED ABOVE** - it's been extracted for you!
+
+For questions, construct location/time context like:
+- If you have Year + State: "In 2004, in Maryland, a 911 operator..."
+- If you have Year only: "In 1996, a man climbed a tower..."
+- If you have State only: "In Colorado, a sheriff candidate..."
+- If you have City + State: "In Brisbane, Queensland, a suspended cop..."
 
 For HISTORICAL EVENTS or PAST CURRENT EVENTS, the YEAR is MANDATORY:
 - ❌ BAD: "In August, a man climbed a tower demanding to be Bob Dole's running mate"

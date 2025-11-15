@@ -55,6 +55,10 @@ export type Article = z.infer<typeof ArticleSchema> & {
   articleSummary?: string | null
   fullContentFetched?: boolean
   fullContentFetchedAt?: Date | null
+  // Spacetime metadata (extracted during summarization)
+  eventYear?: number | null
+  locationCity?: string | null
+  locationState?: string | null
 }
 
 export type ArticleInsert = Omit<Article, 'id'>
