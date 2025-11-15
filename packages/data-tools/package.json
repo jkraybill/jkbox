@@ -23,7 +23,8 @@
     "reset-questions": "tsx src/cli/reset-questions.ts",
     "show-question": "tsx src/cli/show-question.ts",
     "reset-weird": "tsx src/cli/reset-weird-classification.ts",
-    "classify-articles": "tsx src/cli/classify-articles.ts"
+    "classify-articles": "tsx src/cli/classify-articles.ts",
+    "test-classification": "tsx src/cli/test-classification.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

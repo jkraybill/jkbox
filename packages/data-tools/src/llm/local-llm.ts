@@ -77,6 +77,9 @@ Key test: Is this INHERENTLY weird, or just "ironic given context"?
 5. Sad/tragic stories without comedy angle
 6. Lists without specific focus
 7. Opinion pieces or think pieces
+8. Depressing corporate/workplace dystopia (even if unusual, not funny)
+9. Simple misunderstandings or mistakes (unless the outcome is absurd)
+10. Crime stories that are just crimes (assault, theft, etc. - not inherently weird)
 
 === EXAMPLES OF GREAT "WEIRD" ARTICLES ===
 
@@ -98,6 +101,12 @@ Key test: Is this INHERENTLY weird, or just "ironic given context"?
 
 ❌ "Shelter dog named Chase caught on camera scaling kennel door"
    → BAD: Not surprising, not weird (even though open-ended)
+
+❌ "Woman accidentally goes on date with 97-year-old man"
+   → BAD: Simple misunderstanding/mistake, not inherently absurd or funny
+
+❌ "Amazon workers peeing in bottles to meet quotas"
+   → BAD: Depressing workplace dystopia, not funny (even if unusual)
 
 ❌ "Assorted Stupidity #118"
    → BAD: Too generic, no specific fact
@@ -122,6 +131,8 @@ Classify this article. Ask yourself:
 - Does it create an absurd visual or situation?
 - Would someone say "WHAT?!" when they hear it?
 - Is it truly UNEXPECTED (not a predictable consequence)?
+- Is it FUNNY or absurd (not just depressing/sad)?
+- Is it more than just a simple mistake or misunderstanding?
 
 Answer in this EXACT format:
 VERDICT: YES or NO
