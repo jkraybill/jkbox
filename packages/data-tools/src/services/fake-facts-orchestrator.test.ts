@@ -71,9 +71,21 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
-      await db.insertArticles(articles)
+      const insertedCount = await db.insertArticles(articles)
+      expect(insertedCount).toBe(15) // Verify all articles were inserted
+
+      // Debug: Check if articles are actually queryable
+      const unprocessed = await db.getUnprocessedArticles(20)
+      console.log(`DEBUG: Found ${unprocessed.length} unprocessed articles`)
+      if (unprocessed.length === 0) {
+        const allArticles = await pool.query('SELECT id, is_weird, fake_facts_processed FROM articles')
+        console.log(`DEBUG: Total articles in DB: ${allArticles.rows.length}`)
+        console.log('DEBUG: Articles:', allArticles.rows)
+      }
 
       // Run batch processing
       const stats = await orchestrator.processBatch(10, false)
@@ -113,6 +125,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(articles)
@@ -154,6 +167,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       const oldIds = []
@@ -184,6 +198,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(newArticles)
@@ -221,6 +236,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(articles)
@@ -264,6 +280,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(articles)
@@ -313,6 +330,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(articles)
@@ -363,6 +381,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         language: 'en',
         country: 'US',
         contentHash: null,
+        articleSummary: `Test summary for article ${i + 1} about something weird happening.`,
       }))
 
       await db.insertArticles(articles)
