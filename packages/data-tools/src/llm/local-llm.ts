@@ -59,11 +59,15 @@ export class LocalLLM {
 === WHAT MAKES A GOOD "WEIRD" ARTICLE ===
 
 ✅ ACCEPT if it has:
-1. Specific, concrete, surprising details (animals in unusual places, bizarre crimes, absurd situations)
-2. Comedy potential (funny, ironic, or absurd)
-3. Clear factual hook (NOT vague or generic)
-4. Little-known story (NOT famous events everyone knows)
-5. Inherent "you won't believe this" factor
+1. BIZARRE and oddly specific details (not just "unusual for the context")
+2. UNEXPECTED and surprising (not predictable consequences)
+3. Absurd visuals or situations (makes you laugh or say "what?!")
+4. Clear, concrete factual hook (NOT vague or generic)
+5. Little-known story (NOT famous events everyone knows)
+
+Key test: Is this INHERENTLY weird, or just "ironic given context"?
+- "Cow in swimming pool" = WEIRD (inherently absurd)
+- "Hunter killed by animal he was hunting" = NOT WEIRD (expected risk)
 
 ❌ REJECT if it's:
 1. Generic/vague headlines ("Assorted Stupidity #118", "Florida Man Does Something")
@@ -76,40 +80,36 @@ export class LocalLLM {
 
 === EXAMPLES OF GREAT "WEIRD" ARTICLES ===
 
-✅ "Texas trophy hunter killed by buffalo he was stalking in South Africa"
-   → Specific, ironic, inherently funny
-
 ✅ "Woman found dead on bus with 26 iPhones glued to her body"
-   → Bizarre, specific detail, unexpected
+   → GOOD: Bizarre, oddly specific, unexpected
 
 ✅ "Firefighters rescue cow from Oklahoma swimming pool"
-   → Animals in wrong places, absurd visual
+   → GOOD: Surprising, funny, weird, absurd visual
 
-✅ "Ring doorbell camera footage sparks alien speculation"
-   → Specific claim, comedy potential
+=== EXAMPLES OF MEDIOCRE ARTICLES (BORDERLINE) ===
 
-✅ "Shelter dog named Chase caught on camera scaling kennel door"
-   → Specific detail, funny action, named character
+⚠️ "Ring doorbell camera footage sparks alien speculation"
+   → OK: A bit funny, a bit surprising, but pedestrian
 
-=== EXAMPLES OF BAD ARTICLES TO REJECT ===
+=== EXAMPLES OF BAD ARTICLES (REJECT) ===
+
+❌ "Texas trophy hunter killed by buffalo he was stalking in South Africa"
+   → BAD: Hunter killed by wild animal is not unexpected or inherently funny (even though it has irony)
+
+❌ "Shelter dog named Chase caught on camera scaling kennel door"
+   → BAD: Not surprising, not weird (even though open-ended)
 
 ❌ "Assorted Stupidity #118"
-   → Too generic, no specific fact
+   → BAD: Too generic, no specific fact
 
 ❌ "O.J. Simpson Bronco chase"
-   → Too famous, everyone knows this
+   → BAD: Too famous, everyone knows this
 
 ❌ "Trump says controversial thing at rally"
-   → Political, boring, happens daily
-
-❌ "Local school adds new STEM program"
-   → Normal news, not weird
-
-❌ "Stock market reaches new high"
-   → Financial news, not weird
+   → BAD: Political, boring, happens daily
 
 ❌ "Five weird facts about pandas"
-   → List article, too vague
+   → BAD: List article, too vague
 
 === YOUR TASK ===
 
@@ -117,10 +117,11 @@ Article Title: "${title}"
 Description: "${description || 'No description'}"
 
 Classify this article. Ask yourself:
-- Is there a SPECIFIC surprising detail?
-- Is it INHERENTLY funny or absurd?
-- Would someone say "you won't believe this"?
-- Is it UNKNOWN enough to surprise people?
+- Is there a BIZARRE, oddly specific detail?
+- Is it INHERENTLY weird (not just "ironic given context")?
+- Does it create an absurd visual or situation?
+- Would someone say "WHAT?!" when they hear it?
+- Is it truly UNEXPECTED (not a predictable consequence)?
 
 Answer in this EXACT format:
 VERDICT: YES or NO
