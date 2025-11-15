@@ -122,11 +122,17 @@ GOOD: "In Florida, a man stabbed his friend during an argument about whether Don
 
 === KEEP REAL ANSWERS CONCISE ===
 
+CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
+
 Remove unnecessary specificity from real answers:
 
 BAD: "a bald JD Vance meme" → GOOD: "a JD Vance meme"
 BAD: "a VP of manufacturing named Omead Afshar" → GOOD: "a VP of manufacturing"
 BAD: "John Wilkes Booth hiding under her bed" → GOOD: "John Wilkes Booth"
+
+BAD: "her father's death date" (4 words, wordy) → GOOD: Rephrase question so blank is shorter
+BAD: "the coordinates to his burial site" (6 words!) → GOOD: Rephrase question
+BAD: "involuntary lethal injection" (3 words but verbose) → GOOD: "lethal injection"
 
 === FAMOUS PEOPLE = OBSCURE STORIES ONLY ===
 
@@ -365,18 +371,26 @@ Real Answer: "a JD Vance meme"
 
 The game is COMEDY. Prioritize WEIRD + FUNNY over "sensible categories".
 
-=== NO GRATUITOUS ADJECTIVES ===
+=== KEEP ANSWERS SHORT & PUNCHY ===
 
-Keep answers concise. Remove unnecessary descriptors.
+CRITICAL: Answers should be 1-3 words. Maximum 4 words in rare cases.
 
-❌ BAD: "compromising political cartoons"
-✅ GOOD: "political cartoons"
+❌ BAD: "the coordinates to Jimmy Hoffa's burial site" (7 words!)
+✅ GOOD: "Jimmy Hoffa's coordinates" (3 words)
+
+❌ BAD: "the combination to her therapist's safe" (6 words!)
+✅ GOOD: "her therapist's safe combo" (4 words) or "safe combination" (2 words)
+
+❌ BAD: "compromising political cartoons" (3 words but wordy)
+✅ GOOD: "political cartoons" (2 words)
 
 ❌ BAD: "unsuspecting neighbor's cat"
 ✅ GOOD: "neighbor's cat"
 
 ❌ BAD: "vintage lawnmower"
 ✅ GOOD: "lawnmower"
+
+If the real answer is long, match its length/style. But aim for PUNCHY and CONCISE.
 
 === VARIETY IS CRITICAL ===
 
