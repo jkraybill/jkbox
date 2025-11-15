@@ -54,23 +54,75 @@ export class LocalLLM {
   }
 
   private buildPrompt(title: string, description: string): string {
-    return `You are classifying news articles as "weird/offbeat/unusual" or "normal news".
+    return `You are classifying news articles for a trivia game that uses WEIRD/OFFBEAT/SURPRISING stories.
 
-Examples of WEIRD news:
-- "Man arrested for trying to pay for McDonald's with marijuana"
-- "Florida woman calls 911 because McDonald's ran out of McNuggets"
-- "Escaped emu spotted riding city bus"
-- "Woman marries 300-year-old ghost pirate"
+=== WHAT MAKES A GOOD "WEIRD" ARTICLE ===
 
-Examples of NORMAL news:
-- "President announces new economic policy"
-- "Local school adds STEM program"
-- "City council approves budget increase"
-- "Stock market reaches new high"
+✅ ACCEPT if it has:
+1. Specific, concrete, surprising details (animals in unusual places, bizarre crimes, absurd situations)
+2. Comedy potential (funny, ironic, or absurd)
+3. Clear factual hook (NOT vague or generic)
+4. Little-known story (NOT famous events everyone knows)
+5. Inherent "you won't believe this" factor
 
-Article: ${title} - ${description}
+❌ REJECT if it's:
+1. Generic/vague headlines ("Assorted Stupidity #118", "Florida Man Does Something")
+2. Well-known events (famous trials, viral stories everyone heard about)
+3. Celebrity news that's boring (unless truly bizarre)
+4. Political news (UNLESS genuinely absurd, like "Mayor arrested for impersonating Elvis")
+5. Sad/tragic stories without comedy angle
+6. Lists without specific focus
+7. Opinion pieces or think pieces
 
-Is this weird/offbeat news? Answer in this exact format:
+=== EXAMPLES OF GREAT "WEIRD" ARTICLES ===
+
+✅ "Texas trophy hunter killed by buffalo he was stalking in South Africa"
+   → Specific, ironic, inherently funny
+
+✅ "Woman found dead on bus with 26 iPhones glued to her body"
+   → Bizarre, specific detail, unexpected
+
+✅ "Firefighters rescue cow from Oklahoma swimming pool"
+   → Animals in wrong places, absurd visual
+
+✅ "Ring doorbell camera footage sparks alien speculation"
+   → Specific claim, comedy potential
+
+✅ "Shelter dog named Chase caught on camera scaling kennel door"
+   → Specific detail, funny action, named character
+
+=== EXAMPLES OF BAD ARTICLES TO REJECT ===
+
+❌ "Assorted Stupidity #118"
+   → Too generic, no specific fact
+
+❌ "O.J. Simpson Bronco chase"
+   → Too famous, everyone knows this
+
+❌ "Trump says controversial thing at rally"
+   → Political, boring, happens daily
+
+❌ "Local school adds new STEM program"
+   → Normal news, not weird
+
+❌ "Stock market reaches new high"
+   → Financial news, not weird
+
+❌ "Five weird facts about pandas"
+   → List article, too vague
+
+=== YOUR TASK ===
+
+Article Title: "${title}"
+Description: "${description || 'No description'}"
+
+Classify this article. Ask yourself:
+- Is there a SPECIFIC surprising detail?
+- Is it INHERENTLY funny or absurd?
+- Would someone say "you won't believe this"?
+- Is it UNKNOWN enough to surprise people?
+
+Answer in this EXACT format:
 VERDICT: YES or NO
 CONFIDENCE: <number 0-100>
 REASONING: <brief explanation>`

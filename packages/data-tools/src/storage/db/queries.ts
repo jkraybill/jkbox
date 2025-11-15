@@ -375,7 +375,8 @@ export class DatabaseQueries {
   async getUnprocessedArticles(limit: number = 10): Promise<Article[]> {
     const result = await this.pool.query(
       `SELECT * FROM articles
-       WHERE fake_facts_processed = false OR fake_facts_processed IS NULL
+       WHERE (fake_facts_processed = false OR fake_facts_processed IS NULL)
+       AND is_weird = true
        ORDER BY pub_date DESC
        LIMIT $1`,
       [limit]
