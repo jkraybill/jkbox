@@ -684,7 +684,42 @@ Generate the 5 house answers now (and validate each one by writing out the compl
         cost,
       }
     } catch (error) {
-      throw new Error(`Failed to parse Claude response as JSON: ${text}`)
+      // Fallback: Extract validated answers from the validation text
+      // Claude may have shown its work without including final JSON
+      const acceptedAnswers: string[] = []
+      const processedNumbers = new Set<number>()
+
+      // Pattern 1: Look for "ACCEPT" lines with the answer (includes revised versions)
+      const acceptPattern = /## Testing House Answer (\d+)(?:\s+\(revised\))?: "([^"]+)"[\s\S]*?✅ \*\*ACCEPT\*\*/g
+      let match
+      while ((match = acceptPattern.exec(text)) !== null) {
+        const answerNum = parseInt(match[1]!, 10)
+        const answer = match[2]!
+
+        // For revised answers, this will overwrite the original rejected version
+        if (!processedNumbers.has(answerNum)) {
+          acceptedAnswers.push(answer)
+          processedNumbers.add(answerNum)
+        } else {
+          // Replace the rejected version with the revised one
+          const idx = Array.from(processedNumbers).indexOf(answerNum)
+          acceptedAnswers[idx] = answer
+        }
+      }
+
+      // If we found exactly 5 accepted answers, use those
+      if (acceptedAnswers.length === 5) {
+        const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+        console.log('ℹ️  Extracted house answers from validation text (no JSON found)')
+        console.log('   Answers:', acceptedAnswers)
+        return {
+          houseAnswers: acceptedAnswers,
+          cost,
+        }
+      }
+
+      // Otherwise, fail with the original error
+      throw new Error(`Failed to parse Claude response as JSON and couldn't extract validated answers (found ${acceptedAnswers.length}/5): ${text.substring(0, 500)}...`)
     }
   }
 
