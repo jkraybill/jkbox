@@ -109,7 +109,7 @@ Pattern: Test coverage dropped 3 sessions→added test-analyzer skill
 
 ## Session Count Tracking
 
-**Current session: 7** (updated at BOS)
+**Current session: 8** (updated at BOS)
 
 Framework automation triggers based on count:
 - AI-driven health check (when friction detected, not calendar)
@@ -191,6 +191,10 @@ Journal entries reference HC outcomes:
 ---
 
 ## Current Journal
+
+### Session 8 (2025-11-16)
+
+[2025-11-16 20:50 UTC] Session 8✓. BOS complete. Investigated foreign key constraint violation→articles missing from DB. Discovery: only 134 articles vs expected thousands. Nuclear reset executed (cleared classification/questions). T:173/175✗ (word-frequency module missing wordlist.txt - pre-existing). C:∅ (no code changes). Pattern: Database diagnostic session→data loss concern resolved (articles intact, just fewer than expected). User reloading manually. JKLES: ∅ (diagnostic work).
 
 ### Session 7 (2025-11-16)
 
