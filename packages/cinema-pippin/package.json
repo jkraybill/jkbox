@@ -1,0 +1,26 @@
+{
+  "name": "@jkbox/cinema-pippin",
+  "version": "0.1.0",
+  "description": "Cinema Pippin subtitle triplet finder for jkbox",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx src/cli.ts"
+  },
+  "bin": {
+    "cinema-pippin": "./dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.0"
+  }
+}

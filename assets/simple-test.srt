@@ -1,0 +1,47 @@
+1
+00:00:01,000 --> 00:00:03,000
+Sentence before.
+
+2
+00:00:03,000 --> 00:00:06,000
+First frame here now.
+
+3
+00:00:06,000 --> 00:00:09,000
+What is happening?
+
+4
+00:00:09,000 --> 00:00:14,000
+Simple answer!
+
+5
+00:00:15,000 --> 00:00:18,000
+Another statement here.
+
+6
+00:00:18,500 --> 00:00:21,000
+This simple answer works great!
+
+7
+00:00:21,500 --> 00:00:24,000
+Middle frame content.
+
+8
+00:00:24,500 --> 00:00:30,000
+Final word is here.
+
+9
+00:00:31,000 --> 00:00:34,000
+Previous ends correctly.
+
+10
+00:00:34,500 --> 00:00:38,000
+Contains final word in text!
+
+11
+00:00:38,500 --> 00:00:42,000
+Middle second content text.
+
+12
+00:00:42,500 --> 00:00:47,000
+Last entry ends here!

@@ -51,6 +51,9 @@ playwright/.cache/
 tmp/
 temp/
 
+# Generated content (cinema-pippin output, etc.)
+generated/
+
 # Content packs (added separately, not in repo by default)
 content-packs/
 

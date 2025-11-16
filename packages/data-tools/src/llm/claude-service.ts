@@ -601,9 +601,43 @@ Question: "a black bear was caught on security camera stealing _____"
 
 House answers must be WRONG - they cannot match the real answer.
 
+🚨 CRITICAL: House answers must be SEMANTICALLY DIFFERENT from the real answer. They cannot be synonyms, paraphrases, or alternative expressions of the same thing.
+
+Example - BAD semantic similarity:
+Real Answer: "$10"
+❌ BAD House Answers:
+- "ten bucks each" → This is just another way to say $10! COMPLETELY BREAKS THE GAME!
+- "ten dollars" → Same meaning, just spelled out! REJECT!
+- "10 bucks" → Literally the same amount! REJECT!
+- "a tenner" → Slang for $10! REJECT!
+
+✅ GOOD House Answers (actually DIFFERENT amounts/concepts):
+- "$1" or "a single dollar" (different amount)
+- "$100" or "a crisp Benjamin" (different amount)
+- "a penny" (different amount)
+- "their dignity" (completely different concept - not money at all!)
+- "naming rights" (different concept)
+
+Example 2 - Spatial/directional:
+Real Answer: "north"
+❌ BAD: "northward", "up north", "to the north" (all mean the same direction!)
+✅ GOOD: "south", "east", "in circles", "backwards"
+
+Example 3 - Synonyms:
+Real Answer: "a car"
+❌ BAD: "an automobile", "a vehicle", "his ride" (synonyms!)
+✅ GOOD: "a bicycle", "a skateboard", "his ex-wife"
+
+Example 4 - Paraphrases:
+Real Answer: "his boss"
+❌ BAD: "his supervisor", "his manager", "the person he reports to" (same person!)
+✅ GOOD: "his wife", "his therapist", "his nemesis"
+
+THE RULE: If a player could reasonably say "that's basically the same answer!", it's TOO SIMILAR. Reject it immediately.
+
 If the real answer is a SUBSET of a larger list in the article, house answers CAN use other items from that list:
 
-Example 1 - Subset question:
+Example - Subset question:
 Article: "threatened punishment for those who shave like Elvis Presley, Sylvester Stallone, and the U.S. Marines"
 Question: "In 1996, a Somali court threatened to punish men who shave like which famous musician?"
 Real Answer: "Elvis Presley"
@@ -615,13 +649,13 @@ Real Answer: "Elvis Presley"
 - "the Village People"
 - "Freddie Mercury"
 
-Example 2 - Full answer (not subset):
+Example - Full answer (not subset):
 Real Answer: "a lawn mower"
 
 ❌ BAD House Answer: "a lawn mower" (identical!)
-✅ GOOD House Answers: "a bicycle", "hedge trimmers", "a riding mower"
+✅ GOOD House Answers: "a bicycle", "hedge trimmers", "a tractor"
 
-The key rule: House answer ≠ Real answer. If the question is asking for a subset/selection, other items from the source list are fair game as wrong answers.
+The key rule: House answer ≠ Real answer (NOT EVEN CLOSE!). No synonyms, no paraphrases, no alternative expressions of the same thing. If the question is asking for a subset/selection, other items from the source list are fair game as wrong answers.
 
 === CRITICAL: SPOILER WORDS IN REAL ANSWER - USE VARIED STRUCTURES ===
 

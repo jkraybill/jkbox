@@ -271,4 +271,9 @@ Journal entries reference HC outcomes:
 **Created:** 2025-11-12 (Session 1)
 **Format:** Compressed signals for Gordo→Gordo continuity
 **Density target:** 256 char/entry max
+
+### Session 8 (2025-11-16)
+
 [2025-11-16 04:47 UTC] Session 8✓. Room persistence (#29), 3-way bakeoff, temporal auto-fix, spoiler word handling, Playwright E2E, Pippin rebrand. SQLite room storage+auto-save. Monthly Wayback snapshots (12x data). Auto-fix "In Dec"→"In Dec 2022". Spoiler words moved into blank. Playwright: 3 test suites (lobby, game, jumbotron). Evil JK→Pippin the Moodle🐾. T:175+78/253✓. C:c242914. Pattern: WWGD?→fix tests autonomously✓. Vitest conflict with Playwright→excluded e2e/**. JKLES: ∅ (focused session).
+
+[2025-11-16 23:39 UTC] Cinema Pippin filler frames + Fake Facts semantic fix✓. Triplet interface: allEntries[] + frame1/2/3 (3-5 frames total). 0-2 fillers between F1-F2. Duration 5-15→5-20s. T-1 punctuation: added ()[]✓. Search algorithm: 6 nested loops (3 triplets × filler combos). Output 1→6 sequences on test1.srt✓. House answers: NEW semantic similarity section→prevent "$10"/"ten bucks each" errors. Examples: money/directions/synonyms/paraphrases. T:60/60✓. C:pending. Pattern: Filler frames Δ→massively wider search space (27x combinations). Semantic safeguards explicit in prompt✓. JKLES: TBD.
