@@ -321,6 +321,36 @@ This will be EXPLICITLY CHECKED before your question is accepted. Month without 
 2. Test the filled-in sentence for grammatical correctness:
    - "stuck in a dumpster hole" ✓ (not "stuck in dumpster hole")
 
+3. **🚨 CRITICAL: SPOILER WORDS MUST BE PART OF THE BLANK 🚨**
+
+   Words like "also", "too", "as well", "similarly", "likewise" create a semantic relationship that SPOILS the question by revealing what type of answer is expected.
+
+   ❌ BAD - Spoiler word before blank:
+   Question: "Leonard Birkinbine was re-elected as coroner two days after dying because his challenger had also _____"
+   Answer: "died"
+   → PROBLEM: "also" reveals the answer must be the SAME as what Birkinbine did (died)!
+   → Makes house answers like "quit" or "withdrawn" OBVIOUSLY WRONG
+
+   ✅ GOOD - Move spoiler word INTO the blank:
+   Question: "Leonard Birkinbine was re-elected as coroner two days after dying because his challenger had _____"
+   Answer: "also died"
+   House: "moved to Canada", "withdrawn from the race", "been disqualified", "already conceded", "quit politics"
+   → Now house answers use DIFFERENT structures (no "also"), so "also died" doesn't stand out
+   → Players can't tell which structural pattern is correct
+
+   ❌ BAD - Another example:
+   Question: "The suspect escaped by hiding in the same place where police _____ too"
+   Answer: "looked"
+   → "too" spoils it by revealing answer must match what police did
+
+   ✅ GOOD - Fixed:
+   Question: "The suspect escaped by hiding in the same place where police _____"
+   Answer: "looked too"
+   House: "already searched", "never checked", "had investigated", "swept earlier"
+   → House answers use different structures, so "looked too" doesn't give itself away
+
+   Rule: If a word creates a semantic requirement (answer must match/relate to something else), move it INTO the blank. House answers should use VARIED structures, NOT all copy the same modifier.
+
 === POSTSCRIPTS ===
 
 CRITICAL RULES:
@@ -383,15 +413,32 @@ Examples of FAILING this checkpoint:
 ❌ "In January, the Fox family in Iowa..." → NO YEAR! Fix: "In January 1999, the Fox family..." or "In 1999, the Fox family..." or "The Fox family in Iowa..."
 ❌ "In August, a man climbed a tower..." → NO YEAR! Fix: "In August 1996, a man..." or "In 1996, a man..." or "A man climbed a tower..."
 
-CHECKPOINT 2: Open-endedness Check
+CHECKPOINT 2: Spoiler Word Check
+□ Does your question have a spoiler word (also, too, as well, similarly, likewise) RIGHT BEFORE the blank?
+  → If YES: Does this word create a semantic requirement that reveals what TYPE of answer is expected?
+    → If YES: ❌ REJECT - Move the spoiler word INTO the blank as part of the answer!
+    → If NO: ✅ PASS
+
+Examples of FAILING this checkpoint:
+❌ "...his challenger had also _____" with answer "died"
+   → "also" reveals answer must match what Birkinbine did!
+   Fix: "...his challenger had _____" with answer "also died"
+   (House answers will use DIFFERENT structures like "moved to Canada", "been disqualified" - no "also")
+
+❌ "...the same place where police _____ too" with answer "looked"
+   → "too" reveals answer must match police action!
+   Fix: "...the same place where police _____" with answer "looked too"
+   (House answers will use different structures like "already searched", "never checked")
+
+CHECKPOINT 3: Open-endedness Check
 □ Could the blank be filled with multiple categories of answers (not just variations within one category)?
   → If NO: ❌ REJECT - Question too narrow
 
-CHECKPOINT 3: Conciseness Check
+CHECKPOINT 4: Conciseness Check
 □ Is the real answer 1-3 words (max 4 in rare cases)?
   → If NO: ❌ REJECT - Answer too long
 
-CHECKPOINT 4: Compound Answer Check
+CHECKPOINT 5: Compound Answer Check
 □ Does the real answer contain "or" (e.g., "cats or dogs")?
   → If YES: ❌ REJECT - Pick ONE specific answer
 
@@ -575,6 +622,43 @@ Real Answer: "a lawn mower"
 ✅ GOOD House Answers: "a bicycle", "hedge trimmers", "a riding mower"
 
 The key rule: House answer ≠ Real answer. If the question is asking for a subset/selection, other items from the source list are fair game as wrong answers.
+
+=== CRITICAL: SPOILER WORDS IN REAL ANSWER - USE VARIED STRUCTURES ===
+
+If the real answer contains spoiler words like "also", "too", "as well", "similarly", "likewise", house answers should use DIFFERENT structures to avoid revealing the pattern.
+
+Example:
+Question: "Leonard Birkinbine was re-elected as coroner two days after dying because his challenger had _____"
+Real Answer: "also died"
+
+✅ GOOD House Answers (use VARIED structures, NOT "also"):
+- "moved to Canada"
+- "withdrawn from the race"
+- "been disqualified"
+- "already conceded"
+- "quit politics"
+→ Now players can't tell that "also" is the key word. The real answer doesn't stand out.
+
+❌ BAD House Answers (all use "also" - creates obvious pattern):
+- "also withdrawn" → Bad! If ALL answers have "also", it's a giveaway
+- "also quit" → Bad! Pattern reveals "also" is important
+- "also been arrested" → Bad! Makes the structure too obvious
+
+Example 2:
+Real Answer: "looked too"
+
+✅ GOOD House Answers (varied structures):
+- "already searched"
+- "never checked"
+- "had investigated earlier"
+- "swept for evidence"
+- "combed through"
+
+❌ BAD House Answers (all use "too"):
+- "searched too" → Creates obvious pattern
+- "checked too" → Makes structure too obvious
+
+The rule: If real answer has a modifier like "also/too/as well", house answers should use DIFFERENT modifiers or NO modifier. This prevents players from identifying the pattern.
 
 === CRITICAL: VALIDATE BY WRITING OUT COMPLETE FILLED-IN SENTENCES ===
 
