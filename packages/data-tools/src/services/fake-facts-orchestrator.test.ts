@@ -100,7 +100,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
         cost: 0.001,
       }))
 
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1,
         reasoning: 'Test judging reasoning',
         cost: 0.001,
@@ -112,7 +112,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       // Should process exactly 10 candidates (batchSize parameter)
       expect(stats.articlesProcessed).toBe(10)
 
-      // Should generate exactly 1 question (winner of 2 finalists)
+      // Should generate exactly 1 question (winner of 3 finalists)
       expect(stats.questionsGenerated).toBe(1)
 
       // Ollama not used when summaries are cached
@@ -159,7 +159,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
         houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
       }))
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1, reasoning: 'Test', cost: 0.001,
       }))
 
@@ -247,7 +247,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
         houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
       }))
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1, reasoning: 'Test', cost: 0.001,
       }))
 
@@ -300,7 +300,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
         houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
       }))
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1, reasoning: 'Test', cost: 0.001,
       }))
 
@@ -359,7 +359,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
         houseAnswers: ['fake 1', 'fake 2', 'fake 3', 'fake 4', 'fake 5'], cost: 0.001,
       }))
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1, reasoning: 'Test', cost: 0.001,
       }))
 
@@ -424,7 +424,7 @@ describeDb('FakeFactsOrchestrator - Competitive Pipeline (Integration)', () => {
       vi.spyOn(claude, 'generateHouseAnswers').mockImplementation(async () => ({
         houseAnswers: ['fake 1', 'fake 2', 'fake 3'], cost: 0.001,
       }))
-      vi.spyOn(claude, 'judgeQuestions').mockImplementation(async () => ({
+      vi.spyOn(claude, 'judgeThreeQuestions').mockImplementation(async () => ({
         winner: 1, reasoning: 'Test', cost: 0.001,
       }))
 
