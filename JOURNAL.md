@@ -271,3 +271,4 @@ Journal entries reference HC outcomes:
 **Created:** 2025-11-12 (Session 1)
 **Format:** Compressed signals for Gordo→Gordo continuity
 **Density target:** 256 char/entry max
+[2025-11-16 04:47 UTC] Session 8✓. Room persistence (#29), 3-way bakeoff, temporal auto-fix, spoiler word handling, Playwright E2E, Pippin rebrand. SQLite room storage+auto-save. Monthly Wayback snapshots (12x data). Auto-fix "In Dec"→"In Dec 2022". Spoiler words moved into blank. Playwright: 3 test suites (lobby, game, jumbotron). Evil JK→Pippin the Moodle🐾. T:175+78/253✓. C:c242914. Pattern: WWGD?→fix tests autonomously✓. Vitest conflict with Playwright→excluded e2e/**. JKLES: ∅ (focused session).
