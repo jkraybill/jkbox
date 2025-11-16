@@ -6,6 +6,57 @@ import { ClaudeService } from '../llm/claude-service'
 import type { Article } from '../types/article'
 import type { FakeFactsQuestionInsert, FakeFactsAnswerInsert } from '../types/fake-facts'
 
+/**
+ * Check if error is recoverable (worth retrying)
+ */
+function isRecoverableError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+
+  // Network/DNS issues
+  if (msg.includes('enotfound') || msg.includes('econnrefused') || msg.includes('econnreset')) return true
+  if (msg.includes('timeout') || msg.includes('timed out')) return true
+  if (msg.includes('network') || msg.includes('dns')) return true
+
+  // API rate limits / temporary unavailability
+  if (msg.includes('429') || msg.includes('rate limit')) return true
+  if (msg.includes('503') || msg.includes('service unavailable')) return true
+  if (msg.includes('502') || msg.includes('bad gateway')) return true
+  if (msg.includes('overloaded')) return true
+
+  // Intermittent errors
+  if (msg.includes('ECONNABORTED')) return true
+  if (msg.includes('socket hang up')) return true
+
+  return false
+}
+
+/**
+ * Retry a function once if it fails with a recoverable error
+ */
+async function retryOnRecoverableError<T>(
+  fn: () => Promise<T>,
+  delayMs: number = 5000,
+  verbose: boolean = false
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    if (isRecoverableError(error)) {
+      if (verbose) {
+        const msg = error instanceof Error ? error.message : String(error)
+        console.log(`     ⚠️  Recoverable error detected: ${msg}`)
+        console.log(`     ⏳ Retrying after ${delayMs}ms delay...`)
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+      return await fn() // Retry once (will throw if fails again)
+    }
+
+    // Non-recoverable error - throw immediately
+    throw error
+  }
+}
+
 export interface ProcessingStats {
   articlesProcessed: number
   questionsGenerated: number
@@ -336,7 +387,11 @@ export class FakeFactsOrchestrator {
             }
 
             if (verbose) console.log(`     → Generating summary with Ollama...`)
-            summary = await this.ollama.summarize(article.title, contentText)
+            summary = await retryOnRecoverableError(
+              () => this.ollama.summarize(article.title, contentText),
+              5000,
+              verbose
+            )
             await this.db.updateArticleSummary(article.id!, summary)
             this.stats.ollamaInferences++
           }
@@ -401,7 +456,11 @@ export class FakeFactsOrchestrator {
 
       // STEP 2: Score all 10 with Claude (winner of bakeoff!)
       if (verbose) console.log('🏆 Step 2: Scoring candidates with Claude...')
-      const scoringResult = await this.claude.scoreArticleCandidates(candidatesWithSummaries)
+      const scoringResult = await retryOnRecoverableError(
+        () => this.claude.scoreArticleCandidates(candidatesWithSummaries),
+        5000,
+        verbose
+      )
       const scores = scoringResult.scores
       this.stats.totalCost += scoringResult.cost
 
@@ -449,78 +508,134 @@ export class FakeFactsOrchestrator {
       for (let i = 0; i < finalists.length; i++) {
         const finalist = finalists[i]!
 
-        if (verbose) console.log(`  Generating question ${i + 1}/3...`)
+        if (verbose) console.log(`  Generating question ${i + 1}/${finalists.length}...`)
 
-        // Pass spacetime metadata for temporal context
-        const spacetime = {
-          eventYear: finalist.article.eventYear,
-          locationCity: finalist.article.locationCity,
-          locationState: finalist.article.locationState,
-          country: finalist.article.country
-        }
+        try {
+          // Pass spacetime metadata for temporal context
+          const spacetime = {
+            eventYear: finalist.article.eventYear,
+            locationCity: finalist.article.locationCity,
+            locationState: finalist.article.locationState,
+            country: finalist.article.country
+          }
 
-        const questionResult = await this.claude.generateQuestion(finalist.title, finalist.summary, spacetime)
-        const sampleAnswers = await this.getSampleRealAnswers(5)
-        const houseAnswersResult = await this.claude.generateHouseAnswers(
-          finalist.title,
-          finalist.summary,
-          questionResult.question,
-          questionResult.realAnswer,
-          sampleAnswers
-        )
+          // Wrap question generation with retry logic
+          const questionResult = await retryOnRecoverableError(
+            () => this.claude.generateQuestion(finalist.title, finalist.summary, spacetime),
+            5000,
+            verbose
+          )
 
-        const questionCost = questionResult.cost + houseAnswersResult.cost
+          const sampleAnswers = await this.getSampleRealAnswers(5)
 
-        generatedQuestions.push({
-          candidate: finalist,
-          question: questionResult.question,
-          correctAnswer: questionResult.realAnswer,
-          houseAnswers: houseAnswersResult.houseAnswers,
-          postscript: questionResult.postscript,
-          blank: questionResult.blank,
-          cost: questionCost,
-        })
+          // Wrap house answer generation with retry logic
+          const houseAnswersResult = await retryOnRecoverableError(
+            () => this.claude.generateHouseAnswers(
+              finalist.title,
+              finalist.summary,
+              questionResult.question,
+              questionResult.realAnswer,
+              sampleAnswers
+            ),
+            5000,
+            verbose
+          )
 
-        if (verbose) {
-          console.log(`    Q: ${questionResult.question}`)
-          console.log(`    A: ${questionResult.realAnswer}`)
-          console.log(`    House: ${houseAnswersResult.houseAnswers.join(', ')}\n`)
+          const questionCost = questionResult.cost + houseAnswersResult.cost
+
+          generatedQuestions.push({
+            candidate: finalist,
+            question: questionResult.question,
+            correctAnswer: questionResult.realAnswer,
+            houseAnswers: houseAnswersResult.houseAnswers,
+            postscript: questionResult.postscript,
+            blank: questionResult.blank,
+            cost: questionCost,
+          })
+
+          if (verbose) {
+            console.log(`    Q: ${questionResult.question}`)
+            console.log(`    A: ${questionResult.realAnswer}`)
+            console.log(`    House: ${houseAnswersResult.houseAnswers.join(', ')}\n`)
+          }
+        } catch (error) {
+          // Failed even after retry - skip this finalist
+          if (verbose) {
+            const msg = error instanceof Error ? error.message : String(error)
+            console.log(`    ❌ Failed to generate question after retry: ${msg}`)
+            console.log(`    Skipping this finalist and continuing with others...\n`)
+          }
+          // Continue to next finalist instead of aborting entire batch
         }
       }
 
-      // STEP 5: Shuffle and judge all 3
-      if (verbose) console.log('⚖️  Step 5: Judging 3 questions to find the best...\n')
-
-      // Shuffle to avoid position bias
-      const shuffled = generatedQuestions.sort(() => Math.random() - 0.5)
-
-      const judgmentResult = await this.claude.judgeThreeQuestions(
-        {
-          question: shuffled[0]!.question,
-          correctAnswer: shuffled[0]!.correctAnswer,
-          houseAnswers: shuffled[0]!.houseAnswers,
-        },
-        {
-          question: shuffled[1]!.question,
-          correctAnswer: shuffled[1]!.correctAnswer,
-          houseAnswers: shuffled[1]!.houseAnswers,
-        },
-        {
-          question: shuffled[2]!.question,
-          correctAnswer: shuffled[2]!.correctAnswer,
-          houseAnswers: shuffled[2]!.houseAnswers,
+      // STEP 5: Check if we have enough questions to proceed
+      if (generatedQuestions.length === 0) {
+        if (verbose) {
+          console.log('❌ No questions generated successfully - aborting batch\n')
         }
-      )
-      const judgment = judgmentResult
-      this.stats.totalCost += judgmentResult.cost
 
-      const winnerIndex = judgment.winner - 1
-      const winner = shuffled[winnerIndex]!
-      const winnerLabel = ['A', 'B', 'C'][winnerIndex]
+        // Update last_considered for all candidates
+        await this.db.updateLastConsidered(allCandidateIds)
+        return
+      }
 
-      if (verbose) {
-        console.log(`  🏆 Winner: Question ${winnerLabel}`)
-        console.log(`  Reasoning: ${judgment.reasoning}\n`)
+      let winner: typeof generatedQuestions[0]
+
+      if (generatedQuestions.length === 1) {
+        // Only 1 question - no judging needed, it wins by default
+        if (verbose) {
+          console.log('⚖️  Step 5: Only 1 question generated - auto-selecting as winner\n')
+        }
+        winner = generatedQuestions[0]!
+      } else if (generatedQuestions.length === 2) {
+        // 2 questions - pick best by score (already sorted highest first)
+        if (verbose) {
+          console.log('⚖️  Step 5: Only 2 questions generated - selecting highest-scoring candidate\n')
+        }
+        winner = generatedQuestions[0]!
+      } else {
+        // 3+ questions - competitive judging
+        if (verbose) {
+          console.log(`⚖️  Step 5: Judging ${generatedQuestions.length} questions to find the best...\n`)
+        }
+
+        // Shuffle to avoid position bias
+        const shuffled = generatedQuestions.sort(() => Math.random() - 0.5)
+
+        // Wrap judging with retry logic
+        const judgmentResult = await retryOnRecoverableError(
+          () => this.claude.judgeThreeQuestions(
+            {
+              question: shuffled[0]!.question,
+              correctAnswer: shuffled[0]!.correctAnswer,
+              houseAnswers: shuffled[0]!.houseAnswers,
+            },
+            {
+              question: shuffled[1]!.question,
+              correctAnswer: shuffled[1]!.correctAnswer,
+              houseAnswers: shuffled[1]!.houseAnswers,
+            },
+            {
+              question: shuffled[2]!.question,
+              correctAnswer: shuffled[2]!.correctAnswer,
+              houseAnswers: shuffled[2]!.houseAnswers,
+            }
+          ),
+          5000,
+          verbose
+        )
+
+        this.stats.totalCost += judgmentResult.cost
+
+        const winnerIndex = judgmentResult.winner - 1
+        winner = shuffled[winnerIndex]!
+        const winnerLabel = ['A', 'B', 'C'][winnerIndex]
+
+        if (verbose) {
+          console.log(`  🏆 Winner: Question ${winnerLabel}`)
+          console.log(`  Reasoning: ${judgmentResult.reasoning}\n`)
+        }
       }
 
       // STEP 6: Save winner to database
