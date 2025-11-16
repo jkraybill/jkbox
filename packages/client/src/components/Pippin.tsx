@@ -1,12 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 
-interface EvilJKProps {
+interface PippinProps {
   variant?: 'intro' | 'corner' | 'fullscreen'
   onIntroComplete?: () => void
 }
 
-export function EvilJK({ variant = 'corner', onIntroComplete }: EvilJKProps) {
+export function Pippin({ variant = 'corner', onIntroComplete }: PippinProps) {
   const [showIntro, setShowIntro] = useState(variant === 'intro')
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export function EvilJK({ variant = 'corner', onIntroComplete }: EvilJKProps) {
             }}
           >
             <motion.img
-              src="/eviljk.jpg"
-              alt="Evil JK"
+              src="/pippin.png"
+              alt="Pippin the Moodle"
               style={styles.introImage}
               animate={{
                 y: [0, -20, 0],
@@ -63,8 +63,8 @@ export function EvilJK({ variant = 'corner', onIntroComplete }: EvilJKProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
             >
-              <h1 style={styles.introTitle}>WELCOME TO JKBOX!</h1>
-              <p style={styles.introSubtitle}>Let's get this party started! 😈</p>
+              <h1 style={styles.introTitle}>WELCOME TO PIPPIN'S PLAYHOUSE!</h1>
+              <p style={styles.introSubtitle}>Let's get this party started! 🐾</p>
             </motion.div>
           </motion.div>
         </motion.div>
@@ -89,8 +89,8 @@ export function EvilJK({ variant = 'corner', onIntroComplete }: EvilJKProps) {
         }}
       >
         <motion.img
-          src="/eviljk.jpg"
-          alt="Evil JK"
+          src="/pippin.png"
+          alt="Pippin the Moodle"
           style={styles.cornerImage}
           whileHover={{ scale: 1.1, rotate: 10 }}
           transition={{ duration: 0.2 }}

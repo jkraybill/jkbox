@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useGameStore } from '../store/game-store'
 import { useSocket } from '../lib/use-socket'
 import { JumbotronVoting } from '../components/JumbotronVoting'
-import { EvilJK } from '../components/EvilJK'
+import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import type { LobbyCountdownMessage } from '@jkbox/shared'
 
@@ -60,7 +60,7 @@ export function Jumbotron() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>jkbox Party</h1>
+        <h1 style={styles.title}>Pippin's Playhouse</h1>
         <div style={styles.roomCode}>
           Room Code: <span style={styles.roomCodeValue}>{room.id}</span>
         </div>
@@ -94,11 +94,11 @@ export function Jumbotron() {
         <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
       </div>
 
-      {/* Evil JK intro animation (plays once on load) */}
-      {showIntro && <EvilJK variant="intro" onIntroComplete={() => setShowIntro(false)} />}
+      {/* Pippin intro animation (plays once on load) */}
+      {showIntro && <Pippin variant="intro" onIntroComplete={() => setShowIntro(false)} />}
 
-      {/* Evil JK corner mascot (persistent, animated) */}
-      {!showIntro && !countdown && <EvilJK variant="corner" />}
+      {/* Pippin corner mascot (persistent, animated) */}
+      {!showIntro && !countdown && <Pippin variant="corner" />}
 
       {/* Countdown overlay */}
       {countdown && (

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
-import { EvilJK } from '../components/EvilJK'
+import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import type { RoomUpdateMessage, LobbyCountdownMessage } from '@jkbox/shared'
 
@@ -91,8 +91,8 @@ export function Player() {
         </div>
       </div>
 
-      {/* Evil JK corner mascot (smaller for mobile) */}
-      {!countdown && <EvilJK variant="corner" />}
+      {/* Pippin corner mascot (smaller for mobile) */}
+      {!countdown && <Pippin variant="corner" />}
 
       {/* Countdown overlay */}
       {countdown && (
