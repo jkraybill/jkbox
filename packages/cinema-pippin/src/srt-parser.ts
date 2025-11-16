@@ -2,8 +2,8 @@ export interface SRTEntry {
   index: number;
   startTime: string;
   endTime: string;
-  text: string; // All lines joined with \n
-  rawText: string[]; // Individual lines
+  text: string; // All lines joined with space (for comparison)
+  rawText: string[]; // Individual lines (preserved)
 }
 
 export function parseSRT(content: string): SRTEntry[] {
@@ -23,8 +23,8 @@ export function parseSRT(content: string): SRTEntry[] {
     if (!timestampMatch) continue;
 
     const [, startTime, endTime] = timestampMatch;
-    const rawText = lines.slice(2); // Rest is text (preserve blank lines within entry)
-    const text = rawText.join('\n');
+    const rawText = lines.slice(2); // Rest is text (preserve individual lines)
+    const text = rawText.join(' '); // Join with space for comparison purposes
 
     entries.push({
       index,

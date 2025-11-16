@@ -43,8 +43,9 @@ export function getDurationSeconds(firstEntry: SRTEntry, thirdEntry: SRTEntry): 
 export function isSingleWordWithPunctuation(text: string): boolean {
   // Must be exactly one word followed by one punctuation mark
   // Word can contain letters and apostrophes
+  // Valid punctuation: . ! ? - ; " '
   const trimmed = text.trim();
-  const match = trimmed.match(/^[a-zA-Z']+[.!?\-;]$/);
+  const match = trimmed.match(/^[a-zA-Z']+[.!?\-;"']$/);
   return match !== null;
 }
 
@@ -94,4 +95,91 @@ const EXCLUDED_WORDS = new Set([
 
 export function isExcludedWord(word: string): boolean {
   return EXCLUDED_WORDS.has(word.toLowerCase());
+}
+
+export function extractLastWord(text: string): string {
+  // Extract the last word from text, removing punctuation and lowercasing
+  const words = text.trim().split(/\s+/);
+  if (words.length === 0) return '';
+
+  const lastWord = words[words.length - 1];
+  // Remove trailing punctuation and lowercase
+  const cleaned = lastWord.replace(/[.!?\-;,]+$/, '');
+  return cleaned.toLowerCase();
+}
+
+export function hasNonAlphaBeforeLastWord(text: string): boolean {
+  // Check if there's at least one (non-whitespace AND non-alphabetic AND non-comma) character
+  // between the second-last ALPHABETIC word and the last ALPHABETIC word
+  // Returns false for single-word text (which is valid via other path)
+  // IMPORTANT: Also returns false if there's no whitespace in the text (treated as single sequence)
+
+  const trimmed = text.trim();
+
+  // If there's no whitespace, treat as single "word" regardless of punctuation
+  if (!/\s/.test(trimmed)) {
+    return false;
+  }
+
+  // Extract all alphabetic words (sequences of letters and apostrophes)
+  const wordMatches = Array.from(trimmed.matchAll(/[a-zA-Z']+/g));
+
+  if (wordMatches.length < 2) return false; // Need at least 2 alphabetic words
+
+  // Get positions of last two alphabetic words
+  const secondLastMatch = wordMatches[wordMatches.length - 2];
+  const lastMatch = wordMatches[wordMatches.length - 1];
+
+  if (!secondLastMatch || !lastMatch) return false;
+
+  // Position where second-last alphabetic word ends
+  const secondLastEnd = secondLastMatch.index! + secondLastMatch[0].length;
+  // Position where last alphabetic word starts
+  const lastStart = lastMatch.index!;
+
+  // Extract text between them
+  const between = trimmed.slice(secondLastEnd, lastStart);
+
+  // Check if there's at least one character that is:
+  // - NOT whitespace
+  // - NOT alphabetic
+  // - NOT comma
+  for (const char of between) {
+    if (char !== ' ' &&
+        char !== '\t' &&
+        char !== '\n' &&
+        char !== '\r' &&
+        !/[a-zA-Z]/.test(char) &&
+        char !== ',') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function isValidT1Frame3(text: string): boolean {
+  // T1 F3 must satisfy ALL of:
+  // 1. Must end with . ! ? " or '
+  // 2. EITHER:
+  //    a. Single word with punctuation (old rule), OR
+  //    b. Multi-word with non-alpha non-whitespace non-comma char between last two words
+
+  const trimmed = text.trim();
+  const lastChar = trimmed.slice(-1);
+
+  // Must end with specific punctuation
+  if (!['.', '!', '?', '"', "'"].includes(lastChar)) {
+    return false;
+  }
+
+  const words = trimmed.split(/\s+/);
+
+  if (words.length === 1) {
+    // Single word - must have punctuation (already checked above)
+    return isSingleWordWithPunctuation(text);
+  }
+
+  // Multi-word - must have valid separator before last word
+  return hasNonAlphaBeforeLastWord(text);
 }

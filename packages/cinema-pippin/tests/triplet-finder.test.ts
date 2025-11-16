@@ -3,7 +3,7 @@ import { isValidFirstTriplet, isValidSubsequentTriplet, findAllTriplets, type Tr
 import type { SRTEntry } from '../src/srt-parser';
 
 describe('isValidFirstTriplet', () => {
-  it('should return true for valid first triplet with minimum 2 fillers', () => {
+  it('should return true for valid first triplet with 2 fillers', () => {
     const entries: SRTEntry[] = [
       {
         index: 1,
@@ -52,6 +52,194 @@ describe('isValidFirstTriplet', () => {
     // Test with 2 fillers: frame1=1, frame2=4, frame3=5
     const result = isValidFirstTriplet(entries, 1, 4, 5);
     expect(result).toBe(true);
+  });
+
+  it('should return true for valid first triplet with 0 fillers', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous frame.',
+        rawText: ['Previous frame.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:05,000',
+        text: 'First frame here.',
+        rawText: ['First frame here.'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:05,000',
+        endTime: '00:00:07,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:07,000',
+        endTime: '00:00:12,000',  // 9 seconds total
+        text: 'Answer!',
+        rawText: ['Answer!'],
+      },
+    ];
+
+    // Test with 0 fillers: frame1=1, frame2=2, frame3=3
+    const result = isValidFirstTriplet(entries, 1, 2, 3);
+    expect(result).toBe(true);
+  });
+
+  it('should return true for valid first triplet with 6 fillers', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous frame.',
+        rawText: ['Previous frame.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:05,000',
+        text: 'First frame here.',
+        rawText: ['First frame here.'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:05,000',
+        endTime: '00:00:07,000',
+        text: 'F1.',
+        rawText: ['F1.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:07,000',
+        endTime: '00:00:09,000',
+        text: 'F2.',
+        rawText: ['F2.'],
+      },
+      {
+        index: 5,
+        startTime: '00:00:09,000',
+        endTime: '00:00:11,000',
+        text: 'F3.',
+        rawText: ['F3.'],
+      },
+      {
+        index: 6,
+        startTime: '00:00:11,000',
+        endTime: '00:00:13,000',
+        text: 'F4.',
+        rawText: ['F4.'],
+      },
+      {
+        index: 7,
+        startTime: '00:00:13,000',
+        endTime: '00:00:15,000',
+        text: 'F5.',
+        rawText: ['F5.'],
+      },
+      {
+        index: 8,
+        startTime: '00:00:15,000',
+        endTime: '00:00:17,000',
+        text: 'F6.',
+        rawText: ['F6.'],
+      },
+      {
+        index: 9,
+        startTime: '00:00:17,000',
+        endTime: '00:00:19,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 10,
+        startTime: '00:00:19,000',
+        endTime: '00:00:24,000',  // 21 seconds total
+        text: 'Answer!',
+        rawText: ['Answer!'],
+      },
+    ];
+
+    // Test with 6 fillers: frame1=1, frame2=8, frame3=9
+    const result = isValidFirstTriplet(entries, 1, 8, 9);
+    expect(result).toBe(true);
+  });
+
+  it('should accept duration up to 35 seconds', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous frame.',
+        rawText: ['Previous frame.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:15,000',
+        text: 'First frame here.',
+        rawText: ['First frame here.'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:15,000',
+        endTime: '00:00:27,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:27,000',
+        endTime: '00:00:38,000',  // 35 seconds total from frame 2 start
+        text: 'Answer!',
+        rawText: ['Answer!'],
+      },
+    ];
+
+    const result = isValidFirstTriplet(entries, 1, 2, 3);
+    expect(result).toBe(true);
+  });
+
+  it('should reject duration over 35 seconds', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous frame.',
+        rawText: ['Previous frame.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:15,000',
+        text: 'First frame here.',
+        rawText: ['First frame here.'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:15,000',
+        endTime: '00:00:27,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:27,000',
+        endTime: '00:00:39,000',  // 36 seconds total - too long
+        text: 'Answer!',
+        rawText: ['Answer!'],
+      },
+    ];
+
+    const result = isValidFirstTriplet(entries, 1, 2, 3);
+    expect(result).toBe(false);
   });
 
   // Test removed - T1 F2 no longer requires question mark

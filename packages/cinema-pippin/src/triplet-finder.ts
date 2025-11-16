@@ -4,15 +4,15 @@ import {
   endsWithPunctuationOrBracket,
   endsWithQuestionMark,
   getDurationSeconds,
-  isSingleWordWithPunctuation,
-  extractWordFromSingleWord,
+  isValidT1Frame3,
+  extractLastWord,
   containsWordAsStandalone,
   countWords,
   isExcludedWord,
 } from './triplet-utils.js';
 
 export interface Triplet {
-  allEntries: SRTEntry[]; // All frames including fillers (5-8 frames: 3 official + 2-5 fillers)
+  allEntries: SRTEntry[]; // All frames including fillers (3-9 frames: 3 official + 0-6 fillers)
   frame1: SRTEntry;       // Official Frame 1
   frame2: SRTEntry;       // Official Frame 2
   frame3: SRTEntry;       // Official Frame 3
@@ -31,7 +31,7 @@ export function isValidFirstTriplet(
   frame3Idx: number
 ): boolean {
   // frame1Idx, frame2Idx, frame3Idx are the indices for the official frames
-  // frame2Idx can be frame1Idx + 3, +4, +5, or +6 (2, 3, 4, or 5 fillers)
+  // frame2Idx can be frame1Idx + 1, +2, +3, +4, +5, +6, or +7 (0, 1, 2, 3, 4, 5, or 6 fillers)
   // frame3Idx is always frame2Idx + 1
 
   if (frame1Idx < 1 || frame3Idx >= entries.length) {
@@ -50,8 +50,8 @@ export function isValidFirstTriplet(
     return false;
   }
 
-  // Frame 3 must be a single word with punctuation
-  if (!isSingleWordWithPunctuation(frame3.text)) {
+  // Frame 3 must be valid per new rules (single word OR multi-word with special separator)
+  if (!isValidT1Frame3(frame3.text)) {
     return false;
   }
 
@@ -60,9 +60,11 @@ export function isValidFirstTriplet(
     return false;
   }
 
-  // Frame 3 word cannot be in the excluded set
-  const word = extractWordFromSingleWord(frame3.text);
-  if (isExcludedWord(word)) {
+  // Extract keyword (last word of Frame 3)
+  const keyword = extractLastWord(frame3.text);
+
+  // Keyword cannot be empty or in the excluded set
+  if (!keyword || isExcludedWord(keyword)) {
     return false;
   }
 
@@ -73,9 +75,9 @@ export function isValidFirstTriplet(
 
   // Frame 2 no longer requires question mark - any text is valid
 
-  // Duration must be 5-20 seconds
+  // Duration must be 5-35 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 20) {
+  if (duration < 5 || duration > 35) {
     return false;
   }
 
@@ -135,9 +137,9 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Duration must be 5-20 seconds
+  // Duration must be 5-35 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 20) {
+  if (duration < 5 || duration > 35) {
     return false;
   }
 
@@ -148,11 +150,11 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
   const entries = parseSRT(srtContent);
   const results: Triplet[][] = [];
 
-  // Try all combinations of filler counts (2, 3, 4, 5) for each triplet
+  // Try all combinations of filler counts (0, 1, 2, 3, 4, 5, 6) for each triplet
   // Start from index 1 to allow for "previous" frame
   for (let f1Start = 1; f1Start < entries.length; f1Start++) {
-    // Try 2, 3, 4, 5 fillers between Frame 1 and Frame 2 of first triplet
-    for (let f1Fillers = 2; f1Fillers <= 5; f1Fillers++) {
+    // Try 0-6 fillers between Frame 1 and Frame 2 of first triplet
+    for (let f1Fillers = 0; f1Fillers <= 6; f1Fillers++) {
       const f1Frame2Idx = f1Start + 1 + f1Fillers;
       const f1Frame3Idx = f1Frame2Idx + 1;
 
@@ -162,11 +164,11 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
         continue;
       }
 
-      const firstKeyword = extractWordFromSingleWord(entries[f1Frame3Idx].text);
+      const firstKeyword = extractLastWord(entries[f1Frame3Idx].text);
 
       // Find second triplets (start after first triplet ends)
       for (let f2Start = f1Frame3Idx + 1; f2Start < entries.length; f2Start++) {
-        for (let f2Fillers = 2; f2Fillers <= 5; f2Fillers++) {
+        for (let f2Fillers = 0; f2Fillers <= 6; f2Fillers++) {
           const f2Frame2Idx = f2Start + 1 + f2Fillers;
           const f2Frame3Idx = f2Frame2Idx + 1;
 
@@ -178,7 +180,7 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
           // Find third triplets (start after second triplet ends)
           for (let f3Start = f2Frame3Idx + 1; f3Start < entries.length; f3Start++) {
-            for (let f3Fillers = 2; f3Fillers <= 5; f3Fillers++) {
+            for (let f3Fillers = 0; f3Fillers <= 6; f3Fillers++) {
               const f3Frame2Idx = f3Start + 1 + f3Fillers;
               const f3Frame3Idx = f3Frame2Idx + 1;
 

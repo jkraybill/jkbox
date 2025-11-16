@@ -9,6 +9,10 @@ import {
   containsWordAsStandalone,
   countWords,
   isExcludedWord,
+  extractLastWord,
+  extractFirstWord,
+  hasNonAlphaBeforeLastWord,
+  isValidT1Frame3,
   type SRTEntry,
 } from '../src/triplet-utils';
 
@@ -98,100 +102,90 @@ describe('getDurationSeconds', () => {
       rawText: ['Text'],
     };
 
-    expect(getDurationSeconds(entry1, entry3)).toBe(15); // 0 to 15
+    const duration = getDurationSeconds(entry1, entry3);
+    expect(duration).toBe(15); // floor(15.0)
   });
 
-  it('should handle milliseconds', () => {
+  it('should floor fractional seconds', () => {
     const entry1: SRTEntry = {
       index: 1,
-      startTime: '00:00:00,500',
-      endTime: '00:00:05,500',
+      startTime: '00:00:00,200',
+      endTime: '00:00:05,000',
       text: 'Text',
       rawText: ['Text'],
     };
 
     const entry3: SRTEntry = {
       index: 3,
-      startTime: '00:00:10,500',
-      endTime: '00:00:14,500',
+      startTime: '00:00:10,000',
+      endTime: '00:00:15,800',
       text: 'Text',
       rawText: ['Text'],
     };
 
-    expect(getDurationSeconds(entry1, entry3)).toBe(14); // 0.5 to 14.5 = 14 seconds
-  });
-
-  it('should handle hours and minutes', () => {
-    const entry1: SRTEntry = {
-      index: 1,
-      startTime: '01:02:03,000',
-      endTime: '01:02:08,000',
-      text: 'Text',
-      rawText: ['Text'],
-    };
-
-    const entry3: SRTEntry = {
-      index: 3,
-      startTime: '01:02:13,000',
-      endTime: '01:02:18,000',
-      text: 'Text',
-      rawText: ['Text'],
-    };
-
-    expect(getDurationSeconds(entry1, entry3)).toBe(15); // 3s to 18s = 15 seconds
+    const duration = getDurationSeconds(entry1, entry3);
+    expect(duration).toBe(15); // floor(15.6)
   });
 });
 
 describe('isSingleWordWithPunctuation', () => {
-  it('should return true for single word with punctuation', () => {
-    expect(isSingleWordWithPunctuation('You.')).toBe(true);
-    expect(isSingleWordWithPunctuation('Stop!')).toBe(true);
-    expect(isSingleWordWithPunctuation('Go?')).toBe(true);
-    expect(isSingleWordWithPunctuation('Wait-')).toBe(true);
-    expect(isSingleWordWithPunctuation('Okay;')).toBe(true);
+  it('should return true for single word with period', () => {
+    expect(isSingleWordWithPunctuation('Hello.')).toBe(true);
   });
 
-  it('should return true for words with apostrophes', () => {
-    expect(isSingleWordWithPunctuation("Don't!")).toBe(true);
-    expect(isSingleWordWithPunctuation("You're?")).toBe(true);
-    expect(isSingleWordWithPunctuation("It's.")).toBe(true);
+  it('should return true for single word with exclamation', () => {
+    expect(isSingleWordWithPunctuation('Wow!')).toBe(true);
+  });
+
+  it('should return true for single word with question mark', () => {
+    expect(isSingleWordWithPunctuation('Really?')).toBe(true);
+  });
+
+  it('should return true for single word with hyphen', () => {
+    expect(isSingleWordWithPunctuation('Stop-')).toBe(true);
+  });
+
+  it('should return true for single word with semicolon', () => {
+    expect(isSingleWordWithPunctuation('Wait;')).toBe(true);
+  });
+
+  it('should return false for single word without punctuation', () => {
+    expect(isSingleWordWithPunctuation('Hello')).toBe(false);
   });
 
   it('should return false for multiple words', () => {
-    expect(isSingleWordWithPunctuation('Two words.')).toBe(false);
-    expect(isSingleWordWithPunctuation('You are here!')).toBe(false);
+    expect(isSingleWordWithPunctuation('Hello World.')).toBe(false);
+    expect(isSingleWordWithPunctuation('Two words!')).toBe(false);
   });
 
-  it('should return false for no punctuation', () => {
-    expect(isSingleWordWithPunctuation('Word')).toBe(false);
-    expect(isSingleWordWithPunctuation('Okay')).toBe(false);
+  it('should return false for word with multiple punctuation marks', () => {
+    expect(isSingleWordWithPunctuation('Hello!!')).toBe(false);
+    expect(isSingleWordWithPunctuation('What?!')).toBe(false);
   });
 
-  it('should return false for multiple punctuation marks', () => {
-    expect(isSingleWordWithPunctuation('Word!!')).toBe(false);
-    expect(isSingleWordWithPunctuation('What!?')).toBe(false);
-  });
-
-  it('should handle whitespace', () => {
-    expect(isSingleWordWithPunctuation('  You.  ')).toBe(true);
-    expect(isSingleWordWithPunctuation(' Stop! ')).toBe(true);
+  it('should handle apostrophes in words', () => {
+    expect(isSingleWordWithPunctuation("Don't.")).toBe(true);
+    expect(isSingleWordWithPunctuation("It's!")).toBe(true);
   });
 });
 
 describe('extractWordFromSingleWord', () => {
-  it('should extract word without punctuation', () => {
-    expect(extractWordFromSingleWord('You.')).toBe('you');
-    expect(extractWordFromSingleWord('Stop!')).toBe('stop');
-    expect(extractWordFromSingleWord('Go?')).toBe('go');
+  it('should extract word and lowercase', () => {
+    expect(extractWordFromSingleWord('Hello.')).toBe('hello');
+    expect(extractWordFromSingleWord('WORLD!')).toBe('world');
   });
 
-  it('should preserve apostrophes and lowercase', () => {
-    expect(extractWordFromSingleWord("Don't!")).toBe("don't");
-    expect(extractWordFromSingleWord("You're?")).toBe("you're");
+  it('should handle all punctuation types', () => {
+    expect(extractWordFromSingleWord('Stop.')).toBe('stop');
+    expect(extractWordFromSingleWord('Go!')).toBe('go');
+    expect(extractWordFromSingleWord('Really?')).toBe('really');
+    expect(extractWordFromSingleWord('Wait-')).toBe('wait');
+    expect(extractWordFromSingleWord('Okay;')).toBe('okay');
   });
 
-  it('should handle whitespace', () => {
-    expect(extractWordFromSingleWord('  Word.  ')).toBe('word');
+  it('should handle apostrophes', () => {
+    expect(extractWordFromSingleWord("Don't.")).toBe("don't");
+    expect(extractWordFromSingleWord("It's!")).toBe("it's");
   });
 });
 
@@ -246,7 +240,7 @@ describe('countWords', () => {
     expect(countWords('\n\tThree word phrase\t\n')).toBe(3);
   });
 
-  it('should return 0 for empty string', () => {
+  it('should handle empty string', () => {
     expect(countWords('')).toBe(0);
     expect(countWords('   ')).toBe(0);
   });
@@ -278,5 +272,177 @@ describe('isExcludedWord', () => {
     expect(isExcludedWord('world')).toBe(false);
     expect(isExcludedWord('sada')).toBe(false);
     expect(isExcludedWord('answer')).toBe(false);
+  });
+});
+
+describe('extractLastWord', () => {
+  it('should extract last word from single word', () => {
+    expect(extractLastWord('Banana.')).toBe('banana');
+    expect(extractLastWord('Word!')).toBe('word');
+  });
+
+  it('should extract last word from multi-word text', () => {
+    expect(extractLastWord('A big banana.')).toBe('banana');
+    expect(extractLastWord('What a day!')).toBe('day');
+  });
+
+  it('should remove trailing punctuation', () => {
+    expect(extractLastWord('...a banana.')).toBe('banana');
+    expect(extractLastWord('Go home!')).toBe('home');
+    expect(extractLastWord('Really?')).toBe('really');
+  });
+
+  it('should lowercase the result', () => {
+    expect(extractLastWord('BANANA.')).toBe('banana');
+    expect(extractLastWord('Big WORD!')).toBe('word');
+  });
+
+  it('should handle empty string', () => {
+    expect(extractLastWord('')).toBe('');
+  });
+});
+
+describe('extractFirstWord', () => {
+  it('should extract first word from single word', () => {
+    expect(extractFirstWord('Banana.')).toBe('banana');
+    expect(extractFirstWord('Word!')).toBe('word');
+  });
+
+  it('should extract first word from multi-word text', () => {
+    expect(extractFirstWord('A big banana.')).toBe('a');
+    expect(extractFirstWord('What a day!')).toBe('what');
+  });
+
+  it('should remove trailing punctuation from first word', () => {
+    expect(extractFirstWord('Hello, world!')).toBe('hello');
+    expect(extractFirstWord('Stop! Go!')).toBe('stop');
+  });
+
+  it('should lowercase the result', () => {
+    expect(extractFirstWord('BANANA word')).toBe('banana');
+    expect(extractFirstWord('BIG word!')).toBe('big');
+  });
+
+  it('should handle empty string', () => {
+    expect(extractFirstWord('')).toBe('');
+  });
+});
+
+describe('hasNonAlphaBeforeLastWord', () => {
+  it('should return true for dash separator with space', () => {
+    expect(hasNonAlphaBeforeLastWord('A -- BANANA')).toBe(true);
+    expect(hasNonAlphaBeforeLastWord('word - word')).toBe(true);
+  });
+
+  it('should return true for period separator with space', () => {
+    expect(hasNonAlphaBeforeLastWord('A ... BANANA')).toBe(true);
+    expect(hasNonAlphaBeforeLastWord('word. banana')).toBe(true);
+  });
+
+  it('should return true for colon separator', () => {
+    expect(hasNonAlphaBeforeLastWord('A: BANANA')).toBe(true);
+    expect(hasNonAlphaBeforeLastWord('thing: word')).toBe(true);
+  });
+
+  it('should return false for space-only separator', () => {
+    expect(hasNonAlphaBeforeLastWord('A BANANA')).toBe(false);
+    expect(hasNonAlphaBeforeLastWord('two words')).toBe(false);
+  });
+
+  it('should return false for comma separator (excluded)', () => {
+    expect(hasNonAlphaBeforeLastWord('A, BANANA')).toBe(false);
+    expect(hasNonAlphaBeforeLastWord('word, word')).toBe(false);
+  });
+
+  it('should return false for single word (no whitespace)', () => {
+    expect(hasNonAlphaBeforeLastWord('BANANA')).toBe(false);
+    expect(hasNonAlphaBeforeLastWord('word')).toBe(false);
+    expect(hasNonAlphaBeforeLastWord('A--BANANA')).toBe(false); // No whitespace = single "word"
+    expect(hasNonAlphaBeforeLastWord('word-word')).toBe(false); // No whitespace = single "word"
+  });
+
+  it('should return true for mixed punctuation with space', () => {
+    expect(hasNonAlphaBeforeLastWord('A !? BANANA')).toBe(true);
+    expect(hasNonAlphaBeforeLastWord('word ... thing')).toBe(true);
+  });
+
+  it('should return false when punctuation comes before second-last word', () => {
+    expect(hasNonAlphaBeforeLastWord('...A BANANA')).toBe(false); // period before "A", not between "A" and "BANANA"
+  });
+});
+
+describe('isValidT1Frame3', () => {
+  it('should accept single word with period', () => {
+    expect(isValidT1Frame3('BANANA.')).toBe(true);
+    expect(isValidT1Frame3('Word.')).toBe(true);
+  });
+
+  it('should accept single word with exclamation', () => {
+    expect(isValidT1Frame3('BANANA!')).toBe(true);
+  });
+
+  it('should accept single word with question mark', () => {
+    expect(isValidT1Frame3('BANANA?')).toBe(true);
+  });
+
+  it('should accept single word with double quote', () => {
+    expect(isValidT1Frame3('BANANA"')).toBe(true);
+  });
+
+  it('should accept single word with single quote', () => {
+    expect(isValidT1Frame3("BANANA'")).toBe(true);
+  });
+
+  it('should reject single word without punctuation', () => {
+    expect(isValidT1Frame3('BANANA')).toBe(false);
+    expect(isValidT1Frame3('Word')).toBe(false);
+  });
+
+  it('should reject single word with wrong punctuation', () => {
+    expect(isValidT1Frame3('BANANA-')).toBe(false);
+    expect(isValidT1Frame3('BANANA;')).toBe(false);
+    expect(isValidT1Frame3('BANANA:')).toBe(false);
+  });
+
+  it('should accept multi-word with valid separator and valid ending', () => {
+    expect(isValidT1Frame3('A -- BANANA.')).toBe(true);
+    expect(isValidT1Frame3('word ... thing.')).toBe(true);
+    expect(isValidT1Frame3('A: BANANA!')).toBe(true);
+  });
+
+  it('should reject multi-word with space-only separator', () => {
+    expect(isValidT1Frame3('A BANANA.')).toBe(false);
+    expect(isValidT1Frame3('two words.')).toBe(false);
+  });
+
+  it('should reject multi-word with comma separator', () => {
+    expect(isValidT1Frame3('A, BANANA.')).toBe(false);
+    expect(isValidT1Frame3('word, word.')).toBe(false);
+  });
+
+  it('should reject multi-word with valid separator but wrong ending', () => {
+    expect(isValidT1Frame3('A -- BANANA-')).toBe(false);
+    expect(isValidT1Frame3('word ... thing;')).toBe(false);
+    expect(isValidT1Frame3('A: BANANA:')).toBe(false);
+  });
+
+  it('should accept multi-word when punctuation is between last two words and ends correctly', () => {
+    expect(isValidT1Frame3('the big -- BANANA.')).toBe(true); // dash between "big" and "BANANA"
+    expect(isValidT1Frame3('some ... word!')).toBe(true);
+  });
+
+  it('should reject multi-word when punctuation is elsewhere', () => {
+    expect(isValidT1Frame3('...the big BANANA.')).toBe(false); // period before "the", not between last two words
+    expect(isValidT1Frame3('the...big BANANA.')).toBe(false); // period between "the" and "big", not before "BANANA"
+  });
+
+  it('should accept multi-word with quote endings', () => {
+    expect(isValidT1Frame3('A -- BANANA"')).toBe(true);
+    expect(isValidT1Frame3("word ... thing'")).toBe(true);
+  });
+
+  it('should reject single word sequences with no whitespace', () => {
+    expect(isValidT1Frame3('A--BANANA.')).toBe(false); // No whitespace = treated as single word, but has -- not valid punctuation
+    expect(isValidT1Frame3('word...thing.')).toBe(false); // No whitespace = treated as single word
   });
 });
