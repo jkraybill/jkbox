@@ -1,8 +1,39 @@
 import type { Room, Player } from '@jkbox/shared'
 import { generateRoomCode } from './utils/room-code'
+import type { RoomStorage } from './storage/room-storage'
 
 export class RoomManager {
   private rooms: Map<string, Room> = new Map()
+  private storage?: RoomStorage
+
+  constructor(storage?: RoomStorage) {
+    this.storage = storage
+  }
+
+  /**
+   * Restore rooms from persistent storage (call on server startup)
+   */
+  restoreFromStorage(): void {
+    if (!this.storage) {
+      return
+    }
+
+    const rooms = this.storage.getAllRooms()
+    for (const room of rooms) {
+      this.rooms.set(room.id, room)
+    }
+
+    console.log(`✓ Restored ${rooms.length} room(s) from storage`)
+  }
+
+  /**
+   * Persist room to storage (auto-save helper)
+   */
+  private persistRoom(room: Room): void {
+    if (this.storage) {
+      this.storage.saveRoom(room)
+    }
+  }
 
   /**
    * Create a new room with a unique ID
@@ -26,6 +57,7 @@ export class RoomManager {
     }
 
     this.rooms.set(roomId, room)
+    this.persistRoom(room) // Auto-save
     return room
   }
 
@@ -64,6 +96,7 @@ export class RoomManager {
     }
 
     room.players.push(player)
+    this.persistRoom(room) // Auto-save
     return true
   }
 
@@ -77,6 +110,7 @@ export class RoomManager {
     }
 
     room.players = room.players.filter(p => p.id !== playerId)
+    this.persistRoom(room) // Auto-save
   }
 
   /**
@@ -97,6 +131,7 @@ export class RoomManager {
       ...room.players[playerIndex]!,
       ...updates
     }
+    this.persistRoom(room) // Auto-save
   }
 
   /**
@@ -104,6 +139,9 @@ export class RoomManager {
    */
   deleteRoom(roomId: string): void {
     this.rooms.delete(roomId)
+    if (this.storage) {
+      this.storage.deleteRoom(roomId)
+    }
   }
 
   /**

@@ -51,6 +51,12 @@ temp/
 # Content packs (added separately, not in repo by default)
 content-packs/
 
+# SQLite databases (runtime data)
+*.db
+*.db-shm
+*.db-wal
+jkbox-rooms.db
+
 # Migration tarballs (contain sensitive .env files)
 *.tar.gz
 jkbox-migration-*.tar.gz

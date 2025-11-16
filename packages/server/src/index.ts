@@ -9,6 +9,7 @@ import type {
   LobbyReadyToggleMessage
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
+import { RoomStorage } from './storage/room-storage'
 import { ConnectionHandler } from './connection-handler'
 
 const app = express()
@@ -20,9 +21,15 @@ const io = new Server(httpServer, {
   }
 })
 
-// Initialize managers
-const roomManager = new RoomManager()
+// Initialize persistence layer
+const storage = new RoomStorage()
+
+// Initialize managers with persistence
+const roomManager = new RoomManager(storage)
 const connectionHandler = new ConnectionHandler(roomManager, io)
+
+// Restore rooms from previous session (if any)
+roomManager.restoreFromStorage()
 
 // Middleware
 app.use(cors())

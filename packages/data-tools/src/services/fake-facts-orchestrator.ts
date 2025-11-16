@@ -416,24 +416,24 @@ export class FakeFactsOrchestrator {
           })
       }
 
-      // STEP 3: Take top 2 (sorted by score DESC, random for ties)
+      // STEP 3: Take top 3 (sorted by score DESC, random for ties)
       const sortedScores = scores.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score
         return Math.random() - 0.5 // Random tie-breaker
       })
 
-      const top2 = sortedScores.slice(0, 2)
-      const finalists = top2.map(s => candidatesWithSummaries.find(c => c.id === s.id)!)
+      const top3 = sortedScores.slice(0, 3)
+      const finalists = top3.map(s => candidatesWithSummaries.find(c => c.id === s.id)!)
 
       if (verbose) {
-        console.log(`\n🥇 Step 3: Top 2 finalists:`)
+        console.log(`\n🥇 Step 3: Top 3 finalists:`)
         finalists.forEach((f, i) => {
           console.log(`  ${i + 1}. ${f.title}`)
         })
         console.log()
       }
 
-      // STEP 4: Generate questions for both finalists
+      // STEP 4: Generate questions for all 3 finalists
       if (verbose) console.log('❓ Step 4: Generating questions for finalists...\n')
 
       const generatedQuestions: Array<{
@@ -449,9 +449,17 @@ export class FakeFactsOrchestrator {
       for (let i = 0; i < finalists.length; i++) {
         const finalist = finalists[i]!
 
-        if (verbose) console.log(`  Generating question ${i + 1}/2...`)
+        if (verbose) console.log(`  Generating question ${i + 1}/3...`)
 
-        const questionResult = await this.claude.generateQuestion(finalist.title, finalist.summary)
+        // Pass spacetime metadata for temporal context
+        const spacetime = {
+          eventYear: finalist.article.eventYear,
+          locationCity: finalist.article.locationCity,
+          locationState: finalist.article.locationState,
+          country: finalist.article.country
+        }
+
+        const questionResult = await this.claude.generateQuestion(finalist.title, finalist.summary, spacetime)
         const sampleAnswers = await this.getSampleRealAnswers(5)
         const houseAnswersResult = await this.claude.generateHouseAnswers(
           finalist.title,
@@ -480,13 +488,13 @@ export class FakeFactsOrchestrator {
         }
       }
 
-      // STEP 5: Shuffle and judge
-      if (verbose) console.log('⚖️  Step 5: Judging questions head-to-head...\n')
+      // STEP 5: Shuffle and judge all 3
+      if (verbose) console.log('⚖️  Step 5: Judging 3 questions to find the best...\n')
 
       // Shuffle to avoid position bias
       const shuffled = generatedQuestions.sort(() => Math.random() - 0.5)
 
-      const judgmentResult = await this.claude.judgeQuestions(
+      const judgmentResult = await this.claude.judgeThreeQuestions(
         {
           question: shuffled[0]!.question,
           correctAnswer: shuffled[0]!.correctAnswer,
@@ -496,6 +504,11 @@ export class FakeFactsOrchestrator {
           question: shuffled[1]!.question,
           correctAnswer: shuffled[1]!.correctAnswer,
           houseAnswers: shuffled[1]!.houseAnswers,
+        },
+        {
+          question: shuffled[2]!.question,
+          correctAnswer: shuffled[2]!.correctAnswer,
+          houseAnswers: shuffled[2]!.houseAnswers,
         }
       )
       const judgment = judgmentResult
@@ -503,9 +516,10 @@ export class FakeFactsOrchestrator {
 
       const winnerIndex = judgment.winner - 1
       const winner = shuffled[winnerIndex]!
+      const winnerLabel = ['A', 'B', 'C'][winnerIndex]
 
       if (verbose) {
-        console.log(`  🏆 Winner: Question ${judgment.winner}`)
+        console.log(`  🏆 Winner: Question ${winnerLabel}`)
         console.log(`  Reasoning: ${judgment.reasoning}\n`)
       }
 

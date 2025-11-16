@@ -93,11 +93,11 @@ async function main() {
     console.log(chalk.gray(`  Feed: ${feed.url}`))
 
     try {
-      // Get historical snapshots
-      console.log(chalk.gray(`  Querying Wayback Machine (${years} years)...`))
+      // Get historical snapshots (monthly sampling)
+      console.log(chalk.gray(`  Querying Wayback Machine (${years} years, monthly sampling)...`))
       const snapshots = await wayback.getYearlySnapshots(feed.url, years)
       totalSnapshots += snapshots.length
-      console.log(chalk.green(`  ✓ Found ${snapshots.length} yearly snapshots`))
+      console.log(chalk.green(`  ✓ Found ${snapshots.length} monthly snapshots`))
 
       if (snapshots.length === 0) {
         console.log(chalk.yellow(`  ⚠️  No historical data available`))
@@ -108,8 +108,9 @@ async function main() {
       for (let j = 0; j < snapshots.length; j++) {
         const snapshot = snapshots[j]!
         const year = snapshot.timestamp.substring(0, 4)
+        const month = snapshot.timestamp.substring(4, 6)
         console.log(
-          chalk.gray(`  [${j + 1}/${snapshots.length}] Processing ${year} snapshot...`)
+          chalk.gray(`  [${j + 1}/${snapshots.length}] Processing ${year}-${month} snapshot...`)
         )
 
         try {

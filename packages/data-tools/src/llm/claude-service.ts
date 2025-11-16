@@ -279,17 +279,38 @@ For questions, construct location/time context like:
 - If you have State only: "In Colorado, a sheriff candidate..."
 - If you have City + State: "In Brisbane, Queensland, a suspended cop..."
 
-For HISTORICAL EVENTS or PAST CURRENT EVENTS, the YEAR is MANDATORY:
-- ❌ BAD: "In August, a man climbed a tower demanding to be Bob Dole's running mate"
-  → Extremely misleading! This was 1996, not recent.
-- ✅ GOOD: "In August 1996, a man climbed a tower demanding to be Bob Dole's running mate"
+**🚨 CRITICAL: MONTH/YEAR RULES - THIS IS CHECKED IN VALIDATION! 🚨**
 
-For RECENT EVENTS (within 2 years), month/season is fine:
-- "In 2024, a Norwegian tourist..."
-- "Last winter in Texas..."
-- "In Rome last March..."
+ABSOLUTE RULE: NEVER write "In January" or "In February" or "In March" (etc.) without the year.
 
-When in doubt, INCLUDE THE YEAR. It's better to over-specify than mislead players about when something happened.
+You have THREE options. Pick ONE:
+
+✅ Option A: Month + Year
+- "In January 1999, the Fox family in Iowa..."
+- "In August 1996, a man climbed a tower..."
+- "In September 2011, two wheelchair-bound men..."
+
+✅ Option B: Year only (no month)
+- "In 1999, the Fox family in Iowa..."
+- "In 1996, a man climbed a tower..."
+- "In 2011, two wheelchair-bound men..."
+
+✅ Option C: Drop temporal context (location only or nothing)
+- "In Iowa, the Fox family opened..."
+- "A man climbed a tower..."
+- "Two wheelchair-bound men..."
+
+❌ NEVER WRITE THESE (they will be REJECTED in validation):
+- "In January, the Fox family..." → Which January?! MISSING YEAR!
+- "In August, a man climbed..." → Which August?! MISSING YEAR!
+- "In September, two wheelchair-bound men..." → Which September?! MISSING YEAR!
+- "Last March, a woman..." → Which March?! (Only OK if you're certain it's THIS year)
+
+The rule is simple: If you type a month name (January, February, March, April, May, June, July, August, September, October, November, December), the YEAR must appear in the same sentence.
+
+If you're not sure of the year, or it's not important to the story → Use Option B (year only) or Option C (drop it).
+
+This will be EXPLICITLY CHECKED before your question is accepted. Month without year = AUTOMATIC REJECTION.
 
 === GRAMMAR & ARTICLES ===
 
@@ -347,6 +368,36 @@ Question: "President Trump bragged about a test that was actually designed to de
 Real Answer: "early signs of dementia"
 Why reject: Too well-known, everyone knows this story about famous person
 
+=== MANDATORY PRE-SUBMISSION VALIDATION CHECKLIST ===
+
+Before submitting your question, you MUST verify each item below. If ANY item fails, REVISE your question.
+
+CHECKPOINT 1: Month/Year Check
+□ Does your question mention a month (January, February, March, April, May, June, July, August, September, October, November, December)?
+  → If YES: Does it ALSO include the year?
+    → If NO YEAR: ❌ REJECT - Fix it! Use "In [Month] [Year]" OR "In [Year]" OR drop temporal context entirely
+    → If HAS YEAR: ✅ PASS
+
+Examples of FAILING this checkpoint:
+❌ "In September, two wheelchair-bound men..." → NO YEAR! Fix: "In September 2011, two..." or "In 2011, two..." or "Two wheelchair-bound men..."
+❌ "In January, the Fox family in Iowa..." → NO YEAR! Fix: "In January 1999, the Fox family..." or "In 1999, the Fox family..." or "The Fox family in Iowa..."
+❌ "In August, a man climbed a tower..." → NO YEAR! Fix: "In August 1996, a man..." or "In 1996, a man..." or "A man climbed a tower..."
+
+CHECKPOINT 2: Open-endedness Check
+□ Could the blank be filled with multiple categories of answers (not just variations within one category)?
+  → If NO: ❌ REJECT - Question too narrow
+
+CHECKPOINT 3: Conciseness Check
+□ Is the real answer 1-3 words (max 4 in rare cases)?
+  → If NO: ❌ REJECT - Answer too long
+
+CHECKPOINT 4: Compound Answer Check
+□ Does the real answer contain "or" (e.g., "cats or dogs")?
+  → If YES: ❌ REJECT - Pick ONE specific answer
+
+If all checkpoints PASS → Proceed to output format below.
+If any checkpoint FAILS → REVISE your question and check again.
+
 === OUTPUT FORMAT ===
 
 Return ONLY valid JSON:
@@ -381,6 +432,33 @@ Generate the question now:`
       const result = this.extractJSON(text) as any
       const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
 
+      // Auto-fix: Insert year for "In Month," patterns
+      const monthWithoutYearPattern = /\b(In|in)\s+(January|February|March|April|May|June|July|August|September|October|November|December)(,?)\s+(?!\d{4})/
+      if (monthWithoutYearPattern.test(result.question)) {
+        const originalQuestion = result.question
+
+        // Try to get year from spacetime metadata or article pubDate
+        let year: number | null = null
+        if (spacetime?.eventYear) {
+          year = spacetime.eventYear
+        }
+
+        if (year) {
+          // Insert year after month: "In December," → "In December 2022,"
+          result.question = result.question.replace(
+            monthWithoutYearPattern,
+            (match: string, inWord: string, month: string, comma: string) => {
+              const hasComma = comma === ','
+              return `${inWord} ${month} ${year}${hasComma ? ',' : ''}`
+            }
+          )
+          console.log(`✓ Auto-fixed temporal clarity: "${originalQuestion.substring(0, 50)}..." → "${result.question.substring(0, 50)}..."`)
+        } else {
+          console.warn('⚠️  WARNING: Question contains month without year (no year metadata available to fix):', result.question)
+          console.warn('    This violates temporal clarity rules. Consider rejecting or regenerating.')
+        }
+      }
+
       return {
         question: result.question,
         realAnswer: result.realAnswer,
@@ -413,14 +491,15 @@ Notice how these are concise and direct, without unnecessary adjectives.\n`
     const systemPrompt = `You are generating fake "house answers" for an adults-only trivia game.
 
 CRITICAL VALIDATION REQUIREMENT:
-For EVERY house answer you generate, you MUST write out the COMPLETE filled-in sentence and verify:
+For EVERY house answer you generate, you MUST MENTALLY validate it by imagining the COMPLETE filled-in sentence:
 1. Grammatically correct (articles, verb agreement, etc.)
 2. Semantically coherent (makes logical sense)
 3. Verb constraints satisfied (e.g., "unleashing" requires unleashable things)
 
-DO NOT output any house answer until you have validated it by writing the complete sentence.
+Validate MENTALLY - do NOT write out your validation work in the output.
+Return ONLY valid JSON. NO explanations. NO markdown. NO process description.
 
-This is MANDATORY. If you skip this validation, the game will break.`
+This is MANDATORY. If you output anything other than pure JSON, the game will break.`
 
     const prompt = `Generate 5 plausible but wrong answers for this trivia question.
 
@@ -750,27 +829,36 @@ Final answers: ["her pet cheetah", "the dragon", "Pippin", "200 helium balloons"
 
 CRITICAL: You MUST generate EXACTLY 5 house answers. NOT 4. NOT 6. EXACTLY 5.
 
-After validating each answer by writing out the complete sentence, return ONLY valid JSON:
+🚨 CRITICAL: Return ONLY valid JSON. NO explanations, NO markdown, NO validation text, NO process description.
+
+DO NOT WRITE:
+- "I'll generate 5 house answers..."
+- "Testing Candidate 1..."
+- "Complete sentence: ..."
+- Any text before or after the JSON
+- Any markdown formatting (**, ---, etc.)
+
+DO YOUR VALIDATION MENTALLY. Then output ONLY this JSON:
 
 {
   "houseAnswers": ["answer1", "answer2", "answer3", "answer4", "answer5"]
 }
 
 Each answer MUST be:
-1. Validated by writing out the complete filled-in sentence
+1. Validated MENTALLY by imagining the complete filled-in sentence
 2. Grammatically correct
 3. Semantically coherent with verb/context
 4. Weird + funny (not just "category appropriate")
 5. Concise (no gratuitous adjectives)
 6. Varied (not 3+ of the same joke type)
 
-PROCESS:
-1. Test candidates until you have EXACTLY 5 accepted answers
-2. If a candidate fails validation, test another one
+PROCESS (do this IN YOUR HEAD, not in the output):
+1. Test candidates mentally until you have EXACTLY 5 accepted answers
+2. If a candidate fails validation, test another one mentally
 3. STOP when you have 5 accepted answers
-4. Return the JSON with those 5 answers
+4. Return ONLY THE JSON with those 5 answers - NOTHING ELSE
 
-Generate the 5 house answers now (and validate each one by writing out the complete sentence):`
+Generate the 5 house answers now (validate mentally, output ONLY JSON):`
 
     const response = await this.client.messages.create({
       model: this.config.model,
@@ -1059,9 +1147,13 @@ Criteria for a GREAT question:
 ✓ Open-ended (multiple plausible answers)
 ✓ Funny/absurd (dark humor is GOOD - death, sex, violence, drugs all fair game!)
 ✓ Clear and easy to understand
+✓ Temporal clarity: If mentions month (January, etc.), MUST include year - otherwise confusing!
 ✓ House answers are creative, funny, AND grammatically correct
 
 CRITICAL: All house answers MUST be grammatically compatible with the question.
+
+RED FLAG - Auto-reject if:
+❌ Question says "In January" or "In August" etc. WITHOUT a year (should be "In January 1999" or "In 1999" or drop it)
 
 Question 1:
 ${question1.question}
@@ -1079,9 +1171,12 @@ Analyze each question on:
 3. Open-endedness (multiple plausible answers)
 4. Comedy value (funny, absurd, dark humor welcome)
 5. Clarity (easy to understand)
-6. House answer quality (creative, funny, grammatically correct)
+6. Temporal clarity (month without year = RED FLAG)
+7. House answer quality (creative, funny, grammatically correct)
 
 Then pick the WINNER (1 or 2) and explain why.
+
+IMPORTANT: If a question mentions a month without a year (e.g., "In January"), this is a SERIOUS flaw that should heavily penalize that question.
 
 Respond in this EXACT format:
 WINNER: 1 or 2
@@ -1113,6 +1208,100 @@ REASONING: <your detailed reasoning>`
     }
 
     const winner = parseInt(winnerMatch[1]!, 10) as 1 | 2
+    const reasoning = reasoningMatch?.[1]?.trim() || 'No reasoning provided'
+    const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
+
+    return { winner, reasoning, cost }
+  }
+
+  /**
+   * Judge between THREE questions and pick the single best one
+   */
+  async judgeThreeQuestions(
+    question1: { question: string; correctAnswer: string; houseAnswers: string[] },
+    question2: { question: string; correctAnswer: string; houseAnswers: string[] },
+    question3: { question: string; correctAnswer: string; houseAnswers: string[] }
+  ): Promise<{ winner: 1 | 2 | 3; reasoning: string; cost: number }> {
+    const prompt = `You are judging THREE trivia questions for "Fake Facts" - an adults-only party game.
+
+Pick the SINGLE BEST question that will make players LAUGH THE HARDEST.
+
+CRITICAL: This is ADULTS-ONLY comedy. Dark humor, sexual content, violence, controversial topics are ENCOURAGED as long as they're funny. Do NOT penalize questions for adult content.
+
+Criteria for a GREAT question:
+✓ SPECIFIC and concrete (not vague)
+✓ SURPRISING and unexpected
+✓ Open-ended (multiple plausible answers)
+✓ Funny/absurd (dark humor is GOOD - death, sex, violence, drugs all fair game!)
+✓ Clear and easy to understand
+✓ Temporal clarity: If mentions month (January, etc.), MUST include year - otherwise confusing!
+✓ House answers are creative, funny, AND grammatically correct
+
+CRITICAL: All house answers MUST be grammatically compatible with the question.
+
+RED FLAG - Auto-reject if:
+❌ Question says "In January" or "In August" etc. WITHOUT a year (should be "In January 1999" or "In 1999" or drop it)
+
+Question A:
+${question1.question}
+Correct Answer: ${question1.correctAnswer}
+House Answers: ${question1.houseAnswers.join(', ')}
+
+Question B:
+${question2.question}
+Correct Answer: ${question2.correctAnswer}
+House Answers: ${question2.houseAnswers.join(', ')}
+
+Question C:
+${question3.question}
+Correct Answer: ${question3.correctAnswer}
+House Answers: ${question3.houseAnswers.join(', ')}
+
+Analyze each question on:
+1. Specificity (concrete vs vague)
+2. Surprise factor (unexpected vs predictable)
+3. Open-endedness (multiple plausible answers)
+4. Comedy value (funny, absurd, dark humor welcome)
+5. Clarity (easy to understand)
+6. Temporal clarity (month without year = RED FLAG)
+7. House answer quality (creative, funny, grammatically correct)
+
+Then pick the SINGLE WINNER (A, B, or C) and explain why.
+
+IMPORTANT: If a question mentions a month without a year (e.g., "In January"), this is a SERIOUS flaw that should heavily penalize that question.
+
+Respond in this EXACT format:
+WINNER: A or B or C
+REASONING: <your detailed reasoning comparing all three and explaining why the winner is superior>`
+
+    const systemPrompt = this.config.judging?.systemPrompt || 'You are judging trivia questions for quality and entertainment value.'
+
+    const response = await this.client.messages.create({
+      model: this.config.model,
+      max_tokens: this.config.judging?.maxTokens || 2000,
+      temperature: this.config.judging?.temperature || 0.35,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+    // Parse winner and reasoning
+    const winnerMatch = text.match(/WINNER:\s*([ABC])/i)
+    const reasoningMatch = text.match(/REASONING:\s*(.+?)$/is)
+
+    if (!winnerMatch) {
+      throw new Error(`Failed to parse winner from Claude response: ${text}`)
+    }
+
+    // Map A/B/C to 1/2/3
+    const letterToNumber: Record<string, 1 | 2 | 3> = { 'A': 1, 'B': 2, 'C': 3 }
+    const winner = letterToNumber[winnerMatch[1]!.toUpperCase()] || 1
     const reasoning = reasoningMatch?.[1]?.trim() || 'No reasoning provided'
     const cost = this.calculateCost(response.usage.input_tokens, response.usage.output_tokens)
 

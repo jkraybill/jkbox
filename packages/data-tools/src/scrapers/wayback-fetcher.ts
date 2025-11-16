@@ -148,8 +148,10 @@ export class WaybackFetcher {
   }
 
   /**
-   * Get yearly snapshots for the past N years (one per year)
-   * Good for sampling 10 years of history without overwhelming the system
+   * Get monthly snapshots for the past N years (one per month with data)
+   * Prefers middle-of-month snapshots for best representation
+   *
+   * Example: 10 years → up to 120 snapshots (12 months × 10 years)
    */
   async getYearlySnapshots(url: string, yearsBack: number = 10): Promise<WaybackSnapshot[]> {
     const now = new Date()
@@ -161,10 +163,28 @@ export class WaybackFetcher {
       const toDate = `${year}1231`
 
       const yearSnapshots = await this.getSnapshotsInRange(url, fromDate, toDate)
-      if (yearSnapshots.length > 0) {
-        // Take middle snapshot of the year for best representation
-        const midIndex = Math.floor(yearSnapshots.length / 2)
-        snapshots.push(yearSnapshots[midIndex]!)
+
+      if (yearSnapshots.length === 0) {
+        continue
+      }
+
+      // Group snapshots by month
+      const monthGroups = new Map<number, WaybackSnapshot[]>()
+
+      for (const snapshot of yearSnapshots) {
+        // Extract month from timestamp (format: YYYYMMDDHHMMSS)
+        const month = parseInt(snapshot.timestamp.substring(4, 6), 10)
+
+        if (!monthGroups.has(month)) {
+          monthGroups.set(month, [])
+        }
+        monthGroups.get(month)!.push(snapshot)
+      }
+
+      // For each month with snapshots, pick the middle one
+      for (const [month, monthSnapshots] of monthGroups.entries()) {
+        const midIndex = Math.floor(monthSnapshots.length / 2)
+        snapshots.push(monthSnapshots[midIndex]!)
       }
     }
 
