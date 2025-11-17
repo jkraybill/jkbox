@@ -121,6 +121,11 @@ export function extractVideoSegment(
     ? `-map 0:${audioStreamIndex}`
     : `-map 0:a`;
 
+  // Mark selected audio stream as default (ensures it's the primary track in output)
+  const audioDisposition = (audioStreamIndex !== null && audioStreamIndex !== undefined)
+    ? `-disposition:a:0 default`
+    : '';
+
   // Build audio fade filter
   // Fade IN: starts at 0s, duration = paddingSeconds (0% → 100%)
   // Fade OUT: starts at (paddedDuration - paddingSeconds), duration = paddingSeconds (100% → 0%)
@@ -132,11 +137,12 @@ export function extractVideoSegment(
   // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
   // -af: audio filter for fade in/out during padding seconds
+  // -disposition:a:0 default: mark audio track as default (when specific stream selected)
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -c:v libx264 -c:a aac ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });

@@ -223,7 +223,22 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
       return originalStream.index;
     }
 
-    // 2. Prefer first stream (often the original/default)
+    // 2. AVOID streams with "dub", "dubbed", "commentary", "description" in title
+    const nonDubbedStreams = streams.filter(s => {
+      const title = s.title?.toLowerCase() || '';
+      return !title.includes('dub') &&
+             !title.includes('commentary') &&
+             !title.includes('description') &&
+             !title.includes('descriptive');
+    });
+
+    if (nonDubbedStreams.length > 0) {
+      // 3. From non-dubbed streams, prefer first one (usually original)
+      console.log(`\n⏱ Timeout: Auto-selected stream ${nonDubbedStreams[0].fullIndex} (avoiding dubs/commentary)`);
+      return nonDubbedStreams[0].index;
+    }
+
+    // 4. Last resort: pick first stream
     console.log(`\n⏱ Timeout: Auto-selected first stream ${streams[0].fullIndex}`);
     return streams[0].index;
   };
