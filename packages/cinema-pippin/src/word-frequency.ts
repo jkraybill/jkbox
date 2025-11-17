@@ -63,15 +63,15 @@ function loadWordFrequencyMap(): Map<string, number> {
  * @returns Frequency count from wordlist, or 0 if not found
  *
  * @example
- * await scoreWordByFrequency('the') // => 2287073
- * await scoreWordByFrequency('BANANA') // => 1234 (if in list)
- * await scoreWordByFrequency('xyznotreal') // => 0
- * await scoreWordByFrequency("you're") // => looks up "youre" (strips apostrophe)
- * await scoreWordByFrequency("won't") // => looks up "wont" (strips apostrophe)
- * await scoreWordByFrequency("kichi-san") // => looks up "kichisan" (strips hyphen)
- * await scoreWordByFrequency("42") // => 0 (no alphabetic characters)
+ * scoreWordByFrequency('the') // => 2287073
+ * scoreWordByFrequency('BANANA') // => 1234 (if in list)
+ * scoreWordByFrequency('xyznotreal') // => 0
+ * scoreWordByFrequency("you're") // => looks up "youre" (strips apostrophe)
+ * scoreWordByFrequency("won't") // => looks up "wont" (strips apostrophe)
+ * scoreWordByFrequency("kichi-san") // => looks up "kichisan" (strips hyphen)
+ * scoreWordByFrequency("42") // => 0 (no alphabetic characters)
  */
-export async function scoreWordByFrequency(word: string): Promise<number> {
+export function scoreWordByFrequency(word: string): number {
   if (!word || word.trim() === '') {
     return 0
   }
