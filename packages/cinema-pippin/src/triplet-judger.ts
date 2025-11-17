@@ -387,9 +387,21 @@ No explanations, no other text. Just the JSON array of couplets.`;
 
   // Fix LLM using single quotes for array elements instead of double quotes (invalid JSON)
   // JSON standard requires double quotes only
-  // Pattern: ['text with \"quotes\"', "other"] should be ["text with \"quotes\"", "other"]
-  // Only match single quotes that start array elements (after [ or ,)
-  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, '$1"$2"');
+  // Pattern: ['text with \'apostrophe\'', "other"] should be ["text with 'apostrophe'", "other"]
+  // Must properly handle:
+  //   - Escaped single quotes (\') -> unescaped (')
+  //   - Unescaped double quotes (") -> escaped (\")
+  //   - Already-escaped sequences (\\", \\', \\\\, etc.) -> preserve
+  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, (match, prefix, content) => {
+    // Step 1: Unescape escaped single quotes \' -> ' (since we're using double quotes now)
+    let fixed = content.replace(/\\'/g, "'");
+
+    // Step 2: Escape unescaped double quotes " -> \"
+    // Replace all ", but then un-replace already-escaped ones \\"
+    fixed = fixed.replace(/"/g, '\\"').replace(/\\\\"/g, '\\"');
+
+    return `${prefix}"${fixed}"`;
+  });
 
   // Fix incomplete couplets (arrays with only 1 element) by adding empty string as second element
   // This allows JSON to parse, then validation will catch and report the error clearly
@@ -628,7 +640,21 @@ No explanations, no other text. Just the JSON array of couplets.`;
   jsonStr = jsonStr.replace(/(letter\s+)"([A-Za-z0-9])"/gi, '$1\\"$2\\"');
 
   // Fix LLM using single quotes for array elements instead of double quotes (invalid JSON)
-  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, '$1"$2"');
+  // JSON standard requires double quotes only
+  // Pattern: ['text with \'apostrophe\'', "other"] should be ["text with 'apostrophe'", "other"]
+  // Must properly handle:
+  //   - Escaped single quotes (\') -> unescaped (')
+  //   - Unescaped double quotes (") -> escaped (\")
+  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, (match, prefix, content) => {
+    // Step 1: Unescape escaped single quotes \' -> ' (since we're using double quotes now)
+    let fixed = content.replace(/\\'/g, "'");
+
+    // Step 2: Escape unescaped double quotes " -> \"
+    // Replace all ", but then un-replace already-escaped ones \\"
+    fixed = fixed.replace(/"/g, '\\"').replace(/\\\\"/g, '\\"');
+
+    return `${prefix}"${fixed}"`;
+  });
 
   // Fix incomplete couplets (arrays with only 1 element) by adding empty string as second element
   jsonStr = jsonStr.replace(/\[("[^"]*")\](?=\s*[,\]])/g, '[$1, ""]');
@@ -980,7 +1006,21 @@ No explanations, no other text. Just the JSON array of couplets.`;
   let jsonStr = jsonMatch[0];
 
   // Fix LLM using single quotes for array elements instead of double quotes (invalid JSON)
-  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, '$1"$2"');
+  // JSON standard requires double quotes only
+  // Pattern: ['text with \'apostrophe\'', "other"] should be ["text with 'apostrophe'", "other"]
+  // Must properly handle:
+  //   - Escaped single quotes (\') -> unescaped (')
+  //   - Unescaped double quotes (") -> escaped (\")
+  jsonStr = jsonStr.replace(/([,\[])\s*'((?:[^'\\]|\\.)*)'/g, (match, prefix, content) => {
+    // Step 1: Unescape escaped single quotes \' -> ' (since we're using double quotes now)
+    let fixed = content.replace(/\\'/g, "'");
+
+    // Step 2: Escape unescaped double quotes " -> \"
+    // Replace all ", but then un-replace already-escaped ones \\"
+    fixed = fixed.replace(/"/g, '\\"').replace(/\\\\"/g, '\\"');
+
+    return `${prefix}"${fixed}"`;
+  });
 
   // Parse couplets
   let couplets: [string, boolean][];
