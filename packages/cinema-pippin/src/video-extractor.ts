@@ -49,9 +49,13 @@ export function extractTimestampRange(srtContent: string): { startTime: string; 
 }
 
 /**
- * Rebase SRT timestamps to start at 00:00:00,000 and renumber indices
+ * Rebase SRT timestamps to start at a specified delay (default 00:00:00,000) and renumber indices
+ * @param srtContent - The SRT content to rebase
+ * @param originalStartTime - The original start timestamp to subtract (offset)
+ * @param delaySeconds - Optional delay in seconds to add to all timestamps (default 0)
+ *                       Useful for adding padding before first subtitle appears
  */
-export function rebaseSrtTimestamps(srtContent: string, originalStartTime: string): string {
+export function rebaseSrtTimestamps(srtContent: string, originalStartTime: string, delaySeconds: number = 0): string {
   const offsetSeconds = srtTimeToSeconds(originalStartTime);
 
   // Split into individual subtitle entries
@@ -69,8 +73,8 @@ export function rebaseSrtTimestamps(srtContent: string, originalStartTime: strin
       lines[1] = lines[1].replace(
         /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/,
         (match, start, end) => {
-          const newStart = srtTimeToSeconds(start) - offsetSeconds;
-          const newEnd = srtTimeToSeconds(end) - offsetSeconds;
+          const newStart = srtTimeToSeconds(start) - offsetSeconds + delaySeconds;
+          const newEnd = srtTimeToSeconds(end) - offsetSeconds + delaySeconds;
           return `${secondsToSrtTime(newStart)} --> ${secondsToSrtTime(newEnd)}`;
         }
       );
@@ -84,6 +88,8 @@ export function rebaseSrtTimestamps(srtContent: string, originalStartTime: strin
 
 /**
  * Extract video segment using ffmpeg and embed subtitles
+ * Adds configurable padding on each side of the video, but subtitles only appear during the original time range
+ * @param paddingSeconds - Seconds of padding to add before/after video (default 1.0)
  */
 export function extractVideoSegment(
   inputVideo: string,
@@ -91,13 +97,21 @@ export function extractVideoSegment(
   endTime: string,
   outputVideo: string,
   srtFile: string,
-  audioStreamIndex?: number | null
+  audioStreamIndex?: number | null,
+  paddingSeconds: number = 1.0
 ): void {
   const startSeconds = srtTimeToSeconds(startTime);
   const endSeconds = srtTimeToSeconds(endTime);
-  const duration = endSeconds - startSeconds;
+  const originalDuration = endSeconds - startSeconds;
 
-  console.log(`    Extracting video: ${startTime} -> ${endTime} (${duration.toFixed(1)}s)`);
+  // Add configurable padding on each side
+  // Ensure we don't go below 0 (can't seek before video start)
+  const paddedStart = Math.max(0, startSeconds - paddingSeconds);
+  const paddedEnd = endSeconds + paddingSeconds;
+  const paddedDuration = paddedEnd - paddedStart;
+
+  console.log(`    Extracting video: ${startTime} -> ${endTime} (${originalDuration.toFixed(1)}s)`);
+  console.log(`    With padding: ${secondsToSrtTime(paddedStart)} -> ${secondsToSrtTime(paddedEnd)} (${paddedDuration.toFixed(1)}s, ${paddingSeconds}s padding)`);
 
   // Build audio mapping based on audioStreamIndex
   // If audioStreamIndex is a number, use that specific stream: -map 0:${audioStreamIndex}
@@ -108,17 +122,18 @@ export function extractVideoSegment(
     : `-map 0:a`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
-  // -ss: start time, -t: duration
+  // Note: SRT file is already rebased with 1s delay, so subtitles won't appear during padding
+  // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const ffmpegCmd = `ffmpeg -y -ss ${startSeconds} -i "${inputVideo}" -i "${srtFile}" -t ${duration} -map 0:v ${audioMap} -map 1:0 -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
-    console.log(`    ✓ Created ${basename(outputVideo)}`);
+    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding on each side)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
     throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);
@@ -127,13 +142,15 @@ export function extractVideoSegment(
 
 /**
  * Extract videos for all 3 scenes in a sequence directory
+ * @param paddingSeconds - Seconds of padding to add before/after each video (default 1.0)
  */
 export function extractVideosForSequence(
   sequenceDir: string,
   sourceVideo: string,
   srtBasename: string,
   timestampRanges: Array<{ startTime: string; endTime: string }>,
-  audioStreamIndex?: number | null
+  audioStreamIndex?: number | null,
+  paddingSeconds: number = 1.0
 ): void {
   console.log(`\n  🎬 Extracting videos for ${basename(sequenceDir)}/`);
 
@@ -153,8 +170,8 @@ export function extractVideosForSequence(
     // Get the original timestamp range for this scene
     const { startTime, endTime } = timestampRanges[sceneNum - 1];
 
-    // Extract video segment (question SRT is already rebased to 00:00:00,000)
+    // Extract video segment (question SRT is already rebased with padding delay)
     const outputVideoPath = join(sequenceDir, `${srtBasename}-${sceneNum}-question.mp4`);
-    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath, audioStreamIndex);
+    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath, audioStreamIndex, paddingSeconds);
   }
 }

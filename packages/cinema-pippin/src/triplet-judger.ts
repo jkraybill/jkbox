@@ -1466,7 +1466,8 @@ export async function exportTopTriplets(
   srtFile: string,
   judgments: TripletJudgment[],
   sourceVideo?: string,
-  audioStreamIndex?: number | null
+  audioStreamIndex?: number | null,
+  paddingSeconds: number = 1.0
 ): Promise<void> {
   const srtBasename = basename(srtFile, '.srt');
   const clipsBaseDir = join('/home/jk/jkbox/generated/clips', srtBasename);
@@ -1475,6 +1476,9 @@ export async function exportTopTriplets(
   const numToExport = Math.min(Math.floor(judgments.length / 2), 6);
 
   console.log(`\n📦 Exporting top ${numToExport} triplet sequence(s) to ${clipsBaseDir}`);
+  if (sourceVideo) {
+    console.log(`📹 Video padding: ${paddingSeconds}s before/after each clip (subtitles delayed by ${paddingSeconds}s)`);
+  }
 
   // Export the top N judgments (already sorted by quality score)
   for (let i = 0; i < numToExport; i++) {
@@ -1492,27 +1496,27 @@ export async function exportTopTriplets(
     const scene3Range = extractTimestampRange(judgment.thirdScene);
 
     // ========================================================================
-    // SCENE 1 - 3 versions (all rebased to start at 00:00:00,000)
+    // SCENE 1 - 3 versions (all rebased with padding delay)
     // ========================================================================
 
-    // Scene 1 - Original (rebased)
-    const scene1Original = rebaseSrtTimestamps(judgment.firstScene, scene1Range.startTime);
+    // Scene 1 - Original (rebased with padding delay)
+    const scene1Original = rebaseSrtTimestamps(judgment.firstScene, scene1Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-1-original.srt`),
       scene1Original,
       'utf-8'
     );
 
-    // Scene 1 - Question (keyword blanked with _____, rebased)
-    const scene1Question = rebaseSrtTimestamps(judgment.blankedScene, scene1Range.startTime);
+    // Scene 1 - Question (keyword blanked with _____, rebased with padding delay)
+    const scene1Question = rebaseSrtTimestamps(judgment.blankedScene, scene1Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-1-question.srt`),
       scene1Question,
       'utf-8'
     );
 
-    // Scene 1 - CPU (with winning T1 word, rebased)
-    const scene1CPU = rebaseSrtTimestamps(judgment.finalScene1, scene1Range.startTime);
+    // Scene 1 - CPU (with winning T1 word, rebased with padding delay)
+    const scene1CPU = rebaseSrtTimestamps(judgment.finalScene1, scene1Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-1-cpu.srt`),
       scene1CPU,
@@ -1520,33 +1524,33 @@ export async function exportTopTriplets(
     );
 
     // ========================================================================
-    // SCENE 2 - 3 versions (all rebased to start at 00:00:00,000)
+    // SCENE 2 - 3 versions (all rebased with padding delay)
     // ========================================================================
 
-    // Scene 2 - Original (rebased)
-    const scene2Original = rebaseSrtTimestamps(judgment.secondScene, scene2Range.startTime);
+    // Scene 2 - Original (rebased with padding delay)
+    const scene2Original = rebaseSrtTimestamps(judgment.secondScene, scene2Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-2-original.srt`),
       scene2Original,
       'utf-8'
     );
 
-    // Scene 2 - Question (keyword → [keyword], last frame → _____, rebased)
+    // Scene 2 - Question (keyword → [keyword], last frame → _____, rebased with padding delay)
     let scene2Question = replaceKeywordWithWord(
       judgment.secondScene,
       judgment.keyword,
       '[keyword]'
     );
     scene2Question = blankLastFrame(scene2Question);
-    scene2Question = rebaseSrtTimestamps(scene2Question, scene2Range.startTime);
+    scene2Question = rebaseSrtTimestamps(scene2Question, scene2Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-2-question.srt`),
       scene2Question,
       'utf-8'
     );
 
-    // Scene 2 - CPU (with T1 winner + T2 winner phrase, rebased)
-    const scene2CPU = rebaseSrtTimestamps(judgment.finalScene2, scene2Range.startTime);
+    // Scene 2 - CPU (with T1 winner + T2 winner phrase, rebased with padding delay)
+    const scene2CPU = rebaseSrtTimestamps(judgment.finalScene2, scene2Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-2-cpu.srt`),
       scene2CPU,
@@ -1554,33 +1558,33 @@ export async function exportTopTriplets(
     );
 
     // ========================================================================
-    // SCENE 3 - 3 versions (all rebased to start at 00:00:00,000)
+    // SCENE 3 - 3 versions (all rebased with padding delay)
     // ========================================================================
 
-    // Scene 3 - Original (rebased)
-    const scene3Original = rebaseSrtTimestamps(judgment.thirdScene, scene3Range.startTime);
+    // Scene 3 - Original (rebased with padding delay)
+    const scene3Original = rebaseSrtTimestamps(judgment.thirdScene, scene3Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-3-original.srt`),
       scene3Original,
       'utf-8'
     );
 
-    // Scene 3 - Question (keyword → [keyword], last frame → _____, rebased)
+    // Scene 3 - Question (keyword → [keyword], last frame → _____, rebased with padding delay)
     let scene3Question = replaceKeywordWithWord(
       judgment.thirdScene,
       judgment.keyword,
       '[keyword]'
     );
     scene3Question = blankLastFrame(scene3Question);
-    scene3Question = rebaseSrtTimestamps(scene3Question, scene3Range.startTime);
+    scene3Question = rebaseSrtTimestamps(scene3Question, scene3Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-3-question.srt`),
       scene3Question,
       'utf-8'
     );
 
-    // Scene 3 - CPU (with T1 winner + T3 winner phrase, rebased)
-    const scene3CPU = rebaseSrtTimestamps(judgment.finalScene3, scene3Range.startTime);
+    // Scene 3 - CPU (with T1 winner + T3 winner phrase, rebased with padding delay)
+    const scene3CPU = rebaseSrtTimestamps(judgment.finalScene3, scene3Range.startTime, paddingSeconds);
     writeFileSync(
       join(rankDir, `${srtBasename}-3-cpu.srt`),
       scene3CPU,
@@ -1611,7 +1615,7 @@ export async function exportTopTriplets(
     if (sourceVideo) {
       try {
         const timestampRanges = [scene1Range, scene2Range, scene3Range];
-        extractVideosForSequence(rankDir, sourceVideo, srtBasename, timestampRanges, audioStreamIndex);
+        extractVideosForSequence(rankDir, sourceVideo, srtBasename, timestampRanges, audioStreamIndex, paddingSeconds);
         console.log(`    ✅ Extracted 3 video segments`);
       } catch (error) {
         console.error(`    ⚠ Video extraction failed: ${error instanceof Error ? error.message : error}`);
