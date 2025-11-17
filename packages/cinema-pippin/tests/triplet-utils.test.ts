@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   transformToKeyword,
   endsWithPunctuation,
+  endsWithStrongPunctuation,
   endsWithQuestionMark,
   getDurationSeconds,
   isSingleWordWithPunctuation,
@@ -66,6 +67,30 @@ describe('endsWithPunctuation', () => {
   it('should check last character of multiline text', () => {
     expect(endsWithPunctuation('Line 1\nLine 2.')).toBe(true);
     expect(endsWithPunctuation('Line 1\nLine 2')).toBe(false);
+  });
+});
+
+describe('endsWithStrongPunctuation', () => {
+  it('should return true for strong punctuation marks', () => {
+    expect(endsWithStrongPunctuation('Hello.')).toBe(true);
+    expect(endsWithStrongPunctuation('Hello!')).toBe(true);
+    expect(endsWithStrongPunctuation('Hello?')).toBe(true);
+    expect(endsWithStrongPunctuation('Hello-')).toBe(true);
+  });
+
+  it('should return false for semicolon, comma, and colon', () => {
+    expect(endsWithStrongPunctuation('Hello;')).toBe(false);
+    expect(endsWithStrongPunctuation('Hello,')).toBe(false);
+    expect(endsWithStrongPunctuation('Hello:')).toBe(false);
+  });
+
+  it('should return false for no punctuation', () => {
+    expect(endsWithStrongPunctuation('Hello')).toBe(false);
+  });
+
+  it('should check last character of multiline text', () => {
+    expect(endsWithStrongPunctuation('Line 1\nLine 2.')).toBe(true);
+    expect(endsWithStrongPunctuation('Line 1\nLine 2;')).toBe(false);
   });
 });
 
@@ -372,77 +397,40 @@ describe('hasNonAlphaBeforeLastWord', () => {
 });
 
 describe('isValidT1Frame3', () => {
-  it('should accept single word with period', () => {
+  it('should accept any text with at least one word', () => {
+    // Single words (with or without punctuation)
     expect(isValidT1Frame3('BANANA.')).toBe(true);
-    expect(isValidT1Frame3('Word.')).toBe(true);
-  });
-
-  it('should accept single word with exclamation', () => {
+    expect(isValidT1Frame3('BANANA')).toBe(true);
     expect(isValidT1Frame3('BANANA!')).toBe(true);
-  });
-
-  it('should accept single word with question mark', () => {
     expect(isValidT1Frame3('BANANA?')).toBe(true);
-  });
-
-  it('should accept single word with double quote', () => {
     expect(isValidT1Frame3('BANANA"')).toBe(true);
-  });
-
-  it('should accept single word with single quote', () => {
     expect(isValidT1Frame3("BANANA'")).toBe(true);
-  });
+    expect(isValidT1Frame3('BANANA-')).toBe(true);
+    expect(isValidT1Frame3('BANANA;')).toBe(true);
+    expect(isValidT1Frame3('BANANA:')).toBe(true);
 
-  it('should reject single word without punctuation', () => {
-    expect(isValidT1Frame3('BANANA')).toBe(false);
-    expect(isValidT1Frame3('Word')).toBe(false);
-  });
-
-  it('should reject single word with wrong punctuation', () => {
-    expect(isValidT1Frame3('BANANA-')).toBe(false);
-    expect(isValidT1Frame3('BANANA;')).toBe(false);
-    expect(isValidT1Frame3('BANANA:')).toBe(false);
-  });
-
-  it('should accept multi-word with valid separator and valid ending', () => {
+    // Multiple words (any separators, any punctuation)
+    expect(isValidT1Frame3('A BANANA.')).toBe(true);
+    expect(isValidT1Frame3('two words.')).toBe(true);
+    expect(isValidT1Frame3('A, BANANA.')).toBe(true);
     expect(isValidT1Frame3('A -- BANANA.')).toBe(true);
     expect(isValidT1Frame3('word ... thing.')).toBe(true);
     expect(isValidT1Frame3('A: BANANA!')).toBe(true);
-  });
-
-  it('should reject multi-word with space-only separator', () => {
-    expect(isValidT1Frame3('A BANANA.')).toBe(false);
-    expect(isValidT1Frame3('two words.')).toBe(false);
-  });
-
-  it('should reject multi-word with comma separator', () => {
-    expect(isValidT1Frame3('A, BANANA.')).toBe(false);
-    expect(isValidT1Frame3('word, word.')).toBe(false);
-  });
-
-  it('should reject multi-word with valid separator but wrong ending', () => {
-    expect(isValidT1Frame3('A -- BANANA-')).toBe(false);
-    expect(isValidT1Frame3('word ... thing;')).toBe(false);
-    expect(isValidT1Frame3('A: BANANA:')).toBe(false);
-  });
-
-  it('should accept multi-word when punctuation is between last two words and ends correctly', () => {
-    expect(isValidT1Frame3('the big -- BANANA.')).toBe(true); // dash between "big" and "BANANA"
+    expect(isValidT1Frame3('the big -- BANANA.')).toBe(true);
     expect(isValidT1Frame3('some ... word!')).toBe(true);
-  });
-
-  it('should reject multi-word when punctuation is elsewhere', () => {
-    expect(isValidT1Frame3('...the big BANANA.')).toBe(false); // period before "the", not between last two words
-    expect(isValidT1Frame3('the...big BANANA.')).toBe(false); // period between "the" and "big", not before "BANANA"
-  });
-
-  it('should accept multi-word with quote endings', () => {
+    expect(isValidT1Frame3('...the big BANANA.')).toBe(true);
+    expect(isValidT1Frame3('the...big BANANA.')).toBe(true);
     expect(isValidT1Frame3('A -- BANANA"')).toBe(true);
     expect(isValidT1Frame3("word ... thing'")).toBe(true);
+
+    // Single word sequences with no whitespace (still valid)
+    expect(isValidT1Frame3('A--BANANA.')).toBe(true);
+    expect(isValidT1Frame3('word...thing.')).toBe(true);
   });
 
-  it('should reject single word sequences with no whitespace', () => {
-    expect(isValidT1Frame3('A--BANANA.')).toBe(false); // No whitespace = treated as single word, but has -- not valid punctuation
-    expect(isValidT1Frame3('word...thing.')).toBe(false); // No whitespace = treated as single word
+  it('should reject empty text', () => {
+    expect(isValidT1Frame3('')).toBe(false);
+    expect(isValidT1Frame3('   ')).toBe(false); // Only whitespace
+    expect(isValidT1Frame3('\t\n')).toBe(false); // Only whitespace
   });
 });

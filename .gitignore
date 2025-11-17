@@ -57,6 +57,9 @@ generated/
 # Content packs (added separately, not in repo by default)
 content-packs/
 
+# Large video files (test assets)
+*.mkv
+
 # SQLite databases (runtime data)
 *.db
 *.db-shm

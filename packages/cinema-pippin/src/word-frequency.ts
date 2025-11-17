@@ -66,6 +66,10 @@ function loadWordFrequencyMap(): Map<string, number> {
  * await scoreWordByFrequency('the') // => 2287073
  * await scoreWordByFrequency('BANANA') // => 1234 (if in list)
  * await scoreWordByFrequency('xyznotreal') // => 0
+ * await scoreWordByFrequency("you're") // => looks up "youre" (strips apostrophe)
+ * await scoreWordByFrequency("won't") // => looks up "wont" (strips apostrophe)
+ * await scoreWordByFrequency("kichi-san") // => looks up "kichisan" (strips hyphen)
+ * await scoreWordByFrequency("42") // => 0 (no alphabetic characters)
  */
 export async function scoreWordByFrequency(word: string): Promise<number> {
   if (!word || word.trim() === '') {
@@ -73,7 +77,17 @@ export async function scoreWordByFrequency(word: string): Promise<number> {
   }
 
   const map = loadWordFrequencyMap()
-  const normalized = word.toUpperCase()
+
+  // Strip all non-alphabetic characters before lookup
+  // This handles contractions (you're → youre), hyphens (kichi-san → kichisan), etc.
+  const alphaOnly = word.replace(/[^a-zA-Z]/g, '')
+
+  // If no alphabetic characters remain (e.g., pure numbers like "42"), return 0
+  if (alphaOnly === '') {
+    return 0
+  }
+
+  const normalized = alphaOnly.toUpperCase()
 
   return map.get(normalized) ?? 0
 }

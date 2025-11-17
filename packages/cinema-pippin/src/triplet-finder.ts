@@ -1,6 +1,7 @@
 import { parseSRT, type SRTEntry } from './srt-parser.js';
 import {
   endsWithPunctuation,
+  endsWithStrongPunctuation,
   endsWithPunctuationOrBracket,
   endsWithQuestionMark,
   getDurationSeconds,
@@ -17,11 +18,6 @@ export interface Triplet {
   frame2: SRTEntry;       // Official Frame 2
   frame3: SRTEntry;       // Official Frame 3
   keyword: string;
-}
-
-function hasMinimumAlphaChars(text: string, min: number = 2): boolean {
-  const alphaOnly = text.replace(/[^a-zA-Z]/g, '');
-  return alphaOnly.length >= min;
 }
 
 export function isValidFirstTriplet(
@@ -43,20 +39,8 @@ export function isValidFirstTriplet(
   const frame2 = entries[frame2Idx];
   const frame3 = entries[frame3Idx];
 
-  // Check minimum alpha characters for official frames (2 chars minimum)
-  if (!hasMinimumAlphaChars(frame1.text) ||
-      !hasMinimumAlphaChars(frame2.text) ||
-      !hasMinimumAlphaChars(frame3.text)) {
-    return false;
-  }
-
-  // Frame 3 must be valid per new rules (single word OR multi-word with special separator)
+  // Frame 3 must be valid (at least one word)
   if (!isValidT1Frame3(frame3.text)) {
-    return false;
-  }
-
-  // Frame 3 must have at least 3 alphabetic characters
-  if (!hasMinimumAlphaChars(frame3.text, 3)) {
     return false;
   }
 
@@ -68,16 +52,34 @@ export function isValidFirstTriplet(
     return false;
   }
 
-  // Previous frame must end with . ! ? - ; ( ) [ ]
+  // Keyword cannot appear earlier in T1 (F1, F2, or earlier in F3)
+  const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const keywordRegex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+
+  // Check F1 and F2
+  if (keywordRegex.test(frame1.text) || keywordRegex.test(frame2.text)) {
+    return false;
+  }
+
+  // Check F3 (excluding last word)
+  const words = frame3.text.trim().split(/\s+/);
+  if (words.length > 1) {
+    const textWithoutLastWord = words.slice(0, -1).join(' ');
+    if (keywordRegex.test(textWithoutLastWord)) {
+      return false;
+    }
+  }
+
+  // Previous frame must end with . ! ? - ; ) ]
   if (!endsWithPunctuationOrBracket(prevEntry.text)) {
     return false;
   }
 
   // Frame 2 no longer requires question mark - any text is valid
 
-  // Duration must be 5-35 seconds
+  // Duration must be 5-20 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 35) {
+  if (duration < 5 || duration > 20) {
     return false;
   }
 
@@ -101,13 +103,6 @@ export function isValidSubsequentTriplet(
   const frame2 = entries[frame2Idx];
   const frame3 = entries[frame3Idx];
 
-  // Check minimum alpha characters for official frames (2 chars minimum)
-  if (!hasMinimumAlphaChars(frame1.text) ||
-      !hasMinimumAlphaChars(frame2.text) ||
-      !hasMinimumAlphaChars(frame3.text)) {
-    return false;
-  }
-
   // Keyword must appear in at least one frame (F1, F2, or F3)
   const keywordInF1 = containsWordAsStandalone(frame1.text, keyword);
   const keywordInF2 = containsWordAsStandalone(frame2.text, keyword);
@@ -122,7 +117,7 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Previous frame must end with . ! ? - ; ( ) [ ]
+  // Previous frame must end with . ! ? - ; ) ]
   if (!endsWithPunctuationOrBracket(prevEntry.text)) {
     return false;
   }
@@ -132,14 +127,14 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Frame 3 must end with . ! ? - ;
-  if (!endsWithPunctuation(frame3.text)) {
+  // Frame 3 must end with . ! ? - (strong punctuation - no semicolon, comma, or colon)
+  if (!endsWithStrongPunctuation(frame3.text)) {
     return false;
   }
 
-  // Duration must be 5-35 seconds
+  // Duration must be 5-20 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 35) {
+  if (duration < 5 || duration > 20) {
     return false;
   }
 

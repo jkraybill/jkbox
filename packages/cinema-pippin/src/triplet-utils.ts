@@ -16,9 +16,15 @@ export function endsWithPunctuation(text: string): boolean {
   return ['.', '!', '?', '-', ';'].includes(lastChar);
 }
 
+export function endsWithStrongPunctuation(text: string): boolean {
+  // Strong punctuation for T3 F3: excludes semicolon, comma, colon
+  const lastChar = text.trim().slice(-1);
+  return ['.', '!', '?', '-'].includes(lastChar);
+}
+
 export function endsWithPunctuationOrBracket(text: string): boolean {
   const lastChar = text.trim().slice(-1);
-  return ['.', '!', '?', '-', ';', '(', ')', '[', ']'].includes(lastChar);
+  return ['.', '!', '?', '-', ';', ')', ']'].includes(lastChar);
 }
 
 export function endsWithQuestionMark(text: string): boolean {
@@ -159,27 +165,17 @@ export function hasNonAlphaBeforeLastWord(text: string): boolean {
 }
 
 export function isValidT1Frame3(text: string): boolean {
-  // T1 F3 must satisfy ALL of:
-  // 1. Must end with . ! ? " or '
-  // 2. EITHER:
-  //    a. Single word with punctuation (old rule), OR
-  //    b. Multi-word with non-alpha non-whitespace non-comma char between last two words
-
+  // T1 F3 must have at least one word (no minimum character requirement)
   const trimmed = text.trim();
-  const lastChar = trimmed.slice(-1);
 
-  // Must end with specific punctuation
-  if (!['.', '!', '?', '"', "'"].includes(lastChar)) {
+  // Must have at least one word (any non-empty text after trimming)
+  if (trimmed.length === 0) {
     return false;
   }
 
-  const words = trimmed.split(/\s+/);
+  // Extract words (sequences of non-whitespace characters)
+  const words = trimmed.split(/\s+/).filter(w => w.length > 0);
 
-  if (words.length === 1) {
-    // Single word - must have punctuation (already checked above)
-    return isSingleWordWithPunctuation(text);
-  }
-
-  // Multi-word - must have valid separator before last word
-  return hasNonAlphaBeforeLastWord(text);
+  // Must have at least one word
+  return words.length >= 1;
 }

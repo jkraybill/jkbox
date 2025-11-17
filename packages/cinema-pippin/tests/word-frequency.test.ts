@@ -42,9 +42,26 @@ describe('Word Frequency Module', () => {
     expect(score2).toBe(1533597)
   })
 
-  it('should handle words with numbers', async () => {
-    const score = await scoreWordByFrequency('TEST123')
-    expect(score).toBe(0) // Assuming not in wordlist
+  it('should strip non-alphabetic characters before lookup', async () => {
+    // 'TEST123' strips to 'TEST' and looks up TEST's frequency
+    const scoreWithNumbers = await scoreWordByFrequency('TEST123')
+    const scoreTest = await scoreWordByFrequency('TEST')
+    expect(scoreWithNumbers).toBe(scoreTest) // Both should be the same (TEST's frequency)
+    expect(scoreWithNumbers).toBeGreaterThan(0) // TEST is in the wordlist
+
+    // Pure numbers return 0 (no alphabetic characters)
+    const scoreNumbers = await scoreWordByFrequency('42')
+    expect(scoreNumbers).toBe(0)
+
+    // Contractions: "you're" → "youre"
+    const scoreContraction = await scoreWordByFrequency("you're")
+    const scoreNoApostrophe = await scoreWordByFrequency('youre')
+    expect(scoreContraction).toBe(scoreNoApostrophe) // Should be the same
+
+    // Hyphenated words: "test-word" → "testword"
+    const scoreHyphen = await scoreWordByFrequency('test-word')
+    const scoreNoHyphen = await scoreWordByFrequency('testword')
+    expect(scoreHyphen).toBe(scoreNoHyphen) // Should be the same
   })
 
   it('should normalize case (uppercase all lookups)', async () => {

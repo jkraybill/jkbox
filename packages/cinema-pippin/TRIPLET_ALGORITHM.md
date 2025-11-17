@@ -95,14 +95,11 @@ Group all found sequences by **T1 F3 last word**. For each group:
 
 ### Common Rules (All Triplets)
 
-**Minimum Alphabetic Characters:**
-- F1, F2, F3: Each must have ≥2 alphabetic characters
-
 **Previous Frame Punctuation:**
-- Frame before F1 must end with: `.` `!` `?` `-` `;` `(` `)` `[` `]`
+- Frame before F1 must end with: `.` `!` `?` `-` `;` `)` `]`
 
 **Duration:**
-- Total duration from F1 start to F3 end: **5-35 seconds** (inclusive)
+- Total duration from F1 start to F3 end: **5-20 seconds** (inclusive)
 
 ---
 
@@ -112,47 +109,44 @@ Group all found sequences by **T1 F3 last word**. For each group:
 
 **Must satisfy ALL of:**
 
-1. **Minimum 3 alphabetic characters**
+1. **Must have at least one word**
+   - Any non-empty text after trimming whitespace
+   - No minimum character requirement
+   - No punctuation requirements
+   - No separator requirements
+   - Examples:
+     - `"BANANA"` ✓
+     - `"BANANA."` ✓
+     - `"A BANANA"` ✓
+     - `"A -- BANANA."` ✓
+     - `"word ... thing"` ✓
+     - `""` ✗ (empty)
+     - `"   "` ✗ (only whitespace)
 
-2. **Must end with one of:** `.` `!` `?` `"` `'`
-
-3. **Must be EITHER:**
-   - **Single word + punctuation**
-     - Example: `"BANANA."` ✓
-     - Example: `"Word!"` ✓
-     - Must match regex: `/^[a-zA-Z']+[.!?\-;"']$/`
-
-   **OR**
-
-   - **Multi-word with valid separator before last word**
-     - Requirements:
-       - Must contain whitespace (otherwise treated as single sequence)
-       - Between the last 2 **alphabetic words**, there must be ≥1 character that is:
-         - NOT whitespace
-         - NOT alphabetic
-         - NOT comma (`,`)
-     - Examples:
-       - `"A : BANANA!"` ✓ (colon between A and BANANA)
-       - `"word ... thing."` ✓ (periods between words)
-       - `"the big -- BANANA."` ✓ (dashes between big and BANANA)
-       - `"A BANANA."` ✗ (only space)
-       - `"A, BANANA."` ✗ (comma excluded)
-       - `"A--BANANA."` ✗ (no whitespace = single sequence, but `--` not valid ending)
-
-4. **Keyword Extraction:**
+2. **Keyword Extraction:**
    - Extract **last word** from F3 text
    - Strip punctuation
    - Lowercase
    - Example: `"...freedom of Middle-earth."` → keyword = `"middle-earth"`
 
-5. **Excluded Words (keyword cannot be):**
+3. **Keyword Uniqueness:**
+   - The keyword **cannot appear as a standalone word** earlier in T1
+   - Checked in: F1, F2, and F3 (excluding the final word)
+   - Uses word boundary matching (case-insensitive)
+   - Example:
+     - F1: `"In the beginning"`, F2: `"Something arrived"`, F3: `"banana"` → **Valid** (banana doesn't appear earlier)
+     - F1: `"In the beginning"`, F2: `"The banana arrived"`, F3: `"banana"` → **Invalid** (banana appears in F2)
+   - This ensures the keyword is a climactic reveal, not mentioned before
+
+4. **Excluded Words (keyword cannot be):**
    - `the`, `yes`, `no`, `why`, `how`, `when`, `where`, `me`, `i`, `you`
    - `good`, `bad`, `yep`, `yeah`, `nah`, `nope`
    - `one`, `two`, `three`, `none`, `nada`, `nothing`
 
 #### T1 Frame 2 Requirements
-- **Any text** (≥2 alpha chars)
-- No specific punctuation requirement
+- **Any text** (no restrictions)
+- No minimum character requirement
+- No punctuation requirement
 
 ---
 
@@ -167,7 +161,7 @@ Group all found sequences by **T1 F3 last word**. For each group:
 - Must end with: `.` `!` `?` `-` `;`
 
 #### Frame 3 Requirements
-- Must end with: `.` `!` `?` `-` `;`
+- Must end with **strong punctuation**: `.` `!` `?` `-` (excludes `;` `,` `:`)
 - **T2 F3:** Minimum 2 words
 - **T3 F3:** Minimum 3 words
 
@@ -391,10 +385,15 @@ Very rare keywords (appearing only in these 3 triplets) are treated the same as 
 
 ---
 
-**Document Version:** 1.1
-**Last Updated:** 2025-11-16
+**Document Version:** 1.6
+**Last Updated:** 2025-11-17
 **Code Reference:** `packages/cinema-pippin/src/triplet-finder.ts`
 
 ### Changelog
+- **v1.6 (2025-11-17):** T2/T3 Frame 3 must end with strong punctuation only (`.` `!` `?` `-`) - excludes semicolon, comma, and colon
+- **v1.5 (2025-11-17):** Removed opening brackets from previous frame allowed punctuation - "(" and "[" no longer allowed, only closing brackets ")" and "]" allowed
+- **v1.4 (2025-11-17):** Major simplification - removed ALL minimum character requirements; T1 F3 now just requires at least one word (no punctuation or separator requirements); T1 F2 has no restrictions
+- **v1.3 (2025-11-16):** Added keyword uniqueness restriction for T1 - keyword cannot appear as standalone word earlier in any T1 frame
+- **v1.2 (2025-11-16):** Updated duration range from 5-35s back to 5-20s for better quality
 - **v1.1 (2025-11-16):** Updated filler range from 2-5 to 0-6 fillers; updated duration range from 5-20s to 5-35s
 - **v1.0 (2025-11-16):** Initial documentation

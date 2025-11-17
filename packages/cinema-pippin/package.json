@@ -9,10 +9,13 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsx src/cli.ts"
+    "dev": "tsx src/cli.ts",
+    "cli": "tsx src/cli.ts",
+    "imdb-search": "tsx src/imdb-search.ts"
   },
   "bin": {
-    "cinema-pippin": "./dist/cli.js"
+    "cinema-pippin": "./dist/cli.js",
+    "extract-triplets": "./dist/extract-triplets.js"
   },
   "dependencies": {
     "commander": "^12.0.0"
