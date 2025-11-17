@@ -121,19 +121,26 @@ export function extractVideoSegment(
     ? `-map 0:${audioStreamIndex}`
     : `-map 0:a`;
 
+  // Build audio fade filter
+  // Fade IN: starts at 0s, duration = paddingSeconds (0% → 100%)
+  // Fade OUT: starts at (paddedDuration - paddingSeconds), duration = paddingSeconds (100% → 0%)
+  const fadeOutStart = paddedDuration - paddingSeconds;
+  const audioFilter = `-af "afade=t=in:st=0:d=${paddingSeconds},afade=t=out:st=${fadeOutStart}:d=${paddingSeconds}"`;
+
   // Use ffmpeg to extract the segment with embedded subtitles
-  // Note: SRT file is already rebased with 1s delay, so subtitles won't appear during padding
+  // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
   // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
+  // -af: audio filter for fade in/out during padding seconds
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
-    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding on each side)`);
+    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding + audio fade)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
     throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);

@@ -1477,7 +1477,7 @@ export async function exportTopTriplets(
 
   console.log(`\n📦 Exporting top ${numToExport} triplet sequence(s) to ${clipsBaseDir}`);
   if (sourceVideo) {
-    console.log(`📹 Video padding: ${paddingSeconds}s before/after each clip (subtitles delayed by ${paddingSeconds}s)`);
+    console.log(`📹 Video padding: ${paddingSeconds}s before/after each clip (subtitles delayed, audio fades in/out)`);
   }
 
   // Export the top N judgments (already sorted by quality score)
