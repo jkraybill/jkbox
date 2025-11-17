@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { basename, join } from 'path';
 import { execSync } from 'child_process';
+import * as readline from 'readline';
 import { findAllTriplets, type Triplet } from './triplet-finder.js';
 import { findAllTripletsOptimized } from './triplet-finder-optimized.js';
 import { parseSRT } from './srt-parser.js';
@@ -123,6 +124,152 @@ function extractSrtFromVideo(videoPath: string, outputSrtPath: string): void {
 
     throw new Error(`FFmpeg extraction failed: ${stderr}`);
   }
+}
+
+interface AudioStream {
+  index: number;          // Stream index (e.g., 1 for 0:1)
+  fullIndex: string;      // Full stream specifier (e.g., "0:1")
+  language?: string;      // Language code (e.g., "eng", "jpn")
+  codec: string;          // Audio codec (e.g., "aac", "ac3")
+  channels: string;       // Channel layout (e.g., "stereo", "5.1")
+  title?: string;         // Stream title/metadata
+}
+
+/**
+ * Probe video file for audio streams and let user select one
+ * Auto-selects after 60s timeout using heuristic (prefer "original" or first stream)
+ */
+async function selectAudioStream(videoPath: string): Promise<number | null> {
+  console.log('\n🔊 Probing audio streams...\n');
+
+  // Use ffprobe to get audio stream info
+  let probeOutput: string;
+  try {
+    probeOutput = execSync(
+      `ffprobe -v error -select_streams a -show_entries stream=index,codec_name,channels,channel_layout:stream_tags=language,title -of default=noprint_wrappers=1 "${videoPath}" 2>&1`,
+      { encoding: 'utf-8' }
+    );
+  } catch (error: any) {
+    console.error('⚠ Could not probe audio streams, will use default ffmpeg behavior');
+    return null;
+  }
+
+  // Parse ffprobe output
+  const streams: AudioStream[] = [];
+  const streamBlocks = probeOutput.split('[STREAM]').slice(1); // Skip first empty element
+
+  for (const block of streamBlocks) {
+    const lines = block.split('\n').filter(line => line.includes('='));
+    const streamData: Record<string, string> = {};
+
+    for (const line of lines) {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        streamData[key.trim()] = value.trim();
+      }
+    }
+
+    if (streamData.index) {
+      const streamIndex = parseInt(streamData.index);
+      streams.push({
+        index: streamIndex,
+        fullIndex: `0:${streamIndex}`,
+        language: streamData['TAG:language'],
+        codec: streamData.codec_name || 'unknown',
+        channels: streamData.channel_layout || streamData.channels || 'unknown',
+        title: streamData['TAG:title']
+      });
+    }
+  }
+
+  if (streams.length === 0) {
+    console.log('⚠ No audio streams found, will use default ffmpeg behavior\n');
+    return null;
+  }
+
+  if (streams.length === 1) {
+    console.log(`✓ Single audio stream found: ${streams[0].fullIndex} [${streams[0].language || '?'}] - ${streams[0].codec}, ${streams[0].channels}`);
+    if (streams[0].title) {
+      console.log(`  Title: "${streams[0].title}"`);
+    }
+    console.log();
+    return streams[0].index;
+  }
+
+  // Multiple streams - show and prompt
+  console.log('🔊 Audio streams found:\n');
+  streams.forEach((stream, idx) => {
+    const lang = stream.language ? `[${stream.language}]` : '[?]';
+    const title = stream.title ? ` - "${stream.title}"` : '';
+    console.log(`  ${idx + 1}. Stream ${stream.fullIndex} ${lang} - ${stream.codec}, ${stream.channels}${title}`);
+  });
+
+  console.log(`\nSelect audio stream (1-${streams.length}, 'all' for all streams, or wait 60s for auto-select):`);
+
+  // Create readline interface
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  // Heuristic auto-selection after 60 seconds
+  const autoSelectHeuristic = (): number => {
+    // 1. Prefer stream with "original" in title (case-insensitive)
+    const originalStream = streams.find(s =>
+      s.title?.toLowerCase().includes('original')
+    );
+    if (originalStream) {
+      console.log(`\n⏱ Timeout: Auto-selected stream ${originalStream.fullIndex} (contains "original")`);
+      return originalStream.index;
+    }
+
+    // 2. Prefer first stream (often the original/default)
+    console.log(`\n⏱ Timeout: Auto-selected first stream ${streams[0].fullIndex}`);
+    return streams[0].index;
+  };
+
+  return new Promise<number | null>((resolve) => {
+    let resolved = false;
+
+    // Set 60-second timeout
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        rl.close();
+        const selected = autoSelectHeuristic();
+        resolve(selected);
+      }
+    }, 60000);
+
+    rl.question('> ', (answer) => {
+      if (resolved) return;
+
+      resolved = true;
+      clearTimeout(timeout);
+      rl.close();
+
+      const trimmed = answer.trim().toLowerCase();
+
+      if (trimmed === 'all') {
+        console.log('\n✓ Selected: All audio streams\n');
+        resolve(null);
+        return;
+      }
+
+      const selection = parseInt(trimmed);
+      if (isNaN(selection) || selection < 1 || selection > streams.length) {
+        console.log(`\n⚠ Invalid selection, using first stream ${streams[0].fullIndex}\n`);
+        resolve(streams[0].index);
+        return;
+      }
+
+      const selectedStream = streams[selection - 1];
+      const lang = selectedStream.language ? `[${selectedStream.language}]` : '';
+      const title = selectedStream.title ? ` - "${selectedStream.title}"` : '';
+      console.log(`\n✓ Selected: Stream ${selectedStream.fullIndex} ${lang}${title}\n`);
+      resolve(selectedStream.index);
+    });
+  });
 }
 
 function formatTriplet(triplet: Triplet): string {
@@ -319,6 +466,9 @@ program
 
       console.log('');
 
+      // Step 1.5: Select audio stream
+      const audioStreamIndex = await selectAudioStream(videoPath);
+
       // Step 2: Find triplets
       console.log('='.repeat(80));
       console.log('Step 2: Finding triplet sequences...');
@@ -384,7 +534,7 @@ program
       console.log('Step 4: Exporting top sequences with videos...');
       console.log('='.repeat(80));
 
-      await exportTopTriplets(srtPath, judgments, videoPath);
+      await exportTopTriplets(srtPath, judgments, videoPath, audioStreamIndex);
 
       console.log('='.repeat(80));
       console.log('✨ PIPELINE COMPLETE!');

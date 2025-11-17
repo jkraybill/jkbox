@@ -1425,7 +1425,8 @@ function blankLastFrame(scene: string): string {
 export async function exportTopTriplets(
   srtFile: string,
   judgments: TripletJudgment[],
-  sourceVideo?: string
+  sourceVideo?: string,
+  audioStreamIndex?: number | null
 ): Promise<void> {
   const srtBasename = basename(srtFile, '.srt');
   const clipsBaseDir = join('/home/jk/jkbox/generated/clips', srtBasename);
@@ -1570,7 +1571,7 @@ export async function exportTopTriplets(
     if (sourceVideo) {
       try {
         const timestampRanges = [scene1Range, scene2Range, scene3Range];
-        extractVideosForSequence(rankDir, sourceVideo, srtBasename, timestampRanges);
+        extractVideosForSequence(rankDir, sourceVideo, srtBasename, timestampRanges, audioStreamIndex);
         console.log(`    ✅ Extracted 3 video segments`);
       } catch (error) {
         console.error(`    ⚠ Video extraction failed: ${error instanceof Error ? error.message : error}`);

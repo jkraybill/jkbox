@@ -24,6 +24,16 @@ export interface Triplet {
 const TARGET_N = 18;
 const TARGET_N_THIRD = TARGET_N / 3;  // 6 (used in deduplication strategy)
 
+// Overlap minimization weights
+const OVERLAP_PENALTY_WEIGHT = 50.0;  // High penalty for overlap (dominant factor)
+const QUALITY_WEIGHT = 1.0;            // Baseline quality weight
+
+interface TimeRange {
+  startSeconds: number;  // T1 F1 start time
+  endSeconds: number;    // T3 F3 end time
+  duration: number;      // Total span (endSeconds - startSeconds)
+}
+
 interface ValidFirstTriplet {
   f1Start: number;
   f1Frame2: number;
@@ -502,6 +512,129 @@ function selectRandomOthers(group: Triplet[][], alreadySelected: Set<Triplet[]>,
   return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
+/**
+ * Get time range for a triplet sequence (T1 F1 start → T3 F3 end)
+ */
+function getSequenceTimeRange(sequence: Triplet[]): TimeRange {
+  const startSeconds = parseTimeToSeconds(sequence[0].frame1.startTime);
+  const endSeconds = parseTimeToSeconds(sequence[2].frame3.endTime);
+
+  return {
+    startSeconds,
+    endSeconds,
+    duration: endSeconds - startSeconds
+  };
+}
+
+/**
+ * Calculate temporal overlap between two time ranges
+ * Returns percentage overlap relative to the smaller range (0.0 = no overlap, 1.0+ = significant overlap)
+ */
+function calculateOverlap(range1: TimeRange, range2: TimeRange): number {
+  const overlapStart = Math.max(range1.startSeconds, range2.startSeconds);
+  const overlapEnd = Math.min(range1.endSeconds, range2.endSeconds);
+  const overlapDuration = Math.max(0, overlapEnd - overlapStart);
+
+  // Return overlap as percentage of smaller range
+  const minDuration = Math.min(range1.duration, range2.duration);
+  return minDuration > 0 ? overlapDuration / minDuration : 0;
+}
+
+/**
+ * Calculate quality score for a triplet sequence
+ * Higher score = better quality (more interesting, appropriate length, more content)
+ */
+function calculateQualityScore(sequence: Triplet[]): number {
+  let score = 0;
+
+  // 1. Duration preference (prefer 8-15 second sequences)
+  const duration = getSequenceTimeDelta(sequence);
+  const idealDuration = 12; // seconds
+  const durationDeviation = Math.abs(duration - idealDuration);
+  score += Math.max(0, 10 - durationDeviation); // 0-10 points
+
+  // 2. Keyword rarity (less common = more interesting)
+  const keyword = sequence[0].keyword;
+  const wordFreq = scoreWordByFrequency(keyword);
+  score += (1 - wordFreq) * 5; // 0-5 points (rare words score higher)
+
+  // 3. Dialogue density (more alpha chars = more content)
+  const totalAlphaChars = sequence.reduce((sum, triplet) =>
+    sum + triplet.allEntries.reduce((s, e) =>
+      s + e.text.replace(/[^a-zA-Z]/g, '').length, 0), 0);
+  score += Math.min(totalAlphaChars / 100, 5); // 0-5 points (capped)
+
+  return score; // 0-20 range
+}
+
+/**
+ * Greedy selection algorithm that minimizes temporal overlap while maintaining quality
+ * Heavily weights minimal overlap to maximize temporal diversity across selected sequences
+ */
+function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] {
+  if (sequences.length === 0) return [];
+  if (sequences.length <= TARGET_N) return sequences; // No need to filter
+
+  console.log(`\n  Greedy selection with overlap minimization (${sequences.length} → ${TARGET_N}):`);
+
+  // Calculate time ranges and quality scores for all sequences
+  const candidates = sequences.map(seq => ({
+    sequence: seq,
+    timeRange: getSequenceTimeRange(seq),
+    qualityScore: calculateQualityScore(seq),
+    keyword: getLastWordLower(seq[0].frame3.text)
+  }));
+
+  // Sort by quality (best first) for initial selection
+  candidates.sort((a, b) => b.qualityScore - a.qualityScore);
+
+  const selected: typeof candidates = [];
+  const remaining = [...candidates];
+
+  // Select first sequence (highest quality)
+  const first = remaining.shift()!;
+  selected.push(first);
+  console.log(`    1. "${first.keyword}" (quality: ${first.qualityScore.toFixed(1)}, duration: ${first.timeRange.duration.toFixed(1)}s, overlap: 0.0%)`);
+
+  // Greedily select remaining sequences
+  while (selected.length < TARGET_N && remaining.length > 0) {
+    let bestCandidate: typeof candidates[0] | null = null;
+    let bestScore = -Infinity;
+    let bestOverlap = 0;
+
+    for (const candidate of remaining) {
+      // Calculate total overlap with all selected sequences
+      let totalOverlapPercent = 0;
+      for (const selectedSeq of selected) {
+        const overlap = calculateOverlap(candidate.timeRange, selectedSeq.timeRange);
+        totalOverlapPercent += overlap;
+      }
+
+      // Combined score: quality bonus - overlap penalty
+      const score = (candidate.qualityScore * QUALITY_WEIGHT)
+                    - (totalOverlapPercent * OVERLAP_PENALTY_WEIGHT);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestCandidate = candidate;
+        bestOverlap = totalOverlapPercent;
+      }
+    }
+
+    if (bestCandidate) {
+      selected.push(bestCandidate);
+      remaining.splice(remaining.indexOf(bestCandidate), 1);
+
+      const avgOverlap = (bestOverlap / selected.length) * 100;
+      console.log(`    ${selected.length}. "${bestCandidate.keyword}" (quality: ${bestCandidate.qualityScore.toFixed(1)}, duration: ${bestCandidate.timeRange.duration.toFixed(1)}s, avg overlap: ${avgOverlap.toFixed(1)}%)`);
+    }
+  }
+
+  console.log(`    Selected ${selected.length} sequences with minimized temporal overlap`);
+
+  return selected.map(c => c.sequence);
+}
+
 function deduplicateByFirstTripletFrame3LastWord(sequences: Triplet[][]): Triplet[][] {
   const grouped = new Map<string, Triplet[][]>();
 
@@ -606,8 +739,9 @@ export async function findAllTripletsOptimized(srtContent: string): Promise<Trip
   const results = await findTripletsOptimized(entries);
   console.log(`Found ${results.length} raw triplet sequences`);
 
-  const deduplicated = deduplicateByFirstTripletFrame3LastWord(results);
-  console.log(`After deduplication: ${deduplicated.length} sequences`);
+  // Use greedy selection with overlap minimization
+  const selected = selectSequencesWithMinimalOverlap(results);
+  console.log(`After selection: ${selected.length} sequences`);
 
-  return deduplicated;
+  return selected;
 }

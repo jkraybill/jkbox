@@ -700,9 +700,9 @@ This answer here contains answer!`;
     expect(Array.isArray(triplets)).toBe(true);
   });
 
-  it('deduplication: single keyword returns MIN/MEDIAN/MAX time delta variants (<=4 strategy)', async () => {
+  it('greedy selection: returns sequences with minimal overlap', async () => {
     // SRT with sequences that all end with same keyword "light"
-    // Create 3 valid T1->T2->T3 chains with different durations
+    // Create multiple valid T1->T2->T3 chains with different time ranges
     const srt = `1
 00:00:00,000 --> 00:00:01,000
 Previous.
@@ -777,11 +777,11 @@ light burning.`;
 
     const optimized = await findAllTripletsOptimized(srt);
 
-    // With <=4 keywords, should get MIN/MEDIAN/MAX (up to 3 sequences for 1 keyword)
+    // Greedy selection should return at least 1 sequence, up to 18 max
     expect(optimized.length).toBeGreaterThanOrEqual(1);
-    expect(optimized.length).toBeLessThanOrEqual(3);
+    expect(optimized.length).toBeLessThanOrEqual(18);
 
-    // All should have same keyword
+    // All should have same keyword (in this test case)
     const keywords = new Set(optimized.map(seq => seq[0].keyword));
     expect(keywords.size).toBe(1);
   });

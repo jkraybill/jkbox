@@ -90,7 +90,8 @@ export function extractVideoSegment(
   startTime: string,
   endTime: string,
   outputVideo: string,
-  srtFile: string
+  srtFile: string,
+  audioStreamIndex?: number | null
 ): void {
   const startSeconds = srtTimeToSeconds(startTime);
   const endSeconds = srtTimeToSeconds(endTime);
@@ -98,14 +99,22 @@ export function extractVideoSegment(
 
   console.log(`    Extracting video: ${startTime} -> ${endTime} (${duration.toFixed(1)}s)`);
 
+  // Build audio mapping based on audioStreamIndex
+  // If audioStreamIndex is a number, use that specific stream: -map 0:${audioStreamIndex}
+  // If audioStreamIndex is null, include all audio streams: -map 0:a
+  // If audioStreamIndex is undefined, default to all audio streams: -map 0:a
+  const audioMap = (audioStreamIndex !== null && audioStreamIndex !== undefined)
+    ? `-map 0:${audioStreamIndex}`
+    : `-map 0:a`;
+
   // Use ffmpeg to extract the segment with embedded subtitles
   // -ss: start time, -t: duration
-  // -map 0:v -map 0:a -map 1:0: include video, audio from input 0, subtitles from input 1
+  // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const ffmpegCmd = `ffmpeg -y -ss ${startSeconds} -i "${inputVideo}" -i "${srtFile}" -t ${duration} -map 0:v -map 0:a -map 1:0 -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${startSeconds} -i "${inputVideo}" -i "${srtFile}" -t ${duration} -map 0:v ${audioMap} -map 1:0 -c:v libx264 -c:a aac -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
@@ -123,7 +132,8 @@ export function extractVideosForSequence(
   sequenceDir: string,
   sourceVideo: string,
   srtBasename: string,
-  timestampRanges: Array<{ startTime: string; endTime: string }>
+  timestampRanges: Array<{ startTime: string; endTime: string }>,
+  audioStreamIndex?: number | null
 ): void {
   console.log(`\n  🎬 Extracting videos for ${basename(sequenceDir)}/`);
 
@@ -145,6 +155,6 @@ export function extractVideosForSequence(
 
     // Extract video segment (question SRT is already rebased to 00:00:00,000)
     const outputVideoPath = join(sequenceDir, `${srtBasename}-${sceneNum}-question.mp4`);
-    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath);
+    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath, audioStreamIndex);
   }
 }
