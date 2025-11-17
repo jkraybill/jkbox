@@ -448,9 +448,9 @@ No explanations, no other text. Just the JSON array of couplets.`;
     const expectedPrefix = expectedConstraint.split(' -- ')[0];  // e.g., "Political"
     const returnedPrefix = returnedConstraint.split(' -- ')[0];  // What LLM returned
 
-    // Check if the returned prefix matches the expected prefix
-    if (returnedPrefix.trim() !== expectedPrefix.trim() &&
-        !returnedPrefix.trim().startsWith(expectedPrefix.trim())) {
+    // Check if the returned prefix matches the expected prefix (case-insensitive)
+    if (returnedPrefix.trim().toLowerCase() !== expectedPrefix.trim().toLowerCase() &&
+        !returnedPrefix.trim().toLowerCase().startsWith(expectedPrefix.trim().toLowerCase())) {
       throw new Error(
         `❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
         `Expected constraint name:\n"${expectedPrefix}"\n\n` +
@@ -698,10 +698,10 @@ No explanations, no other text. Just the JSON array of couplets.`;
     const expectedPrefix = expectedConstraint.split(' -- ')[0];  // e.g., "The letter 'R' (5 words)"
     const returnedPrefix = returnedConstraint.split(' -- ')[0];  // What LLM returned
 
-    // Check if the returned prefix matches the expected prefix
+    // Check if the returned prefix matches the expected prefix (case-insensitive)
     // Be lenient - just check that it starts with or equals the expected prefix
-    if (returnedPrefix.trim() !== expectedPrefix.trim() &&
-        !returnedPrefix.trim().startsWith(expectedPrefix.trim())) {
+    if (returnedPrefix.trim().toLowerCase() !== expectedPrefix.trim().toLowerCase() &&
+        !returnedPrefix.trim().toLowerCase().startsWith(expectedPrefix.trim().toLowerCase())) {
       throw new Error(
         `❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
         `Expected constraint name:\n"${expectedPrefix}"\n\n` +
