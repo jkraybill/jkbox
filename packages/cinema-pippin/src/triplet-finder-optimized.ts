@@ -282,10 +282,21 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
   }
 
   // Filter out keywords with frequency > 10000 (too common)
+  // BUT: Always keep at least TARGET_N keywords to ensure we can reach the target
   const beforeCommonFilter = keywordScores.length;
-  const filteredScores = keywordScores.filter(k => k.frequency <= 10000);
+  let filteredScores = keywordScores.filter(k => k.frequency <= 10000);
 
-  if (filteredScores.length < beforeCommonFilter) {
+  // If we filtered too aggressively and have fewer than TARGET_N keywords,
+  // add back the rarest common words until we hit TARGET_N
+  if (filteredScores.length < TARGET_N && keywordScores.length >= TARGET_N) {
+    // Sort all keywords by frequency (rarest first)
+    const sortedAll = [...keywordScores].sort((a, b) => a.frequency - b.frequency);
+    // Take the rarest TARGET_N keywords
+    filteredScores = sortedAll.slice(0, TARGET_N);
+    const added = filteredScores.length - (keywordScores.filter(k => k.frequency <= 10000).length);
+    console.log(`  ⚠️  Only ${filteredScores.length - added} keywords with frequency ≤ 10000`);
+    console.log(`  📈 Added ${added} less-common keywords to reach TARGET_N (${TARGET_N})`);
+  } else if (filteredScores.length < beforeCommonFilter) {
     const removed = beforeCommonFilter - filteredScores.length;
     console.log(`  Filtered out ${removed} common keywords (frequency > 10000)`);
   }
