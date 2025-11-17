@@ -568,41 +568,68 @@ function calculateQualityScore(sequence: Triplet[]): number {
 }
 
 /**
- * Greedy selection algorithm that minimizes temporal overlap while maintaining quality
- * Heavily weights minimal overlap to maximize temporal diversity across selected sequences
+ * Greedy selection algorithm with PRIMARY priority on keyword uniqueness
+ * and SECONDARY priority on minimal temporal overlap
+ *
+ * Guarantees: Each selected sequence has a UNIQUE keyword (no duplicates!)
+ * Then: Minimizes temporal overlap among selected sequences
  */
 function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] {
   if (sequences.length === 0) return [];
-  if (sequences.length <= TARGET_N) return sequences; // No need to filter
 
-  console.log(`\n  Greedy selection with overlap minimization (${sequences.length} → ${TARGET_N}):`);
+  console.log(`\n  Greedy selection with keyword uniqueness + overlap minimization:`);
+  console.log(`    Input: ${sequences.length} sequences`);
 
-  // Calculate time ranges and quality scores for all sequences
-  const candidates = sequences.map(seq => ({
-    sequence: seq,
-    timeRange: getSequenceTimeRange(seq),
-    qualityScore: calculateQualityScore(seq),
-    keyword: getLastWordLower(seq[0].frame3.text)
-  }));
+  // Group sequences by keyword
+  const keywordGroups = new Map<string, Triplet[][]>();
+  for (const seq of sequences) {
+    const keyword = getLastWordLower(seq[0].frame3.text);
+    if (!keywordGroups.has(keyword)) {
+      keywordGroups.set(keyword, []);
+    }
+    keywordGroups.get(keyword)!.push(seq);
+  }
 
-  // Sort by quality (best first) for initial selection
-  candidates.sort((a, b) => b.qualityScore - a.qualityScore);
+  console.log(`    Unique keywords: ${keywordGroups.size}`);
 
-  const selected: typeof candidates = [];
-  const remaining = [...candidates];
+  // Calculate metadata for all sequences
+  const candidatesByKeyword = new Map<string, Array<{
+    sequence: Triplet[][];
+    timeRange: TimeRange;
+    qualityScore: number;
+    keyword: string;
+  }>>();
 
-  // Select first sequence (highest quality)
-  const first = remaining.shift()!;
-  selected.push(first);
-  console.log(`    1. "${first.keyword}" (quality: ${first.qualityScore.toFixed(1)}, duration: ${first.timeRange.duration.toFixed(1)}s, overlap: 0.0%)`);
+  for (const [keyword, seqs] of keywordGroups.entries()) {
+    const candidates = seqs.map(seq => ({
+      sequence: seq,
+      timeRange: getSequenceTimeRange(seq),
+      qualityScore: calculateQualityScore(seq),
+      keyword
+    }));
+    // Sort by quality (best first) within each keyword group
+    candidates.sort((a, b) => b.qualityScore - a.qualityScore);
+    candidatesByKeyword.set(keyword, candidates);
+  }
 
-  // Greedily select remaining sequences
-  while (selected.length < TARGET_N && remaining.length > 0) {
-    let bestCandidate: typeof candidates[0] | null = null;
+  const selected: Array<{
+    sequence: Triplet[][];
+    timeRange: TimeRange;
+    qualityScore: number;
+    keyword: string;
+  }> = [];
+
+  // Greedy selection: pick one sequence per keyword
+  while (selected.length < TARGET_N && candidatesByKeyword.size > 0) {
+    let bestKeyword: string | null = null;
+    let bestCandidate: typeof selected[0] | null = null;
     let bestScore = -Infinity;
     let bestOverlap = 0;
 
-    for (const candidate of remaining) {
+    // For each remaining keyword, consider its best sequence
+    for (const [keyword, candidates] of candidatesByKeyword.entries()) {
+      const candidate = candidates[0]; // Best quality sequence for this keyword
+
       // Calculate total overlap with all selected sequences
       let totalOverlapPercent = 0;
       for (const selectedSeq of selected) {
@@ -616,21 +643,24 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] 
 
       if (score > bestScore) {
         bestScore = score;
+        bestKeyword = keyword;
         bestCandidate = candidate;
         bestOverlap = totalOverlapPercent;
       }
     }
 
-    if (bestCandidate) {
+    if (bestCandidate && bestKeyword) {
       selected.push(bestCandidate);
-      remaining.splice(remaining.indexOf(bestCandidate), 1);
+      candidatesByKeyword.delete(bestKeyword); // Remove this keyword group
 
-      const avgOverlap = (bestOverlap / selected.length) * 100;
+      const avgOverlap = selected.length > 1 ? (bestOverlap / (selected.length - 1)) * 100 : 0;
       console.log(`    ${selected.length}. "${bestCandidate.keyword}" (quality: ${bestCandidate.qualityScore.toFixed(1)}, duration: ${bestCandidate.timeRange.duration.toFixed(1)}s, avg overlap: ${avgOverlap.toFixed(1)}%)`);
+    } else {
+      break; // No more keywords available
     }
   }
 
-  console.log(`    Selected ${selected.length} sequences with minimized temporal overlap`);
+  console.log(`    Selected ${selected.length} sequences (${selected.length} unique keywords, minimized overlap)`);
 
   return selected.map(c => c.sequence);
 }
