@@ -5,6 +5,7 @@ import {
   endsWithPunctuationOrBracket,
   endsWithQuestionMark,
   getDurationSeconds,
+  getFrameDuration,
   isValidT1Frame3,
   extractLastWord,
   containsWordAsStandalone,
@@ -90,6 +91,15 @@ export function isValidFirstTriplet(
     return false;
   }
 
+  // Frame durations must be increasing: F1 < F2 < F3
+  const f1Duration = getFrameDuration(frame1);
+  const f2Duration = getFrameDuration(frame2);
+  const f3Duration = getFrameDuration(frame3);
+
+  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
+    return false;
+  }
+
   return true;
 }
 
@@ -145,6 +155,15 @@ export function isValidSubsequentTriplet(
   // Duration must be 5-20 seconds
   const duration = getDurationSeconds(frame1, frame3);
   if (duration < 5 || duration > 20) {
+    return false;
+  }
+
+  // Frame durations must be increasing: F1 < F2 < F3
+  const f1Duration = getFrameDuration(frame1);
+  const f2Duration = getFrameDuration(frame2);
+  const f3Duration = getFrameDuration(frame3);
+
+  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
     return false;
   }
 

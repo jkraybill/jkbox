@@ -16,7 +16,7 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:05,000',
+        endTime: '00:00:05,000',  // F1 duration: 2 seconds
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
@@ -37,14 +37,14 @@ describe('isValidFirstTriplet', () => {
       {
         index: 5,
         startTime: '00:00:09,000',
-        endTime: '00:00:11,000',
+        endTime: '00:00:12,000',  // F2 duration: 3 seconds (longer than F1)
         text: 'Second frame no question needed',
         rawText: ['Second frame no question needed'],
       },
       {
         index: 6,
-        startTime: '00:00:11,000',
-        endTime: '00:00:14,000',  // 11 seconds total from frame 1 start
+        startTime: '00:00:12,000',
+        endTime: '00:00:16,000',  // F3 duration: 4 seconds (longer than F2), total 13s from F1 start
         text: 'Answer!',  // Single word + punctuation
         rawText: ['Answer!'],
       },
@@ -67,21 +67,21 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:05,000',
+        endTime: '00:00:05,000',  // F1 duration: 2 seconds
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
       {
         index: 3,
         startTime: '00:00:05,000',
-        endTime: '00:00:07,000',
+        endTime: '00:00:08,000',  // F2 duration: 3 seconds (longer than F1)
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:07,000',
-        endTime: '00:00:12,000',  // 9 seconds total
+        startTime: '00:00:08,000',
+        endTime: '00:00:13,000',  // F3 duration: 5 seconds (longer than F2), total 10s
         text: 'Answer!',
         rawText: ['Answer!'],
       },
@@ -104,7 +104,7 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:05,000',
+        endTime: '00:00:05,000',  // F1 duration: 2 seconds
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
@@ -153,14 +153,14 @@ describe('isValidFirstTriplet', () => {
       {
         index: 9,
         startTime: '00:00:17,000',
-        endTime: '00:00:19,000',
+        endTime: '00:00:19,500',  // F2 duration: 2.5 seconds (longer than F1)
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 10,
-        startTime: '00:00:19,000',
-        endTime: '00:00:22,000',  // 19 seconds total
+        startTime: '00:00:19,500',
+        endTime: '00:00:22,500',  // F3 duration: 3 seconds (longer than F2), total 19.5s from F1 start
         text: 'Answer!',
         rawText: ['Answer!'],
       },
@@ -183,21 +183,21 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:10,000',
+        endTime: '00:00:08,000',  // F1 duration: 5 seconds
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
       {
         index: 3,
-        startTime: '00:00:10,000',
-        endTime: '00:00:17,000',
+        startTime: '00:00:08,000',
+        endTime: '00:00:15,000',  // F2 duration: 7 seconds (longer than F1)
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:17,000',
-        endTime: '00:00:23,000',  // 20 seconds total from frame 2 start
+        startTime: '00:00:15,000',
+        endTime: '00:00:23,000',  // F3 duration: 8 seconds (longer than F2), total 20s from F1 start
         text: 'Answer!',
         rawText: ['Answer!'],
       },
@@ -448,21 +448,21 @@ describe('isValidSubsequentTriplet', () => {
       {
         index: 4,
         startTime: '00:00:07,000',
-        endTime: '00:00:09,000',
+        endTime: '00:00:09,000',  // F1 duration: 2 seconds
         text: 'Frame 1 here.',
         rawText: ['Frame 1 here.'],
       },
       {
         index: 5,
         startTime: '00:00:09,000',
-        endTime: '00:00:11,000',
+        endTime: '00:00:12,000',  // F2 duration: 3 seconds (longer than F1)
         text: 'This contains the hello keyword.',
         rawText: ['This contains the hello keyword.'],
       },
       {
         index: 6,
-        startTime: '00:00:11,000',
-        endTime: '00:00:14,000',
+        startTime: '00:00:12,000',
+        endTime: '00:00:16,000',  // F3 duration: 4 seconds (longer than F2)
         text: 'Third frame here!',
         rawText: ['Third frame here!'],
       },
@@ -571,21 +571,21 @@ describe('isValidSubsequentTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:08,000',
+        endTime: '00:00:06,000',  // F1: 3 seconds
         text: 'This contains the hello keyword!',
         rawText: ['This contains the hello keyword!'],
       },
       {
         index: 3,
-        startTime: '00:00:08,000',
-        endTime: '00:00:13,000',
+        startTime: '00:00:06,000',
+        endTime: '00:00:11,000',  // F2: 5 seconds
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:13,000',
-        endTime: '00:00:16,000',
+        startTime: '00:00:11,000',
+        endTime: '00:00:18,000',  // F3: 7 seconds
         text: 'Yes indeed!',  // 2 words, minWords = 2
         rawText: ['Yes indeed!'],
       },
@@ -643,21 +643,21 @@ describe('isValidSubsequentTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:08,000',
+        endTime: '00:00:06,000',  // F1: 3 seconds
         text: 'This contains the hello keyword!',
         rawText: ['This contains the hello keyword!'],
       },
       {
         index: 3,
-        startTime: '00:00:08,000',
-        endTime: '00:00:13,000',
+        startTime: '00:00:06,000',
+        endTime: '00:00:11,000',  // F2: 5 seconds
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:13,000',
-        endTime: '00:00:16,000',
+        startTime: '00:00:11,000',
+        endTime: '00:00:18,000',  // F3: 7 seconds
         text: 'Three words here!',  // 3 words, minWords = 3
         rawText: ['Three words here!'],
       },
@@ -715,21 +715,21 @@ describe('isValidSubsequentTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:08,000',
+        endTime: '00:00:06,000',  // F1: 3 seconds
         text: 'This contains the hello keyword!',
         rawText: ['This contains the hello keyword!'],
       },
       {
         index: 3,
-        startTime: '00:00:08,000',
-        endTime: '00:00:13,000',
+        startTime: '00:00:06,000',
+        endTime: '00:00:11,000',  // F2: 5 seconds
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:13,000',
-        endTime: '00:00:16,000',
+        startTime: '00:00:11,000',
+        endTime: '00:00:18,000',  // F3: 7 seconds
         text: 'You think you can win today?',  // 6 words, minWords = 6 for T3
         rawText: ['You think you can win today?'],
       },
@@ -773,79 +773,57 @@ This answer here contains answer!`;
   });
 
   it('greedy selection: returns sequences with minimal overlap', async () => {
-    // SRT with sequences that all end with same keyword "light"
-    // Create multiple valid T1->T2->T3 chains with different time ranges
+    // SRT with sequences that create valid T1->T2->T3 chains
+    // T1: keyword "light" only at end of F3
+    // T2/T3: keyword "light" appears in F1 or F2 (required for subsequent triplets)
+    // Frame durations must be strictly increasing within each triplet
     const srt = `1
-00:00:00,000 --> 00:00:01,000
+00:00:00,000 --> 00:00:01,500
 Previous.
 
 2
-00:00:01,000 --> 00:00:03,000
-Short
+00:00:01,500 --> 00:00:04,000
+Short text-
 
 3
-00:00:03,000 --> 00:00:05,000
-text
+00:00:04,000 --> 00:00:08,500
+more content-
 
 4
-00:00:05,000 --> 00:00:07,000
-Here.
+00:00:08,500 --> 00:00:15,000
+Here comes the light!
 
 5
-00:00:07,000 --> 00:00:09,000
-And : light!
+00:00:16,000 --> 00:00:18,500
+The light shines.
 
 6
-00:00:10,000 --> 00:00:11,000
-Prev.
+00:00:18,500 --> 00:00:22,000
+Medium text-
 
 7
-00:00:11,000 --> 00:00:13,000
-MediumLengthTextHere
+00:00:22,000 --> 00:00:27,500
+even more text-
 
 8
-00:00:13,000 --> 00:00:15,000
-MoreTextContent
+00:00:27,500 --> 00:00:36,000
+Another answer with bright light here!
 
 9
-00:00:15,000 --> 00:00:17,000
-EvenMoreText.
+00:00:37,000 --> 00:00:39,500
+A light appears.
 
 10
-00:00:17,000 --> 00:00:19,000
-The word : light!
+00:00:39,500 --> 00:00:43,000
+Question here-
 
 11
-00:00:20,000 --> 00:00:21,000
-Done.
+00:00:43,000 --> 00:00:48,500
+Answer text-
 
 12
-00:00:21,000 --> 00:00:23,000
-Q1
-
-13
-00:00:23,000 --> 00:00:25,000
-A1
-
-14
-00:00:25,000 --> 00:00:27,000
-End.
-
-15
-00:00:27,000 --> 00:00:29,000
-The keyword brings more light than ever!
-
-16
-00:00:30,000 --> 00:00:32,000
-Short again text.
-
-17
-00:00:32,000 --> 00:00:34,000
-Word here.
-
-18
-00:00:34,000 --> 00:00:36,000
-The light is burning brightly today here.`;
+00:00:48,500 --> 00:00:57,000
+The keyword brings more light than ever!`;
 
     const optimized = await findAllTripletsOptimized(srt);
 
@@ -901,57 +879,46 @@ Final test here.`);
     // Test data with valid triplet patterns
     // T1: keyword "banana" appears only at end of F3
     // T2 and T3: keyword "banana" appears in frames (required for subsequent triplets)
+    // Frame durations must be strictly increasing within each triplet
     const srt = `1
-00:00:01,000 --> 00:00:02,000
+00:00:01,000 --> 00:00:02,500
 Something happened.
 
 2
-00:00:02,000 --> 00:00:04,000
-In the beginning
+00:00:02,500 --> 00:00:05,000
+In the beginning-
 
 3
-00:00:04,000 --> 00:00:06,000
-there was
+00:00:05,000 --> 00:00:09,500
+there was more text-
 
 4
-00:00:06,000 --> 00:00:08,000
-But then something arrived.
+00:00:09,500 --> 00:00:16,000
+But then something arrived: banana!
 
 5
-00:00:08,000 --> 00:00:10,000
-And the : banana!
+00:00:17,000 --> 00:00:19,500
+The yellow banana-
 
 6
-00:00:10,500 --> 00:00:12,000
-The yellow banana
+00:00:19,500 --> 00:00:23,000
+tasted wonderful and-
 
 7
-00:00:12,000 --> 00:00:14,000
-tasted wonderful
+00:00:23,000 --> 00:00:29,500
+Everyone loved it the most delicious banana ever.
 
 8
-00:00:14,000 --> 00:00:16,000
-Everyone loved it.
+00:00:30,000 --> 00:00:32,500
+Without banana we-
 
 9
-00:00:16,000 --> 00:00:18,000
-It was absolutely the most delicious banana ever.
+00:00:32,500 --> 00:00:36,000
+survive in darkness-
 
 10
-00:00:18,500 --> 00:00:20,000
-Without banana we survive
-
-11
-00:00:20,000 --> 00:00:22,000
-in total darkness
-
-12
-00:00:22,000 --> 00:00:24,000
-We need it to live.
-
-13
-00:00:24,000 --> 00:00:26,000
-Please keep the fresh yellow banana in the fridge.`;
+00:00:36,000 --> 00:00:42,500
+We need it to keep the fresh yellow banana in the fridge.`;
 
     const optimized = await findAllTripletsOptimized(srt);
 

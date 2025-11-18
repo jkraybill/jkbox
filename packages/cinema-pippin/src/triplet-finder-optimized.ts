@@ -5,6 +5,7 @@ import {
   endsWithStrongPunctuation,
   endsWithPunctuationOrBracket,
   getDurationSeconds,
+  getFrameDuration,
   isValidT1Frame3,
   extractLastWord,
   countWords,
@@ -102,6 +103,13 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
       // Validate duration
       const duration = getDurationSeconds(frame1, frame3);
       if (duration < 5 || duration > 20) continue;
+
+      // Frame durations must be increasing: F1 < F2 < F3
+      const f1Duration = getFrameDuration(frame1);
+      const f2Duration = getFrameDuration(frame2);
+      const f3Duration = getFrameDuration(frame3);
+
+      if (f1Duration >= f2Duration || f2Duration >= f3Duration) continue;
 
       validFirstTriplets.push({
         f1Start: i,
@@ -216,13 +224,26 @@ function isValidSubsequentTriplet(
 
   // Duration validation
   const duration = getDurationSeconds(frame1, frame3);
-  return duration >= 5 && duration <= 20;
+  if (duration < 5 || duration > 20) {
+    return false;
+  }
+
+  // Frame durations must be increasing: F1 < F2 < F3
+  const f1Duration = getFrameDuration(frame1);
+  const f2Duration = getFrameDuration(frame2);
+  const f3Duration = getFrameDuration(frame3);
+
+  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
  * Optimized triplet finder - O(n) preprocessing + O(n²) search
  */
-async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> {
+async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Triplet[][], keywordFrequencies: Map<string, number> }> {
   const results: Triplet[][] = [];
 
   // Step 1: Pre-compute all valid first triplets (O(n))
@@ -230,7 +251,7 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
   const validFirstTriplets = buildFirstTripletIndex(entries);
   console.log(`  Found ${validFirstTriplets.length} valid first triplets`);
 
-  if (validFirstTriplets.length === 0) return results;
+  if (validFirstTriplets.length === 0) return { results, keywordFrequencies: new Map() };
 
   // Step 2: Extract unique keywords and build keyword index (O(n))
   console.log('  Building keyword index...');
