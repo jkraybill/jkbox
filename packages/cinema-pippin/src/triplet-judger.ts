@@ -1434,7 +1434,9 @@ export async function judgeAllTriplets(srtFile: string): Promise<TripletJudgment
 }
 
 /**
- * Helper: Blank out the last frame of a scene with _____
+ * Helper: Blank out the last frame of a scene with space-preserving blanks
+ * Replaces non-whitespace characters with underscores while preserving spaces
+ * Example: "I'll be back!" becomes "____ __ _____"
  */
 function blankLastFrame(scene: string): string {
   const frames = scene.split(/\n\n+/);
@@ -1449,11 +1451,13 @@ function blankLastFrame(scene: string): string {
     return scene;
   }
 
-  // Keep index (line 0) and timestamp (line 1), replace text with _____
+  // Keep index (line 0) and timestamp (line 1), blank text while preserving spaces
+  const originalText = lastFrameLines.slice(2).join('\n');
+  const blankedText = blankWithSpaces(originalText);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
-    '_____'            // Replace all text with blank
+    blankedText        // Replace text with space-preserving blanks
   ].join('\n');
 
   // Reconstruct scene with blanked last frame
