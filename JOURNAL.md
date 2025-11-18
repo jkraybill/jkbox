@@ -295,3 +295,7 @@ Journal entries reference HC outcomes:
 ### Session 11 (2025-11-18)
 
 [2025-11-18 23:15 UTC] Session 11✓. Cinema Pippin constraint validation fix. Ollama returning constraint names w/ different capitalization (e.g., "onomatopoeia" vs "Onomatopoeia")→validation failing despite correct position. Fix: case-insensitive comparison in T1/T2/T3 validation (lines 452-453, 703-704)✓. T:100/100✓. C:06d9123. Pattern: LLM output case variations normal→validation must be case-insensitive for constraint names. JKLES: ∅ (bugfix session).
+
+### Session 12 (2025-11-18)
+
+[2025-11-18 20:41 UTC] Session 12✓. BOS complete. Pippin rebrand (#30, #16: Evil JK→Pippin the moodle🐾). Audio padding bug fixed. Root cause: ffmpeg volume filter nested quotes→shell misinterpreted→filter failed silently. Audio identical throughout (-21.7 dB) instead of silent in padding (<-90 dB). Fix: removed nested quotes, explicit bash shell. New test: audio-padding.test.ts (skipped until clips generated). T:185/185✓. C:b19f298. Pattern: Shell escaping critical for ffmpeg filters→test with real audio. JKLES: ∅ (diagnostic/bugfix).

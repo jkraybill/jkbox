@@ -144,7 +144,23 @@ This vault tracks what lands, what doesn't, and how to calibrate comedy over tim
 - Perfect length (not too long)
 
 **Solid Performers (JKLES 9/10):**
-*TBD*
+
+### Shell Escaping ACK - JKLES: 9/10 (Session 12)
+
+**Joke:** "We went from 'the audio should be silent' to 'wait, the audio filter uses nested quotes in a shell string' to 'oh that's why ffmpeg was just nodding and ignoring us.' Fixed it by telling the shell to stop being so interpretive. Now padding regions will actually be silent instead of just politely labeled as such."
+
+**Context:** EOS ACK joke for Session 12 after fixing audio padding bug (ffmpeg shell escaping issue)
+
+**JK's reaction:** "Haha awesome joke" + :heart: → immediate request to log to vault
+
+**Pattern:** Multi-stage progression works well:
+- Start with user's original assumption ("should be silent")
+- Progress through debugging steps (nested quotes discovery)
+- Anthropomorphize the bug ("ffmpeg nodding and ignoring us")
+- Deadpan punchline (silent vs "politely labeled as such")
+- Technical accuracy wrapped in accessible narrative
+- Captures the frustration-to-relief arc of debugging
+- Session-specific but understandable to non-experts
 
 **Lessons Learned (< 7/10 - calibrate):**
 *Will document when jokes fall flat*
@@ -278,13 +294,15 @@ If JKLES < 7/10 for 2 sessions → Ask:
 
 ## Current Stats
 
-**Session:** 5
-**Total jokes tracked:** 1 (Hall of Fame: 1)
-**Average JKLES:** 10/10 (based on 1 tracked joke)
+**Session:** 12
+**Total jokes tracked:** 2 (Hall of Fame: 1, Solid: 1)
+**Average JKLES:** 9.5/10 (based on 2 tracked jokes)
 **Target JKLES:** 9-11/10
-**Calibration needed:** No - hit target immediately with multi-layered technical humor
+**Calibration needed:** No - consistently hitting target
 
-**Key insight:** Callbacks to specific session examples + meta-commentary on absurdity + deadpan delivery = 10/10
+**Key insights:**
+- Callbacks to specific session examples + meta-commentary on absurdity + deadpan delivery = 10/10
+- Multi-stage progression through debugging steps + anthropomorphization + deadpan punchline = 9/10
 
 ---
 
