@@ -30,6 +30,16 @@ describe('Keyword Utils', () => {
     it('should preserve hyphens', () => {
       expect(extractLastWordFromText('self-aware')).toBe('self-aware');
     });
+
+    it('should extract keyword from possessive form', () => {
+      expect(extractLastWordFromText('It was your father\'s.')).toBe('father');
+      expect(extractLastWordFromText('Above my Father\'s')).toBe('father');
+      expect(extractLastWordFromText('my mother\'s!')).toBe('mother');
+    });
+
+    it('should handle possessive without trailing punctuation', () => {
+      expect(extractLastWordFromText('my father\'s')).toBe('father');
+    });
   });
 
   describe('replaceKeywordWithBlank', () => {

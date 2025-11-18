@@ -3,13 +3,26 @@
  */
 
 /**
- * Extract the last word from text (strips punctuation)
+ * Extract the last word from text (strips punctuation and possessives)
+ * Examples:
+ * - "I love bananas." → "bananas"
+ * - "It was your father's." → "father"
+ * - "Above my Father's" → "father"
  */
 export function extractLastWordFromText(text: string): string {
   const words = text.trim().split(/\s+/);
   if (words.length === 0) return '';
-  const lastWord = words[words.length - 1];
-  // Remove all punctuation and convert to lowercase
+  let lastWord = words[words.length - 1];
+
+  // First, check if it contains 's followed by punctuation or end of string
+  // This handles: "father's", "father's.", "father's!", etc.
+  const possessiveMatch = lastWord.match(/'s([.!?]*)$/i);
+  if (possessiveMatch) {
+    // Remove the 's but keep any trailing punctuation for next step
+    lastWord = lastWord.slice(0, -2) + (possessiveMatch[1] || '');
+  }
+
+  // Then remove all remaining punctuation and convert to lowercase
   return lastWord.replace(/[^a-zA-Z-]/g, '').toLowerCase();
 }
 
