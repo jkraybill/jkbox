@@ -143,11 +143,13 @@ export function extractVideoSegment(
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
   // -af: audio filter to silence first/last paddingSeconds by multiplying audio samples by 0
   // -disposition:a:0 default: mark audio track as default (when specific stream selected)
-  // -c:v libx264 -c:a aac: re-encode video and audio
+  // -vf scale=1280:-2: scale to 720p width (1280px), maintain aspect ratio, ensure height divisible by 2
+  // -c:v libx264 -crf 23 -preset fast: H.264 with CRF 23 (good quality ~2-3 Mbps for 720p)
+  // -c:a aac -b:a 128k: AAC audio at 128kbps (excellent quality, smaller size)
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -c:v libx264 -c:a aac ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -vf scale=1280:-2 -c:v libx264 -crf 23 -preset fast -c:a aac -b:a 128k ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: '/bin/bash' });
