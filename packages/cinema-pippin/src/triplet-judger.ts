@@ -1169,12 +1169,14 @@ export async function judgeTriplet(
   }
 
   // Keep index (line 0) and timestamp (line 1), blank text while preserving spaces
-  const originalText = lastFrameLines.slice(2).join('\n');
-  const blankedText = blankWithSpaces(originalText);
+  // NEW RULE: If multiple lines of text, only output first line (blanked)
+  const textLines = lastFrameLines.slice(2);
+  const firstLineOnly = textLines.length > 1 ? textLines[0] : textLines.join('\n');
+  const blankedText = blankWithSpaces(firstLineOnly);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
-    blankedText        // Replace text with space-preserving blanks
+    blankedText        // Replace text with space-preserving blanks (first line only)
   ].join('\n');
 
   // Reconstruct second scene with blanked last frame
@@ -1243,12 +1245,14 @@ export async function judgeTriplet(
     throw new Error(`Last frame in third scene has invalid format`);
   }
 
-  const originalTextT3 = lastFrameLinesT3.slice(2).join('\n');
-  const blankedTextT3 = blankWithSpaces(originalTextT3);
+  // NEW RULE: If multiple lines of text, only output first line (blanked)
+  const textLinesT3 = lastFrameLinesT3.slice(2);
+  const firstLineOnlyT3 = textLinesT3.length > 1 ? textLinesT3[0] : textLinesT3.join('\n');
+  const blankedTextT3 = blankWithSpaces(firstLineOnlyT3);
   const blankedLastFrameT3 = [
     lastFrameLinesT3[0], // Index
     lastFrameLinesT3[1], // Timestamp
-    blankedTextT3        // Replace text with space-preserving blanks
+    blankedTextT3        // Replace text with space-preserving blanks (first line only)
   ].join('\n');
 
   const blankedThirdScene = [
