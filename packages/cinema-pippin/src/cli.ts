@@ -146,7 +146,7 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
   let probeOutput: string;
   try {
     probeOutput = execSync(
-      `ffprobe -v error -select_streams a -show_entries stream=index,codec_name,channels,channel_layout:stream_tags=language,title -of default=noprint_wrappers=1 "${videoPath}" 2>&1`,
+      `ffprobe -v error -select_streams a -show_entries stream=index,codec_name,channels,channel_layout:stream_tags=language,title -of default "${videoPath}" 2>&1`,
       { encoding: 'utf-8' }
     );
   } catch (error: any) {
