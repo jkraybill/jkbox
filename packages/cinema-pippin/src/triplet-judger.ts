@@ -17,7 +17,7 @@ import { blankWithSpaces, replaceBlankedText } from './blanking-utils.js';
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
 const MODEL = 'qwen-fast'; // Optimized qwen2.5:14b (num_ctx=2048, num_batch=512) - ~40% faster
 const CONSTRAINTS_FILE = '/home/jk/jkbox/assets/constraints.txt';
-const MAX_RETRIES = 2; // Max 2 retries = 3 total attempts
+const MAX_RETRIES = 4; // Max 4 retries = 5 total attempts
 
 interface OllamaResponse {
   model: string;
@@ -120,6 +120,67 @@ function shuffle<T>(array: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+/**
+ * Parse version numbers from Ollama response with fallback handling
+ * Primary: Match exactly 3 numbers in range 1-6
+ * Fallback: Extract all numbers, filter to 1-6, pad/fix if needed
+ * @returns Array of 3 0-based indices [best, 2nd, 3rd]
+ */
+function parseVersionNumbers(response: string): number[] {
+  // Primary: Try exact match for 3 numbers in range 1-6
+  const exactMatch = response.match(/\b([1-6])\s+([1-6])\s+([1-6])\b/);
+  if (exactMatch) {
+    return [
+      parseInt(exactMatch[1], 10) - 1,
+      parseInt(exactMatch[2], 10) - 1,
+      parseInt(exactMatch[3], 10) - 1
+    ];
+  }
+
+  // Fallback: Extract ALL numbers, filter to valid range, attempt recovery
+  console.log(`⚠️  Primary parsing failed, attempting fallback recovery...`);
+
+  const allNumbers = response.match(/\b\d+\b/g);
+  if (!allNumbers) {
+    throw new Error(`Could not extract any numbers from response: ${response}`);
+  }
+
+  // Convert to integers and filter to valid range (1-6)
+  const validNumbers = allNumbers
+    .map(n => parseInt(n, 10))
+    .filter(n => n >= 1 && n <= 6);
+
+  console.log(`   Found numbers: ${allNumbers.join(', ')} → Valid: ${validNumbers.join(', ')}`);
+
+  if (validNumbers.length === 0) {
+    throw new Error(`No valid version numbers (1-6) found in response: ${response}`);
+  }
+
+  // If we have at least 3 valid numbers, use first 3
+  if (validNumbers.length >= 3) {
+    const recovered = validNumbers.slice(0, 3);
+    console.log(`   ✓ Recovered 3 valid numbers: ${recovered.join(' ')}`);
+    return recovered.map(n => n - 1); // Convert to 0-based
+  }
+
+  // If we have 1-2 valid numbers, pad with random valid numbers (not already used)
+  const used = new Set(validNumbers);
+  const available = [1, 2, 3, 4, 5, 6].filter(n => !used.has(n));
+
+  while (validNumbers.length < 3 && available.length > 0) {
+    const randomIdx = Math.floor(Math.random() * available.length);
+    const randomNum = available.splice(randomIdx, 1)[0];
+    validNumbers.push(randomNum);
+  }
+
+  if (validNumbers.length === 3) {
+    console.log(`   ✓ Padded to 3 numbers: ${validNumbers.join(' ')}`);
+    return validNumbers.map(n => n - 1); // Convert to 0-based
+  }
+
+  throw new Error(`Could not recover 3 valid version numbers from response: ${response}`);
 }
 
 /**
@@ -786,6 +847,12 @@ ${versions.join('\n\n---\n\n')}
 Provide EXACTLY 3 numbers (1-6) separated by spaces, ranked from funniest to third-funniest.
 Example: "3 1 5" means Version 3 is funniest, Version 1 is second, Version 5 is third.
 
+🚨 CRITICAL VALIDATION RULES:
+• ONLY use numbers 1, 2, 3, 4, 5, or 6
+• DO NOT use 0, 7, 8, 9, or any number outside 1-6
+• There are exactly 6 versions - you CANNOT select version 7 or higher
+• Using invalid numbers will cause an error
+
 Your response should be ONLY the 3 numbers separated by spaces. No explanations, no other text.`;
 
   console.log('\n================================================================================');
@@ -811,18 +878,8 @@ Your response should be ONLY the 3 numbers separated by spaces. No explanations,
   console.log(response);
   console.log('================================================================================\n');
 
-  // Extract 3 numbers from response (e.g., "3 1 5")
-  const numbersMatch = response.match(/\b([1-6])\s+([1-6])\s+([1-6])\b/);
-  if (!numbersMatch) {
-    throw new Error(`Could not extract 3 version numbers from response: ${response}`);
-  }
-
-  // Return 0-based indices [best, 2nd, 3rd]
-  return [
-    parseInt(numbersMatch[1], 10) - 1,
-    parseInt(numbersMatch[2], 10) - 1,
-    parseInt(numbersMatch[3], 10) - 1
-  ];
+  // Parse version numbers with fallback handling
+  return parseVersionNumbers(response);
 }
 
 /**
@@ -880,6 +937,12 @@ ${versions.join('\n\n---\n\n')}
 Provide EXACTLY 3 numbers (1-6) separated by spaces, ranked from funniest to third-funniest.
 Example: "3 1 5" means Version 3 is funniest, Version 1 is second, Version 5 is third.
 
+🚨 CRITICAL VALIDATION RULES:
+• ONLY use numbers 1, 2, 3, 4, 5, or 6
+• DO NOT use 0, 7, 8, 9, or any number outside 1-6
+• There are exactly 6 versions - you CANNOT select version 7 or higher
+• Using invalid numbers will cause an error
+
 Your response should be ONLY the 3 numbers separated by spaces. No explanations, no other text.`;
 
   console.log('\n================================================================================');
@@ -905,18 +968,8 @@ Your response should be ONLY the 3 numbers separated by spaces. No explanations,
   console.log(response);
   console.log('================================================================================\n');
 
-  // Extract 3 numbers from response (e.g., "3 1 5")
-  const numbersMatch = response.match(/\b([1-6])\s+([1-6])\s+([1-6])\b/);
-  if (!numbersMatch) {
-    throw new Error(`Could not extract 3 version numbers from response: ${response}`);
-  }
-
-  // Return 0-based indices [best, 2nd, 3rd]
-  return [
-    parseInt(numbersMatch[1], 10) - 1,
-    parseInt(numbersMatch[2], 10) - 1,
-    parseInt(numbersMatch[3], 10) - 1
-  ];
+  // Parse version numbers with fallback handling
+  return parseVersionNumbers(response);
 }
 
 /**
