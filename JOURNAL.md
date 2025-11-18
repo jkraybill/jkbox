@@ -190,6 +190,10 @@ Journal entries reference HC outcomes:
 
 ---
 
+## Session Count
+
+**Current session: 14** (updated at BOS)
+
 ## Current Journal
 
 ### Session 8 (2025-11-16)
@@ -303,3 +307,7 @@ Journal entries reference HC outcomes:
 ### Session 13 (2025-11-18)
 
 [2025-11-18 21:16 UTC] Session 13✓. SHOWSTOPPER: ffmpeg audio filter shell escaping bug→video extraction broken. Root cause: volume expression if(lt(t,1),0,...) has parens→bash interpreted as syntax→"No such filter: '1)'" error. Fix: wrap expr in single quotes + add :eval=frame → -af "volume='${expr}':eval=frame"✓. Pattern: ffmpeg filter expressions with special chars need single-quote protection + eval=frame for time-based (t variable) evaluation. Feature: 6 answers + top 3 selection. Changed 5→6 generation, single→top3 judging. T1/T2/T3: generate 6 options, AI returns "X Y Z" (ranked top 3). Gameplay uses #1, answers.json exports all 3 per question [[w1,w2,w3],[p1,p2,p3],[p1,p2,p3]]. Interface: +top3Words/Phrases/PhrasesT3 arrays. Tests: updated mocks for 6-gen + "X Y Z" format. T:185/185✓. C:04a1f63,45cd94a. Pattern: Max variety in data export while keeping gameplay focused. JKLES: 10/10 (ACK joke).
+
+### Session 14 (2025-11-19)
+
+[2025-11-19 02:07 UTC] Session 14✓. Crash recovery→8 failing tests. Root cause: Uncommitted frame duration validation (F1<F2<F3) + return type mismatch in findTripletsOptimized. Fixes: 1) Return type consistency (line 254 returned array, should return object), 2) Updated function signature, 3) Fixed 5 tests with equal/uniform frame durations→strictly increasing (3s<5s<7s). T:480/480✓ (cinema-pippin 199/199✓). C:07d6760. Pattern: New validations require corresponding test updates. Non-determinism suspicion→actually deterministic test data issue. JKLES: ∅ (recovery session).

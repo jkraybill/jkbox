@@ -47,6 +47,17 @@ export function getDurationSeconds(firstEntry: SRTEntry, thirdEntry: SRTEntry): 
 }
 
 /**
+ * Get the duration of a single SRT frame in seconds
+ * @param entry - The SRT frame
+ * @returns Duration in seconds (end - start)
+ */
+export function getFrameDuration(entry: SRTEntry): number {
+  const start = timeToSeconds(entry.startTime);
+  const end = timeToSeconds(entry.endTime);
+  return end - start;
+}
+
+/**
  * Check if a triplet overlaps in time with any previously selected triplets
  * @param candidate - The triplet to check
  * @param existing - Array of previously selected triplets
