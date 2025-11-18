@@ -57,8 +57,18 @@ generated/
 # Content packs (added separately, not in repo by default)
 content-packs/
 
-# Large video files (test assets)
+# Large video files (test assets - ALL video formats)
 *.mkv
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+*.mpg
+*.mpeg
+*.3gp
 
 # SQLite databases (runtime data)
 *.db
