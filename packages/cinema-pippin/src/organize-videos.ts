@@ -47,6 +47,7 @@ async function hasSubtitleStream(filePath: string): Promise<boolean> {
 
 /**
  * Sanitize filename: lowercase, replace spaces with hyphens, remove non-alphanumeric
+ * If sanitization results in empty filename, keep original name
  */
 function sanitizeFilename(filename: string): string {
   const ext = extname(filename);
@@ -66,6 +67,11 @@ function sanitizeFilename(filename: string): string {
 
   // Remove leading/trailing hyphens
   sanitized = sanitized.replace(/^-+|-+$/g, '');
+
+  // If sanitization removed everything, keep original name
+  if (sanitized.length === 0) {
+    return filename;
+  }
 
   return sanitized + ext.toLowerCase();
 }
