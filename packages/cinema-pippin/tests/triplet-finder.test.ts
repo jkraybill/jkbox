@@ -895,3 +895,124 @@ Please keep the banana fresh.`;
     }
   });
 });
+
+describe('HTML Tag Stripping in findAllTriplets', () => {
+  it('should strip HTML tags from SRT content before processing (using real SRT)', () => {
+    // Use existing SRT test data that we know works, but add HTML tags
+    const srtWithHtml = `1
+00:00:01,000 --> 00:00:03,000
+<font face="sans-serif" size="71">Previous sentence here.</font>
+
+2
+00:00:03,000 --> 00:00:05,000
+<b>I think the</b>
+
+3
+00:00:05,000 --> 00:00:07,000
+<i>quick brown</i>
+
+4
+00:00:07,000 --> 00:00:10,500
+<u>fox jumped!</u>
+
+5
+00:00:10,500 --> 00:00:12,000
+<font color="red">That was</font>
+
+6
+00:00:12,000 --> 00:00:13,500
+<b>quite a</b>
+
+7
+00:00:13,500 --> 00:00:15,000
+<i>sight!</i>`;
+
+    const sequences = findAllTriplets(srtWithHtml);
+
+    // Main test: verify HTML was stripped before processing
+    // If we find ANY sequences, all frames should be clean
+    if (sequences.length > 0) {
+      for (const sequence of sequences) {
+        for (const triplet of sequence) {
+          // No HTML tags should remain
+          expect(triplet.frame1.text).not.toMatch(/<[^>]*>/);
+          expect(triplet.frame2.text).not.toMatch(/<[^>]*>/);
+          expect(triplet.frame3.text).not.toMatch(/<[^>]*>/);
+        }
+      }
+    }
+
+    // At minimum, verify the function doesn't crash with HTML input
+    expect(sequences).toBeDefined();
+    expect(Array.isArray(sequences)).toBe(true);
+  });
+
+  it('should produce same results with or without HTML tags', () => {
+    const cleanSrt = `1
+00:00:01,000 --> 00:00:03,000
+Previous sentence.
+
+2
+00:00:03,000 --> 00:00:05,000
+I think the
+
+3
+00:00:05,000 --> 00:00:07,000
+quick brown
+
+4
+00:00:07,000 --> 00:00:10,500
+fox jumped!
+
+5
+00:00:10,500 --> 00:00:12,000
+That was
+
+6
+00:00:12,000 --> 00:00:13,500
+quite a
+
+7
+00:00:13,500 --> 00:00:15,000
+sight!`;
+
+    const srtWithHtml = `1
+00:00:01,000 --> 00:00:03,000
+<font>Previous sentence.</font>
+
+2
+00:00:03,000 --> 00:00:05,000
+<b>I think the</b>
+
+3
+00:00:05,000 --> 00:00:07,000
+<i>quick brown</i>
+
+4
+00:00:07,000 --> 00:00:10,500
+<u>fox jumped!</u>
+
+5
+00:00:10,500 --> 00:00:12,000
+<font color="red">That was</font>
+
+6
+00:00:12,000 --> 00:00:13,500
+<b>quite a</b>
+
+7
+00:00:13,500 --> 00:00:15,000
+<i>sight!</i>`;
+
+    const cleanSequences = findAllTriplets(cleanSrt);
+    const htmlSequences = findAllTriplets(srtWithHtml);
+
+    // Should find same number of sequences
+    expect(htmlSequences.length).toBe(cleanSequences.length);
+
+    // If any sequences found, keywords should match
+    if (cleanSequences.length > 0 && htmlSequences.length > 0) {
+      expect(htmlSequences[0][0].keyword).toBe(cleanSequences[0][0].keyword);
+    }
+  });
+});

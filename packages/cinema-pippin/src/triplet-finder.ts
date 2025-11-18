@@ -11,6 +11,7 @@ import {
   countWords,
   isExcludedWord,
 } from './triplet-utils.js';
+import { stripHtmlFromSrt } from './html-utils.js';
 
 export interface Triplet {
   allEntries: SRTEntry[]; // All frames including fillers (3-9 frames: 3 official + 0-6 fillers)
@@ -282,8 +283,12 @@ function deduplicateByFirstTripletFrame3LastWord(sequences: Triplet[][]): Triple
 }
 
 export function findAllTriplets(srtContent: string): Triplet[][] {
+  // Strip all HTML tags from the SRT content FIRST
+  // This ensures triplet files written later will have clean text
+  const cleanSrtContent = stripHtmlFromSrt(srtContent);
+
   // Find all valid triplet sequences
-  const results = findTripletsInternal(srtContent);
+  const results = findTripletsInternal(cleanSrtContent);
 
   // Deduplicate based on Triplet 1's Frame 3 last word, keeping highest total alpha char count
   return deduplicateByFirstTripletFrame3LastWord(results);

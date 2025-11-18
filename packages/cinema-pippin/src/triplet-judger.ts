@@ -198,6 +198,7 @@ async function callOllama(
 
 /**
  * Parse first scene from triplet file (delimited by \n---\n)
+ * HTML tags already stripped during triplet extraction
  */
 function parseFirstScene(tripletFilePath: string): string {
   const content = readFileSync(tripletFilePath, 'utf-8');
@@ -210,6 +211,7 @@ function parseFirstScene(tripletFilePath: string): string {
 
 /**
  * Parse second scene from triplet file (delimited by \n---\n)
+ * HTML tags already stripped during triplet extraction
  */
 function parseSecondScene(tripletFilePath: string): string {
   const content = readFileSync(tripletFilePath, 'utf-8');
@@ -222,6 +224,7 @@ function parseSecondScene(tripletFilePath: string): string {
 
 /**
  * Parse third scene from triplet file (delimited by \n---\n)
+ * HTML tags already stripped during triplet extraction
  */
 function parseThirdScene(tripletFilePath: string): string {
   const content = readFileSync(tripletFilePath, 'utf-8');
