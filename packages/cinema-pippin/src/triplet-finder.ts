@@ -46,6 +46,11 @@ export function isValidFirstTriplet(
     return false;
   }
 
+  // Frame 3 must end with strong punctuation (. ! ?)
+  if (!endsWithStrongPunctuation(frame3.text)) {
+    return false;
+  }
+
   // Extract keyword (last word of Frame 3)
   const keyword = extractLastWord(frame3.text);
 

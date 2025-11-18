@@ -73,6 +73,9 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
       // Validate Frame 3
       if (!isValidT1Frame3(frame3.text)) continue;
 
+      // Frame 3 must end with strong punctuation (. ! ?)
+      if (!endsWithStrongPunctuation(frame3.text)) continue;
+
       // Extract and validate keyword
       const keyword = extractLastWord(frame3.text);
       if (!keyword || isExcludedWord(keyword)) continue;

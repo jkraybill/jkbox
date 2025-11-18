@@ -71,17 +71,17 @@ describe('endsWithPunctuation', () => {
 });
 
 describe('endsWithStrongPunctuation', () => {
-  it('should return true for strong punctuation marks', () => {
+  it('should return true for strong punctuation marks (period, exclamation, question)', () => {
     expect(endsWithStrongPunctuation('Hello.')).toBe(true);
     expect(endsWithStrongPunctuation('Hello!')).toBe(true);
     expect(endsWithStrongPunctuation('Hello?')).toBe(true);
-    expect(endsWithStrongPunctuation('Hello-')).toBe(true);
   });
 
-  it('should return false for semicolon, comma, and colon', () => {
+  it('should return false for semicolon, comma, colon, and dash', () => {
     expect(endsWithStrongPunctuation('Hello;')).toBe(false);
     expect(endsWithStrongPunctuation('Hello,')).toBe(false);
     expect(endsWithStrongPunctuation('Hello:')).toBe(false);
+    expect(endsWithStrongPunctuation('Hello-')).toBe(false);
   });
 
   it('should return false for no punctuation', () => {

@@ -17,9 +17,9 @@ export function endsWithPunctuation(text: string): boolean {
 }
 
 export function endsWithStrongPunctuation(text: string): boolean {
-  // Strong punctuation for T3 F3: excludes semicolon, comma, colon
+  // Strong punctuation for T3 F3: only period, exclamation, question mark
   const lastChar = text.trim().slice(-1);
-  return ['.', '!', '?', '-'].includes(lastChar);
+  return ['.', '!', '?'].includes(lastChar);
 }
 
 export function endsWithPunctuationOrBracket(text: string): boolean {
