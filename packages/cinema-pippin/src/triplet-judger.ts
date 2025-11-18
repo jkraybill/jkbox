@@ -12,7 +12,7 @@ import {
   applyCasing
 } from './keyword-utils.js';
 import { extractVideosForSequence, extractTimestampRange, rebaseSrtTimestamps } from './video-extractor.js';
-import { blankWithSpaces, replaceBlankedText } from './blanking-utils.js';
+import { blankWithSpaces, replaceBlankedText, condenseAndBlank } from './blanking-utils.js';
 
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
 const MODEL = 'qwen-fast'; // Optimized qwen2.5:14b (num_ctx=2048, num_batch=512) - ~40% faster
@@ -1243,14 +1243,13 @@ export async function judgeTriplet(
   }
 
   // Keep index (line 0) and timestamp (line 1), blank text while preserving spaces
-  // NEW RULE: If multiple lines of text, only output first line (blanked)
+  // NEW RULE: Condense multi-line to single line (with spaces), then blank with max 8 words
   const textLines = lastFrameLines.slice(2);
-  const firstLineOnly = textLines.length > 1 ? textLines[0] : textLines.join('\n');
-  const blankedText = blankWithSpaces(firstLineOnly);
+  const blankedText = condenseAndBlank(textLines);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
-    blankedText        // Replace text with space-preserving blanks (first line only)
+    blankedText        // Condensed + blanked text (max 8 blank words)
   ].join('\n');
 
   // Reconstruct second scene with blanked last frame
@@ -1323,14 +1322,13 @@ export async function judgeTriplet(
     throw new Error(`Last frame in third scene has invalid format`);
   }
 
-  // NEW RULE: If multiple lines of text, only output first line (blanked)
+  // NEW RULE: Condense multi-line to single line (with spaces), then blank with max 8 words
   const textLinesT3 = lastFrameLinesT3.slice(2);
-  const firstLineOnlyT3 = textLinesT3.length > 1 ? textLinesT3[0] : textLinesT3.join('\n');
-  const blankedTextT3 = blankWithSpaces(firstLineOnlyT3);
+  const blankedTextT3 = condenseAndBlank(textLinesT3);
   const blankedLastFrameT3 = [
     lastFrameLinesT3[0], // Index
     lastFrameLinesT3[1], // Timestamp
-    blankedTextT3        // Replace text with space-preserving blanks (first line only)
+    blankedTextT3        // Condensed + blanked text (max 8 blank words)
   ].join('\n');
 
   const blankedThirdScene = [

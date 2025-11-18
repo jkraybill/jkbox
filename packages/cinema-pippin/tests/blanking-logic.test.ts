@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { blankWithSpaces, replaceBlankedText } from '../src/blanking-utils.js';
+import { blankWithSpaces, replaceBlankedText, condenseAndBlank } from '../src/blanking-utils.js';
 
 describe('Blanking Logic', () => {
   describe('blankWithSpaces', () => {
@@ -158,6 +158,84 @@ ${blankedFrame}`;
 
       expect(result).toContain("playing with my puppy.");
       expect(result).not.toContain("___");
+    });
+  });
+
+  describe('condenseAndBlank', () => {
+    it('should condense single-line text to blanks', () => {
+      const result = condenseAndBlank(["Hello world"]);
+      expect(result).toBe("____ ____");
+    });
+
+    it('should condense multi-line text to single line with blanks', () => {
+      const result = condenseAndBlank(["Hello world", "How are you?"]);
+      // Hello(5)->____ world(5)->____ How(3)->___ are(3)->___ you?(4)->____
+      expect(result).toBe("____ ____ ___ ___ ____");
+    });
+
+    it('should truncate to max 8 blank words', () => {
+      // 10 words -> truncate to 8
+      const result = condenseAndBlank(["One two three four five six seven eight nine ten"]);
+      // One(3)->___ two(3)->___ three(5)->____ four(4)->____ five(4)->____ six(3)->___ seven(5)->____ eight(5)->____ (truncated)
+      expect(result).toBe("___ ___ ____ ____ ____ ___ ____ ____");
+    });
+
+    it('should not truncate if exactly 8 words', () => {
+      const result = condenseAndBlank(["One two three four five six seven eight"]);
+      // One(3)->___ two(3)->___ three(5)->____ four(4)->____ five(4)->____ six(3)->___ seven(5)->____ eight(5)->____
+      expect(result).toBe("___ ___ ____ ____ ____ ___ ____ ____");
+    });
+
+    it('should not truncate if less than 8 words', () => {
+      const result = condenseAndBlank(["One two three"]);
+      // One(3)->___ two(3)->___ three(5)->____
+      expect(result).toBe("___ ___ ____");
+    });
+
+    it('should handle multi-line with more than 8 words total', () => {
+      // Line 1: 5 words, Line 2: 6 words = 11 total -> truncate to 8
+      const result = condenseAndBlank([
+        "This is line one here",
+        "And this is line two also"
+      ]);
+      // This(4)->____ is(2)->__ line(4)->____ one(3)->___ here(4)->____ And(3)->___ this(4)->____ is(2)->__ (truncated)
+      expect(result).toBe("____ __ ____ ___ ____ ___ ____ __");
+      const wordCount = result.split(/\s+/).length;
+      expect(wordCount).toBe(8);
+    });
+
+    it('should handle empty lines', () => {
+      const result = condenseAndBlank(["Hello", "", "World"]);
+      // "Hello  World" (double space from empty line) -> "____  ____"
+      expect(result).toBe("____  ____");
+    });
+
+    it('should condense long words correctly', () => {
+      // "extraordinary" becomes "____ " (4 underscores)
+      const result = condenseAndBlank(["I love extraordinary bananas"]);
+      expect(result).toBe("_ ____ ____ ____");
+    });
+
+    it('should handle real T3 F3 scenario: 5-word frame', () => {
+      // This was the bug case: "This is Miss Elliot's brother." (5 words)
+      const result = condenseAndBlank(["This is Miss Elliot's brother."]);
+      expect(result).toBe("____ __ ____ ____ ____");
+      // Should be 5 blank words (under 8 limit, so not truncated)
+      const wordCount = result.split(/\s+/).length;
+      expect(wordCount).toBe(5);
+    });
+
+    it('should handle real T3 F3 scenario: multi-line with 9 words', () => {
+      // Multi-line that exceeds 8 words
+      const result = condenseAndBlank([
+        "You think you can win?",
+        "Think again my friend!"
+      ]);
+      // You(3)->___ think(5)->____ you(3)->___ can(3)->___ win?(4)->____ Think(5)->____ again(5)->____ my(2)->__ (truncated)
+      // 5 words + 4 words = 9 words total -> truncate to 8
+      expect(result).toBe("___ ____ ___ ___ ____ ____ ____ __");
+      const wordCount = result.split(/\s+/).length;
+      expect(wordCount).toBe(8);
     });
   });
 });
