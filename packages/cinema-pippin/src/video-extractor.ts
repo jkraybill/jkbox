@@ -126,11 +126,12 @@ export function extractVideoSegment(
     ? `-disposition:a:0 default`
     : '';
 
-  // Build audio fade filter
-  // Fade IN: starts at 0s, duration = paddingSeconds (0% → 100%)
-  // Fade OUT: starts at (paddedDuration - paddingSeconds), duration = paddingSeconds (100% → 0%)
-  const fadeOutStart = paddedDuration - paddingSeconds;
-  const audioFilter = `-af "afade=t=in:st=0:d=${paddingSeconds},afade=t=out:st=${fadeOutStart}:d=${paddingSeconds}"`;
+  // Build audio volume filter
+  // First paddingSeconds: 25% volume
+  // Last paddingSeconds: 25% volume
+  // Middle section: 100% volume
+  const volumeThreshold = paddedDuration - paddingSeconds;
+  const audioFilter = `-af "volume='if(lt(t,${paddingSeconds}),0.25,if(gt(t,${volumeThreshold}),0.25,1.0))'"`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
   // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
@@ -146,7 +147,7 @@ export function extractVideoSegment(
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
-    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding + audio fade)`);
+    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding + 25% volume)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
     throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);
