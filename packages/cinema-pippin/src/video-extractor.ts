@@ -126,18 +126,21 @@ export function extractVideoSegment(
     ? `-disposition:a:0 default`
     : '';
 
-  // Build audio volume filter
-  // First paddingSeconds: SILENT (0% volume)
-  // Last paddingSeconds: SILENT (0% volume)
-  // Middle section: 100% volume
+  // Build audio filter to MUTE (write silent samples) in padding regions
+  // volume filter with multiplier of 0 writes actual silent audio samples (not just metadata)
+  // First paddingSeconds: multiply by 0 (silent samples)
+  // Middle section: multiply by 1.0 (original audio)
+  // Last paddingSeconds: multiply by 0 (silent samples)
   const volumeThreshold = paddedDuration - paddingSeconds;
-  const audioFilter = `-af "volume='if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))'"`;
+  // Escape for shell: use double quotes around the whole filter, escape the expression single quotes
+  const volumeExpr = `if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))`;
+  const audioFilter = `-af "volume=${volumeExpr}"`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
   // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
   // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
-  // -af: audio filter to silence first/last paddingSeconds
+  // -af: audio filter to silence first/last paddingSeconds by multiplying audio samples by 0
   // -disposition:a:0 default: mark audio track as default (when specific stream selected)
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
@@ -146,7 +149,7 @@ export function extractVideoSegment(
   const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -c:v libx264 -c:a aac ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
-    const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
+    const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: '/bin/bash' });
     console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s silent padding)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
