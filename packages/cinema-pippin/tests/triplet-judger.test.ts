@@ -18,7 +18,8 @@ vi.mock('fs', async () => {
 Cars -- this punchline should refer to car-related topics.
 Nudity -- this punchline should be about nudity, body part euphemisms, boobies, peepees, butts, bums, nips, etc, while being max funny.
 The letter 'A' -- this punchline must begin with the letter 'A'.
-Pippin's word -- this punchline should be dog-related, invoking the energy of Pippin, our mischevious moodle puppy and game host.`;
+Pippin's word -- this punchline should be dog-related, invoking the energy of Pippin, our mischevious moodle puppy and game host.
+Foodie -- this punchline should be food-related.`;
       }
       // For other files, use actual implementation
       return actual.readFileSync(path, encoding as BufferEncoding);
@@ -84,13 +85,13 @@ Fruit is amazing!`;
         // First call is T1 generation (Prompt 1)
         if (mockResponseCount === 1) {
           // Parse constraints from prompt (they're listed as "1. constraint text")
-          const constraintMatches = prompt.match(/📋 YOUR 5 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
+          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
           const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
           const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
 
           // Create couplets with proper constraints (T1 words have NO punctuation now)
-          const mockCouplets = constraints.slice(0, 5).map((constraint: string, idx: number) => {
-            const words = ['sexophone', 'convertible', 'boobies', 'avocado', 'puppy'];
+          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
+            const words = ['sexophone', 'convertible', 'boobies', 'avocado', 'puppy', 'tacos'];
             return [constraint, words[idx]];
           });
 
@@ -114,7 +115,7 @@ Fruit is amazing!`;
           });
         }
 
-        // Second call is T1 judging (Prompt 2)
+        // Second call is T1 judging (Prompt 2) - returns top 3
         if (mockResponseCount === 2) {
           return Promise.resolve({
             ok: true,
@@ -126,7 +127,7 @@ Fruit is amazing!`;
                     value: new TextEncoder().encode(JSON.stringify({
                       model: 'test',
                       created_at: '2024',
-                      response: '3',
+                      response: '3 1 5', // Top 3: boobies, sexophone, puppy
                       done: false,
                     })),
                   })
@@ -139,18 +140,19 @@ Fruit is amazing!`;
         // Third call is T2 generation (Prompt 1 T2)
         if (mockResponseCount === 3) {
           // Parse constraints from T2 prompt (includes word counts)
-          const constraintMatches = prompt.match(/📋 YOUR 5 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
+          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
           const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
           const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
 
           // Create couplets with proper constraints (phrases this time)
-          const mockCouplets = constraints.slice(0, 5).map((constraint: string, idx: number) => {
+          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
             const phrases = [
               'very sexy saxophone!',
               'driving a red convertible.',
               'showing off my boobies!',
               'eating fresh avocado toast.',
-              'playing with my puppy.'
+              'playing with my puppy.',
+              'munching delicious tacos!'
             ];
             return [constraint, phrases[idx]];
           });
@@ -175,7 +177,7 @@ Fruit is amazing!`;
           });
         }
 
-        // Fourth call is T2 judging (Prompt 2 T2)
+        // Fourth call is T2 judging (Prompt 2 T2) - returns top 3
         if (mockResponseCount === 4) {
           return Promise.resolve({
             ok: true,
@@ -187,7 +189,7 @@ Fruit is amazing!`;
                     value: new TextEncoder().encode(JSON.stringify({
                       model: 'test',
                       created_at: '2024',
-                      response: '2',
+                      response: '2 4 1', // Top 3: convertible, avocado toast, sexy saxophone
                       done: false,
                     })),
                   })
@@ -200,18 +202,19 @@ Fruit is amazing!`;
         // Fifth call is T3 generation (Prompt 1 T3)
         if (mockResponseCount === 5) {
           // Parse constraints from T3 prompt (includes word counts)
-          const constraintMatches = prompt.match(/📋 YOUR 5 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
+          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
           const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
           const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
 
           // Create couplets with proper constraints (phrases for T3)
-          const mockCouplets = constraints.slice(0, 5).map((constraint: string, idx: number) => {
+          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
             const phrases = [
               'super sexy scenario!',
               'amazing automobile adventure.',
               'bouncing boobies bonanza!',
               'radical racing rivals?',
-              'perfect puppy playtime.'
+              'perfect puppy playtime.',
+              'tasty taco time!'
             ];
             return [constraint, phrases[idx]];
           });
@@ -236,7 +239,7 @@ Fruit is amazing!`;
           });
         }
 
-        // Sixth call is T3 judging (Prompt 2 T3)
+        // Sixth call is T3 judging (Prompt 2 T3) - returns top 3
         if (mockResponseCount === 6) {
           return Promise.resolve({
             ok: true,
@@ -248,7 +251,7 @@ Fruit is amazing!`;
                     value: new TextEncoder().encode(JSON.stringify({
                       model: 'test',
                       created_at: '2024',
-                      response: '4',
+                      response: '4 2 5', // Top 3: racing rivals, automobile adventure, puppy playtime
                       done: false,
                     })),
                   })

@@ -36,6 +36,7 @@ interface TripletJudgment {
   shuffledWords: string[];
   bestWord: string;
   bestWordIndex: number;
+  top3Words: string[]; // Top 3 alternatives [best, 2nd, 3rd]
   // T2 (second scene) results
   secondScene: string;
   secondSceneWithWord: string;
@@ -43,6 +44,7 @@ interface TripletJudgment {
   shuffledPhrases: string[];
   bestPhrase: string;
   bestPhraseIndex: number;
+  top3Phrases: string[]; // Top 3 alternatives [best, 2nd, 3rd]
   // T3 (third scene) - phrase generation and judging
   thirdScene: string;
   thirdSceneWithWord: string;
@@ -50,6 +52,7 @@ interface TripletJudgment {
   shuffledPhrasesT3: string[];
   bestPhraseT3: string;
   bestPhraseIndexT3: number;
+  top3PhrasesT3: string[]; // Top 3 alternatives [best, 2nd, 3rd]
   // Final quality judging
   qualityAnswers: [string, boolean][];
   qualityScore: number;
@@ -271,16 +274,17 @@ async function generateReplacementWordsInternal(
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER one-word punchlines that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
-  const prompt = `Generate 5 HILARIOUS one-word replacements for a blank in this film scene.
+  const prompt = `Generate 6 HILARIOUS one-word replacements for a blank in this film scene.
 
 🎯 CRITICAL RULES - FOLLOW EXACTLY:
-• Generate EXACTLY 5 words in a JSON array
+• Generate EXACTLY 6 words in a JSON array
 • Array position MUST match constraint number:
   - Array[0] = word for constraint 1
   - Array[1] = word for constraint 2
   - Array[2] = word for constraint 3
   - Array[3] = word for constraint 4
   - Array[4] = word for constraint 5
+  - Array[5] = word for constraint 6
 • EACH word satisfies ONLY its ONE assigned constraint
 • Words must be SINGLE WORDS (no phrases, no hyphens unless part of one word)
 • Maximize ABSURDITY, SURPRISE, and HUMOR in context
@@ -309,7 +313,7 @@ Examples:
 
 🚨 REMEMBER: The punctuation is already in the film scene! You only provide the WORD!
 
-📋 YOUR 5 CONSTRAINTS (one per word, IN ORDER):
+📋 YOUR 6 CONSTRAINTS (one per word, IN ORDER):
 ${constraintsList}
 
 🎬 FILM SCENE WITH BLANK:
@@ -340,11 +344,11 @@ Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "s
 ← RIGHT! Each couplet pairs constraint with its word in correct order. Words are SINGLE WORDS with NO PUNCTUATION!
 
 ⚠️ OUTPUT FORMAT:
-Respond with ONLY a valid JSON array of 5 couplets (constraint-word pairs).
+Respond with ONLY a valid JSON array of 6 couplets (constraint-word pairs).
 Each couplet is [constraint_text, word] where constraint_text is EXACTLY copied from above.
 
 Format:
-[["constraint 1 full text here", "word1"], ["constraint 2 full text here", "word2"], ["constraint 3 full text here", "word3"], ["constraint 4 full text here", "word4"], ["constraint 5 full text here", "word5"]]
+[["constraint 1 full text here", "word1"], ["constraint 2 full text here", "word2"], ["constraint 3 full text here", "word3"], ["constraint 4 full text here", "word4"], ["constraint 5 full text here", "word5"], ["constraint 6 full text here", "word6"]]
 
 No explanations, no other text. Just the JSON array of couplets.`;
 
@@ -421,10 +425,10 @@ No explanations, no other text. Just the JSON array of couplets.`;
     throw new Error(`Could not parse JSON from response: ${response}\nJSON string after fixes: ${jsonStr}\nParse error: ${parseError}`);
   }
 
-  // Validate we got 5 couplets
-  if (!Array.isArray(couplets) || couplets.length !== 5) {
+  // Validate we got 6 couplets
+  if (!Array.isArray(couplets) || couplets.length !== 6) {
     throw new Error(
-      `Expected 5 constraint-word couplets, got ${couplets?.length ?? 'invalid'}.\n` +
+      `Expected 6 constraint-word couplets, got ${couplets?.length ?? 'invalid'}.\n` +
       `Response: ${JSON.stringify(couplets)}`
     );
   }
@@ -533,16 +537,17 @@ async function generateReplacementPhrasesInternal(
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER multi-word punchlines and phrases that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
-  const prompt = `Generate 5 HILARIOUS phrase/sentence replacements for a blank in this film scene.
+  const prompt = `Generate 6 HILARIOUS phrase/sentence replacements for a blank in this film scene.
 
 🎯 CRITICAL RULES - FOLLOW EXACTLY:
-• Generate EXACTLY 5 phrases/sentences in a JSON array
+• Generate EXACTLY 6 phrases/sentences in a JSON array
 • Array position MUST match constraint number:
   - Array[0] = phrase for constraint 1
   - Array[1] = phrase for constraint 2
   - Array[2] = phrase for constraint 3
   - Array[3] = phrase for constraint 4
   - Array[4] = phrase for constraint 5
+  - Array[5] = phrase for constraint 6
 • EACH phrase satisfies ONLY its ONE assigned constraint
 • Phrases can be MULTIPLE WORDS - aim for the target word count but ±1-2 words is OK
 • Maximize ABSURDITY, SURPRISE, and HUMOR in context
@@ -568,7 +573,7 @@ Examples:
 
 🚨 CRITICAL: Look at the ENTIRE film scene context - if the blank is in a NEW FRAME and the PREVIOUS FRAME ended with punctuation, you MUST capitalize the first word!
 
-📋 YOUR 5 CONSTRAINTS (one per phrase, IN ORDER, with target word counts):
+📋 YOUR 6 CONSTRAINTS (one per phrase, IN ORDER, with target word counts):
 ${constraintsList}
 
 🎬 FILM SCENE WITH BLANK:
@@ -599,11 +604,11 @@ Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult
 ← RIGHT! Each couplet pairs constraint with its phrase in correct order. Notice phrase word counts match targets AND all phrases end with punctuation!
 
 ⚠️ OUTPUT FORMAT:
-Respond with ONLY a valid JSON array of 5 couplets (constraint-phrase pairs).
+Respond with ONLY a valid JSON array of 6 couplets (constraint-phrase pairs).
 Each couplet is [constraint_text, phrase] where constraint_text is EXACTLY copied from above.
 
 Format:
-[["constraint 1 full text here", "phrase 1"], ["constraint 2 full text here", "phrase 2"], ["constraint 3 full text here", "phrase 3"], ["constraint 4 full text here", "phrase 4"], ["constraint 5 full text here", "phrase 5"]]
+[["constraint 1 full text here", "phrase 1"], ["constraint 2 full text here", "phrase 2"], ["constraint 3 full text here", "phrase 3"], ["constraint 4 full text here", "phrase 4"], ["constraint 5 full text here", "phrase 5"], ["constraint 6 full text here", "phrase 6"]]
 
 No explanations, no other text. Just the JSON array of couplets.`;
 
@@ -671,10 +676,10 @@ No explanations, no other text. Just the JSON array of couplets.`;
     throw new Error(`Could not parse JSON from response: ${response}\nJSON string after fixes: ${jsonStr}\nParse error: ${parseError}`);
   }
 
-  // Validate we got 5 couplets
-  if (!Array.isArray(couplets) || couplets.length !== 5) {
+  // Validate we got 6 couplets
+  if (!Array.isArray(couplets) || couplets.length !== 6) {
     throw new Error(
-      `Expected 5 constraint-phrase couplets, got ${couplets?.length ?? 'invalid'}.\n` +
+      `Expected 6 constraint-phrase couplets, got ${couplets?.length ?? 'invalid'}.\n` +
       `Response: ${JSON.stringify(couplets)}`
     );
   }
@@ -745,7 +750,8 @@ async function generateReplacementPhrases(
 }
 
 /**
- * Judge which of 5 words is the funniest (internal implementation)
+ * Judge which of 6 words are the top 3 funniest (internal implementation)
+ * Returns array of 3 indices (0-based) in rank order: [best, 2nd, 3rd]
  */
 async function judgeWordsInternal(
   originalScene: string,
@@ -753,8 +759,8 @@ async function judgeWordsInternal(
   words: string[],
   tripletNumber?: number,
   totalTriplets?: number
-): Promise<number> {
-  // Create 5 versions of the scene with each word, preserving casing from original
+): Promise<number[]> {
+  // Create 6 versions of the scene with each word, preserving casing from original
   const versions = words.map((word, idx) => {
     const filledScene = replaceKeywordWithWord(originalScene, keyword, word);
     return `VERSION ${idx + 1}:\n${filledScene}`;
@@ -762,25 +768,25 @@ async function judgeWordsInternal(
 
   const system = `You are an EXPERT COMEDY JUDGE for "Cinema Pippin", an adults-only party game. You have impeccable taste in humor and can identify what makes people laugh hardest. You evaluate punchlines based on: maximum comedic impact, surprise/shock value, absurdity, clever contextual fit, and broad adult appeal. You are decisive and pick clear winners.`;
 
-  const prompt = `Judge these 5 versions of the same film scene. Each has a different word filling the blank.
+  const prompt = `Judge these 6 versions of the same film scene. Each has a different word filling the blank.
 
 🎯 YOUR TASK:
-Pick the FUNNIEST version - the one that:
-• Maximizes HUMOR and makes people LAUGH HARDEST
-• Has the best SURPRISE/SHOCK value
-• Creates the most ABSURD or CLEVER juxtaposition
-• Fits the context while being UNEXPECTED
-• Has broad ADULT APPEAL for a party game
+Rank the TOP 3 FUNNIEST versions - the ones that:
+• Maximize HUMOR and make people LAUGH HARDEST
+• Have the best SURPRISE/SHOCK value
+• Create the most ABSURD or CLEVER juxtaposition
+• Fit the context while being UNEXPECTED
+• Have broad ADULT APPEAL for a party game
 
-📽️ THE 5 VERSIONS:
+📽️ THE 6 VERSIONS:
 
 ${versions.join('\n\n---\n\n')}
 
 ⚠️ OUTPUT FORMAT:
-Complete this sentence with ONLY a number (1, 2, 3, 4, or 5):
-"The funniest, most surprising, yet still contextually fitting version is Version _____"
+Provide EXACTLY 3 numbers (1-6) separated by spaces, ranked from funniest to third-funniest.
+Example: "3 1 5" means Version 3 is funniest, Version 1 is second, Version 5 is third.
 
-Your response should be ONLY the number. No explanations, no other text.`;
+Your response should be ONLY the 3 numbers separated by spaces. No explanations, no other text.`;
 
   console.log('\n================================================================================');
   console.log('⚖️  PROMPT 2: JUDGE FUNNIEST WORD');
@@ -805,17 +811,22 @@ Your response should be ONLY the number. No explanations, no other text.`;
   console.log(response);
   console.log('================================================================================\n');
 
-  // Extract number from response
-  const numberMatch = response.match(/\b([1-5])\b/);
-  if (!numberMatch) {
-    throw new Error(`Could not extract version number from response: ${response}`);
+  // Extract 3 numbers from response (e.g., "3 1 5")
+  const numbersMatch = response.match(/\b([1-6])\s+([1-6])\s+([1-6])\b/);
+  if (!numbersMatch) {
+    throw new Error(`Could not extract 3 version numbers from response: ${response}`);
   }
 
-  return parseInt(numberMatch[1], 10);
+  // Return 0-based indices [best, 2nd, 3rd]
+  return [
+    parseInt(numbersMatch[1], 10) - 1,
+    parseInt(numbersMatch[2], 10) - 1,
+    parseInt(numbersMatch[3], 10) - 1
+  ];
 }
 
 /**
- * Judge which of 5 words is the funniest
+ * Judge which of 6 words are the top 3 funniest
  * Uses lower temperature (0.3) for consistent, reliable judgment
  * Retries up to 2 times on failure
  */
@@ -825,7 +836,7 @@ async function judgeWords(
   words: string[],
   tripletNumber?: number,
   totalTriplets?: number
-): Promise<number> {
+): Promise<number[]> {
   return withRetry(
     () => judgeWordsInternal(originalScene, keyword, words, tripletNumber, totalTriplets),
     'Judge funniest word'
@@ -833,7 +844,8 @@ async function judgeWords(
 }
 
 /**
- * Judge which of 5 phrases is the funniest for T2 (internal implementation)
+ * Judge which of 6 phrases are the top 3 funniest for T2/T3 (internal implementation)
+ * Returns array of 3 indices (0-based) in rank order: [best, 2nd, 3rd]
  */
 async function judgePhrasesInternal(
   sceneTemplate: string,
@@ -841,8 +853,8 @@ async function judgePhrasesInternal(
   stage: 'T2' | 'T3',
   tripletNumber?: number,
   totalTriplets?: number
-): Promise<number> {
-  // Create 5 versions of the scene with each phrase
+): Promise<number[]> {
+  // Create 6 versions of the scene with each phrase
   const versions = phrases.map((phrase, idx) => {
     const filledScene = replaceBlankedText(sceneTemplate, phrase);
     return `VERSION ${idx + 1}:\n${filledScene}`;
@@ -850,25 +862,25 @@ async function judgePhrasesInternal(
 
   const system = `You are an EXPERT COMEDY JUDGE for "Cinema Pippin", an adults-only party game. You have impeccable taste in humor and can identify what makes people laugh hardest. You evaluate punchlines based on: maximum comedic impact, surprise/shock value, absurdity, clever contextual fit, and broad adult appeal. You are decisive and pick clear winners.`;
 
-  const prompt = `Judge these 5 versions of the same film scene. Each has a different PHRASE filling the blank.
+  const prompt = `Judge these 6 versions of the same film scene. Each has a different PHRASE filling the blank.
 
 🎯 YOUR TASK:
-Pick the FUNNIEST version - the one that:
+Rank the TOP 3 FUNNIEST versions - the ones that:
 • Maximizes HUMOR and makes people LAUGH HARDEST
 • Has the best SURPRISE/SHOCK value
 • Creates the most ABSURD or CLEVER juxtaposition
 • Fits the context while being UNEXPECTED
 • Has broad ADULT APPEAL for a party game
 
-📽️ THE 5 VERSIONS:
+📽️ THE 6 VERSIONS:
 
 ${versions.join('\n\n---\n\n')}
 
 ⚠️ OUTPUT FORMAT:
-Complete this sentence with ONLY a number (1, 2, 3, 4, or 5):
-"The funniest, most surprising, yet still contextually fitting version is Version _____"
+Provide EXACTLY 3 numbers (1-6) separated by spaces, ranked from funniest to third-funniest.
+Example: "3 1 5" means Version 3 is funniest, Version 1 is second, Version 5 is third.
 
-Your response should be ONLY the number. No explanations, no other text.`;
+Your response should be ONLY the 3 numbers separated by spaces. No explanations, no other text.`;
 
   console.log('\n================================================================================');
   console.log(`⚖️  PROMPT 2 (${stage}): JUDGE FUNNIEST PHRASE`);
@@ -893,17 +905,22 @@ Your response should be ONLY the number. No explanations, no other text.`;
   console.log(response);
   console.log('================================================================================\n');
 
-  // Extract number from response
-  const numberMatch = response.match(/\b([1-5])\b/);
-  if (!numberMatch) {
-    throw new Error(`Could not extract version number from response: ${response}`);
+  // Extract 3 numbers from response (e.g., "3 1 5")
+  const numbersMatch = response.match(/\b([1-6])\s+([1-6])\s+([1-6])\b/);
+  if (!numbersMatch) {
+    throw new Error(`Could not extract 3 version numbers from response: ${response}`);
   }
 
-  return parseInt(numberMatch[1], 10);
+  // Return 0-based indices [best, 2nd, 3rd]
+  return [
+    parseInt(numbersMatch[1], 10) - 1,
+    parseInt(numbersMatch[2], 10) - 1,
+    parseInt(numbersMatch[3], 10) - 1
+  ];
 }
 
 /**
- * Judge which of 5 phrases is the funniest for T2
+ * Judge which of 6 phrases are the top 3 funniest for T2/T3
  * Uses lower temperature (0.3) for consistent, reliable judgment
  * Retries up to 2 times on failure
  */
@@ -913,7 +930,7 @@ async function judgePhrases(
   stage: 'T2' | 'T3',
   tripletNumber?: number,
   totalTriplets?: number
-): Promise<number> {
+): Promise<number[]> {
   return withRetry(
     () => judgePhrasesInternal(sceneTemplate, phrases, stage, tripletNumber, totalTriplets),
     `Judge funniest phrase (${stage})`
@@ -1110,11 +1127,11 @@ export async function judgeTriplet(
 
   // 4. Load and randomly select 5 constraints
   const allConstraints = loadConstraints();
-  const selectedConstraints = randomSample(allConstraints, 5);
-  console.log('\n🎲 Randomly selected 5 constraints:');
+  const selectedConstraints = randomSample(allConstraints, 6);
+  console.log('\n🎲 Randomly selected 6 constraints:');
   selectedConstraints.forEach((c, i) => console.log(`   ${i + 1}. ${c}`));
 
-  // 5. Generate 5 replacement words
+  // 5. Generate 6 replacement words
   const generatedWords = await generateReplacementWords(
     blankedScene,
     selectedConstraints,
@@ -1127,10 +1144,14 @@ export async function judgeTriplet(
   const shuffledWords = shuffle(generatedWords);
   console.log(`🔀 Shuffled order: ${JSON.stringify(shuffledWords)}`);
 
-  // 7. Judge which is funniest (using original scene to preserve casing)
-  const bestVersionNumber = await judgeWords(firstScene, keyword, shuffledWords, tripletNumber, totalTriplets);
-  const bestWord = shuffledWords[bestVersionNumber - 1];
-  console.log(`\n🏆 WINNER (T1): Version ${bestVersionNumber} - "${bestWord}"`);
+  // 7. Judge top 3 funniest (using original scene to preserve casing)
+  const top3Indices = await judgeWords(firstScene, keyword, shuffledWords, tripletNumber, totalTriplets);
+  const top3Words = top3Indices.map(idx => shuffledWords[idx]);
+  const bestWord = top3Words[0]; // Use #1 for gameplay progression
+  console.log(`\n🏆 WINNERS (T1):`);
+  console.log(`   #1 (best): Version ${top3Indices[0] + 1} - "${top3Words[0]}"`);
+  console.log(`   #2: Version ${top3Indices[1] + 1} - "${top3Words[1]}"`);
+  console.log(`   #3: Version ${top3Indices[2] + 1} - "${top3Words[2]}"`);
 
   // ============================================================================
   // T2 (SECOND SCENE) PROCESSING
@@ -1188,11 +1209,11 @@ export async function judgeTriplet(
   console.log(`✏️  Blanked out final frame text in second scene`)
 
   // 11. Randomly select NEW 5 constraints for T2
-  const selectedConstraintsT2 = randomSample(allConstraints, 5);
-  console.log('\n🎲 Randomly selected 5 NEW constraints for T2:');
+  const selectedConstraintsT2 = randomSample(allConstraints, 6);
+  console.log('\n🎲 Randomly selected 6 NEW constraints for T2:');
   selectedConstraintsT2.forEach((c, i) => console.log(`   ${i + 1}. ${c}`));
 
-  // 12. Generate 5 replacement phrases for T2
+  // 12. Generate 6 replacement phrases for T2
   const generatedPhrases = await generateReplacementPhrases(
     blankedSecondScene,
     selectedConstraintsT2,
@@ -1206,10 +1227,14 @@ export async function judgeTriplet(
   const shuffledPhrases = shuffle(generatedPhrases);
   console.log(`🔀 Shuffled order: ${JSON.stringify(shuffledPhrases)}`);
 
-  // 14. Judge which phrase is funniest
-  const bestPhraseVersionNumber = await judgePhrases(blankedSecondScene, shuffledPhrases, 'T2', tripletNumber, totalTriplets);
-  const bestPhrase = shuffledPhrases[bestPhraseVersionNumber - 1];
-  console.log(`\n🏆 WINNER (T2): Version ${bestPhraseVersionNumber} - "${bestPhrase}"`);
+  // 14. Judge top 3 funniest phrases
+  const top3PhrasesIndices = await judgePhrases(blankedSecondScene, shuffledPhrases, 'T2', tripletNumber, totalTriplets);
+  const top3Phrases = top3PhrasesIndices.map(idx => shuffledPhrases[idx]);
+  const bestPhrase = top3Phrases[0]; // Use #1 for gameplay progression
+  console.log(`\n🏆 WINNERS (T2):`);
+  console.log(`   #1 (best): Version ${top3PhrasesIndices[0] + 1} - "${top3Phrases[0]}"`);
+  console.log(`   #2: Version ${top3PhrasesIndices[1] + 1} - "${top3Phrases[1]}"`);
+  console.log(`   #3: Version ${top3PhrasesIndices[2] + 1} - "${top3Phrases[2]}"`);
 
   // ============================================================================
   // T3 (THIRD SCENE) PROCESSING - Phrase generation and judging
@@ -1263,11 +1288,11 @@ export async function judgeTriplet(
   console.log(`✏️  Blanked out final frame text in third scene`);
 
   // 18. Randomly select NEW 5 constraints for T3
-  const selectedConstraintsT3 = randomSample(allConstraints, 5);
-  console.log('\n🎲 Randomly selected 5 NEW constraints for T3:');
+  const selectedConstraintsT3 = randomSample(allConstraints, 6);
+  console.log('\n🎲 Randomly selected 6 NEW constraints for T3:');
   selectedConstraintsT3.forEach((c, i) => console.log(`   ${i + 1}. ${c}`));
 
-  // 19. Generate 5 replacement phrases for T3
+  // 19. Generate 6 replacement phrases for T3
   const generatedPhrasesT3 = await generateReplacementPhrases(
     blankedThirdScene,
     selectedConstraintsT3,
@@ -1281,10 +1306,14 @@ export async function judgeTriplet(
   const shuffledPhrasesT3 = shuffle(generatedPhrasesT3);
   console.log(`🔀 Shuffled order: ${JSON.stringify(shuffledPhrasesT3)}`);
 
-  // 21. Judge which phrase is funniest
-  const bestPhraseVersionNumberT3 = await judgePhrases(blankedThirdScene, shuffledPhrasesT3, 'T3', tripletNumber, totalTriplets);
-  const bestPhraseT3 = shuffledPhrasesT3[bestPhraseVersionNumberT3 - 1];
-  console.log(`\n🏆 WINNER (T3): Version ${bestPhraseVersionNumberT3} - "${bestPhraseT3}"`);
+  // 21. Judge top 3 funniest phrases
+  const top3PhrasesIndicesT3 = await judgePhrases(blankedThirdScene, shuffledPhrasesT3, 'T3', tripletNumber, totalTriplets);
+  const top3PhrasesT3 = top3PhrasesIndicesT3.map(idx => shuffledPhrasesT3[idx]);
+  const bestPhraseT3 = top3PhrasesT3[0]; // Use #1 for gameplay progression
+  console.log(`\n🏆 WINNERS (T3):`);
+  console.log(`   #1 (best): Version ${top3PhrasesIndicesT3[0] + 1} - "${top3PhrasesT3[0]}"`);
+  console.log(`   #2: Version ${top3PhrasesIndicesT3[1] + 1} - "${top3PhrasesT3[1]}"`);
+  console.log(`   #3: Version ${top3PhrasesIndicesT3[2] + 1} - "${top3PhrasesT3[2]}"`);
 
   // ============================================================================
   // FINAL OUTPUT - Complete triplet with all winners
@@ -1331,21 +1360,24 @@ export async function judgeTriplet(
     generatedWords,
     shuffledWords,
     bestWord,
-    bestWordIndex: bestVersionNumber - 1,
+    bestWordIndex: top3Indices[0],
+    top3Words,
     // T2 fields
     secondScene,
     secondSceneWithWord,
     generatedPhrases,
     shuffledPhrases,
     bestPhrase,
-    bestPhraseIndex: bestPhraseVersionNumber - 1,
+    bestPhraseIndex: top3PhrasesIndices[0],
+    top3Phrases,
     // T3 fields
     thirdScene,
     thirdSceneWithWord,
     generatedPhrasesT3,
     shuffledPhrasesT3,
     bestPhraseT3,
-    bestPhraseIndexT3: bestPhraseVersionNumberT3 - 1,
+    bestPhraseIndexT3: top3PhrasesIndicesT3[0],
+    top3PhrasesT3,
     // Final quality judging
     qualityAnswers,
     qualityScore,
@@ -1613,9 +1645,9 @@ export async function exportTopTriplets(
 
     const answers = {
       answers: [
-        judgment.bestWord,
-        judgment.bestPhrase,
-        judgment.bestPhraseT3
+        judgment.top3Words,       // T1: [best, 2nd, 3rd]
+        judgment.top3Phrases,     // T2: [best, 2nd, 3rd]
+        judgment.top3PhrasesT3    // T3: [best, 2nd, 3rd]
       ]
     };
 
