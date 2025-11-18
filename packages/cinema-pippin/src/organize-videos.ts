@@ -7,7 +7,7 @@
  * renames and organizes them based on subtitle availability.
  */
 
-import { readdir, stat, rename, rmdir } from 'fs/promises';
+import { readdir, stat, rename, rmdir, copyFile, unlink } from 'fs/promises';
 import { join, dirname, extname, basename } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -155,10 +155,23 @@ async function processVideoFile(filePath: string, dryRun: boolean = false): Prom
   if (dryRun) {
     console.log('  🔄 [DRY RUN] Would move file');
   } else {
-    // Move file
+    // Move file (using copy+delete for cross-filesystem compatibility)
     try {
-      await rename(filePath, destPath);
-      console.log(`  ✅ Moved successfully`);
+      // Try rename first (fast if same filesystem)
+      try {
+        await rename(filePath, destPath);
+        console.log(`  ✅ Moved successfully (rename)`);
+      } catch (renameError: any) {
+        // If rename fails due to cross-device link, use copy+delete
+        if (renameError.code === 'EXDEV') {
+          console.log('  🔄 Cross-filesystem move detected, using copy+delete...');
+          await copyFile(filePath, destPath);
+          await unlink(filePath);
+          console.log(`  ✅ Moved successfully (copy+delete)`);
+        } else {
+          throw renameError;
+        }
+      }
 
       // Try to delete parent directory if empty
       await deleteIfEmpty(parentDir);
