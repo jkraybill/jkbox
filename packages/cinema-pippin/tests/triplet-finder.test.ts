@@ -666,6 +666,78 @@ describe('isValidSubsequentTriplet', () => {
     const result = isValidSubsequentTriplet(entries, 1, 2, 3, 'hello', 3);
     expect(result).toBe(true);
   });
+
+  it('should return false if minWords is 6 (T3) and frame 3 has only 5 words', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous sentence.',
+        rawText: ['Previous sentence.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:08,000',
+        text: 'This contains the hello keyword!',
+        rawText: ['This contains the hello keyword!'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:08,000',
+        endTime: '00:00:13,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:13,000',
+        endTime: '00:00:16,000',
+        text: 'You think you can win?',  // 5 words, minWords = 6 for T3
+        rawText: ['You think you can win?'],
+      },
+    ];
+
+    const result = isValidSubsequentTriplet(entries, 1, 2, 3, 'hello', 6);
+    expect(result).toBe(false);
+  });
+
+  it('should return true if minWords is 6 (T3) and frame 3 has 6 words', () => {
+    const entries: SRTEntry[] = [
+      {
+        index: 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:03,000',
+        text: 'Previous sentence.',
+        rawText: ['Previous sentence.'],
+      },
+      {
+        index: 2,
+        startTime: '00:00:03,000',
+        endTime: '00:00:08,000',
+        text: 'This contains the hello keyword!',
+        rawText: ['This contains the hello keyword!'],
+      },
+      {
+        index: 3,
+        startTime: '00:00:08,000',
+        endTime: '00:00:13,000',
+        text: 'Second frame.',
+        rawText: ['Second frame.'],
+      },
+      {
+        index: 4,
+        startTime: '00:00:13,000',
+        endTime: '00:00:16,000',
+        text: 'You think you can win today?',  // 6 words, minWords = 6 for T3
+        rawText: ['You think you can win today?'],
+      },
+    ];
+
+    const result = isValidSubsequentTriplet(entries, 1, 2, 3, 'hello', 6);
+    expect(result).toBe(true);
+  });
 });
 
 describe('findAllTriplets', () => {
@@ -761,7 +833,7 @@ End.
 
 15
 00:00:27,000 --> 00:00:29,000
-K : light!
+The keyword brings more light than ever!
 
 16
 00:00:30,000 --> 00:00:32,000
@@ -773,7 +845,7 @@ Word here.
 
 18
 00:00:34,000 --> 00:00:36,000
-light burning.`;
+The light is burning brightly today here.`;
 
     const optimized = await findAllTripletsOptimized(srt);
 
@@ -863,7 +935,7 @@ Everyone loved it.
 
 9
 00:00:16,000 --> 00:00:18,000
-It was delicious banana.
+It was absolutely the most delicious banana ever.
 
 10
 00:00:18,500 --> 00:00:20,000
@@ -879,7 +951,7 @@ We need it to live.
 
 13
 00:00:24,000 --> 00:00:26,000
-Please keep the banana fresh.`;
+Please keep the fresh yellow banana in the fridge.`;
 
     const optimized = await findAllTripletsOptimized(srt);
 

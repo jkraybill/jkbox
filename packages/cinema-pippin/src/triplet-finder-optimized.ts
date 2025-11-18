@@ -266,7 +266,8 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
             const f3Frame3 = f3Frame2 + 1;
             if (f3Frame3 >= entries.length) break;
 
-            if (isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 3)) {
+            // T3 F3 must have 6+ words
+            if (isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 6)) {
               // Found complete T1→T2→T3 chain!
               foundCompleteSequence = true;
               qualifiedKeywords.add(t1.keyword);
@@ -392,7 +393,8 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
 
             if (f3Frame3 >= entries.length) break;
 
-            if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 3)) {
+            // T3 F3 must have 6+ words (not 3!)
+            if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 6)) {
               continue;
             }
 
