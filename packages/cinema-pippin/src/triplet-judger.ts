@@ -641,9 +641,12 @@ ${constraintsList}
 ${blankedScene}
 
 💡 TIPS FOR MAX HUMOR:
-- Create absurd/unexpected phrases that land perfectly in THIS scene
+- **CLEVER TWIST > CRUDE SHOCK:** "May the Force be with you... and in you" beats "just fucking"
+- **ABSURD JUXTAPOSITION:** Mix serious + silly, formal + crude, mundane + extreme
+- **CONTEXT FIT MATTERS:** Phrase must land in THIS scene, not generic shock
+- **AVOID:** Pure sound effects ("Vroom vroom"), preachy lectures, lazy obscenity
+- **PRIORITIZE:** Surprise + wordplay + unexpected callbacks to pop culture
 - Word count is flexible - prioritize HUMOR over exact count
-- Shock value + cleverness + context = gold
 - Think phrases/sentences, NOT single words!
 
 ❌ WRONG EXAMPLE (constraint mismatch):
@@ -768,10 +771,21 @@ No explanations, no other text. Just the JSON array of couplets.`;
     const expectedPrefix = expectedConstraint.split(' -- ')[0];  // e.g., "The letter 'R' (5 words)"
     const returnedPrefix = returnedConstraint.split(' -- ')[0];  // What LLM returned
 
-    // Check if the returned prefix matches the expected prefix (case-insensitive)
+    // Normalize both for comparison: strip surrounding quotes, unescape internal quotes
+    const normalizeConstraint = (str: string) => {
+      return str.trim()
+        .replace(/^["']|["']$/g, '')  // Strip surrounding quotes
+        .replace(/\\"/g, '"')         // Unescape internal quotes
+        .replace(/\s+/g, ' ')         // Normalize whitespace
+        .toLowerCase();
+    };
+
+    const expectedNorm = normalizeConstraint(expectedPrefix);
+    const returnedNorm = normalizeConstraint(returnedPrefix);
+
+    // Check if the returned prefix matches the expected prefix (normalized)
     // Be lenient - just check that it starts with or equals the expected prefix
-    if (returnedPrefix.trim().toLowerCase() !== expectedPrefix.trim().toLowerCase() &&
-        !returnedPrefix.trim().toLowerCase().startsWith(expectedPrefix.trim().toLowerCase())) {
+    if (returnedNorm !== expectedNorm && !returnedNorm.startsWith(expectedNorm)) {
       throw new Error(
         `❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
         `Expected constraint name:\n"${expectedPrefix}"\n\n` +
