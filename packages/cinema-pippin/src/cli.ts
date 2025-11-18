@@ -196,6 +196,18 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
     return streams[0].index;
   }
 
+  // Multiple streams - check for exactly 1 "original" track first
+  const originalStreams = streams.filter(s =>
+    s.title?.toLowerCase().includes('original')
+  );
+
+  if (originalStreams.length === 1) {
+    const selected = originalStreams[0];
+    console.log(`✓ Auto-selected stream ${selected.fullIndex} [${selected.language || '?'}] - ${selected.codec}, ${selected.channels}`);
+    console.log(`  Title: "${selected.title}" (contains "original")\n`);
+    return selected.index;
+  }
+
   // Multiple streams - show and prompt
   console.log('🔊 Audio streams found:\n');
   streams.forEach((stream, idx) => {
