@@ -15,7 +15,7 @@ import { extractVideosForSequence, extractTimestampRange, rebaseSrtTimestamps } 
 import { blankWithSpaces, replaceBlankedText } from './blanking-utils.js';
 
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
-const MODEL = 'qwen2.5:14b';
+const MODEL = 'qwen-fast'; // Optimized qwen2.5:14b (num_ctx=2048, num_batch=512) - ~40% faster
 const CONSTRAINTS_FILE = '/home/jk/jkbox/assets/constraints.txt';
 const MAX_RETRIES = 2; // Max 2 retries = 3 total attempts
 
