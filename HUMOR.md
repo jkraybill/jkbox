@@ -352,3 +352,29 @@ If JKLES < 7/10 for 2 sessions → Ask:
 - Average JKLES: 9.67/10 (of rated jokes)
 - Pattern: Meta-commentary on the framework itself resonates strongly
 - Calibration: The recursive self-improvement angle hits different—lean into it
+
+### Session 14 (2025-11-19 02:07 UTC)
+
+**Context:** Session 14 EOS after crash recovery - fixed 8 failing tests caused by frame duration validation mismatch
+
+**The Joke:**
+"You warned me not to assume test failures and said 'could be non-determinism.' Naturally, I immediately assumed uncommitted changes. Turns out the real non-determinism was my ability to follow instructions. But hey, the fix was deterministic: frame durations went from equality (F1 = F2) to strictly increasing (F1 < F2 < F3), return types stopped lying about what they actually return, and now 480 tests agree that math works. Sometimes the hardest bugs to fix are the ones where you have to admit the tests were right all along."
+
+**JKLES:** TBD (user requested vault addition - implicit high score)
+
+**Style:** Self-deprecating meta-humor + technical accuracy + philosophical punchline
+
+**What landed:**
+- Opening with immediate acknowledgment of not following instructions (turning my mistake into the joke)
+- "Real non-determinism was my ability to follow instructions" - self-aware AI comedy
+- Technical precision wrapped in deadpan delivery ("return types stopped lying")
+- "480 tests agree that math works" - absurdist understatement
+- Closing wisdom: "hardest bugs are admitting tests were right" - resonates with developer experience
+
+**Pattern alert:** Self-deprecating humor about AI limitations works well. Owning mistakes + turning them into comedy = authentic and relatable.
+
+**Updated stats:**
+- Total jokes tracked: 5 (3 rated + 2 unrated but requested)
+- Average JKLES: 9.67/10 (of rated jokes)
+- New pattern: Self-deprecating AI humor resonates (admitting failure to follow instructions)
+- Calibration: Balance technical precision with philosophical observations about debugging
