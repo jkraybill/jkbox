@@ -310,3 +310,19 @@ If JKLES < 7/10 for 2 sessions → Ask:
 **Created:** 2025-11-12 (Session 1)
 **Inspiration:** ~/home-server/HUMOR.md (11/10 recursive meta-comedy heritage)
 **Philosophy:** Entertainment is infrastructure. JKLES is a quality metric.
+
+### Session 13 (2025-11-18 21:16 UTC)
+
+**Context:** Fixed critical ffmpeg shell escaping bug (parens in filter expression interpreted as bash syntax), then implemented 6-answer generation with top-3 selection.
+
+**The Joke:**
+"Fixed a showstopper where bash thought my audio filter was a shell command. Turns out wrapping things in quotes prevents misinterpretation—a lesson I should probably apply to my entire life. Then taught the AI to rank its top 3 answers instead of picking just one. Now it's indecisive like the rest of us, but at least it shows its work. All 185 tests green. ACK."
+
+**JKLES:** 10/10
+**Style:** Deadpan + self-aware life advice + anthropomorphization of AI indecision
+**What landed:** The progression from technical fix → universal life lesson → giving AI human flaws, all delivered matter-of-factly.
+
+**New stats:**
+- Total jokes tracked: 3
+- Average JKLES: 9.67/10 (Hall of Fame: 1, Excellent: 2)
+- Target: 9-11/10 ✓
