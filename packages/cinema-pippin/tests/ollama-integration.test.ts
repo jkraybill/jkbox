@@ -206,4 +206,69 @@ Output format: Just the number (1, 2, or 3), nothing else.`;
     // Should get a response
     expect(response.length).toBeGreaterThan(0);
   }, 15000);
+
+  it('should verify optimized model configuration', async () => {
+    // This test verifies qwen-fast is using optimized parameters
+    const response = await fetch('http://localhost:11434/api/show', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: MODEL }),
+    });
+
+    expect(response.ok).toBe(true);
+    const data = await response.json();
+
+    // Verify model exists and has details
+    expect(data).toHaveProperty('modelfile');
+
+    // Check for optimization parameters (num_ctx and num_batch)
+    const modelfile = data.modelfile;
+    expect(modelfile).toContain('PARAMETER num_ctx 2048');
+    expect(modelfile).toContain('PARAMETER num_batch 512');
+
+    // Log current configuration for visibility
+    console.log('\n📊 Model Configuration Verified:');
+    console.log('✅ Model:', MODEL);
+    console.log('✅ Context window: 2048 tokens');
+    console.log('✅ Batch size: 512');
+  }, 10000);
+
+  it('should process requests efficiently (performance benchmark)', async () => {
+    const startTime = Date.now();
+
+    // Simulate a typical Cinema Pippin task
+    const system = 'You are a helpful assistant. Respond ONLY with valid JSON, no explanations.';
+    const prompt = `Generate 3 funny words in JSON array format.
+
+Output ONLY this format: ["word1", "word2", "word3"]
+
+No explanations, just the JSON array.`;
+
+    const response = await callOllama(prompt, system, 0.95);
+
+    const duration = Date.now() - startTime;
+
+    // Try to parse - should be valid JSON or contain a JSON array
+    let parsed;
+    try {
+      parsed = JSON.parse(response);
+    } catch (e) {
+      // Sometimes response has extra text, try to extract JSON array
+      const match = response.match(/\[.*\]/s);
+      if (match) {
+        parsed = JSON.parse(match[0]);
+      } else {
+        throw new Error(`Could not parse response: ${response}`);
+      }
+    }
+
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBeGreaterThan(0);
+
+    // With qwen-fast, this should be fast (under 5 seconds)
+    console.log(`\n⏱️  Performance benchmark: ${duration}ms`);
+
+    // Should be reasonably fast (allowing some variance)
+    expect(duration).toBeLessThan(8000);
+  }, 15000);
 });
