@@ -322,7 +322,10 @@ If JKLES < 7/10 for 2 sessions → Ask:
 **Style:** Deadpan + self-aware life advice + anthropomorphization of AI indecision
 **What landed:** The progression from technical fix → universal life lesson → giving AI human flaws, all delivered matter-of-factly.
 
+**Pattern alert:** ⚠️ "Turns out" transitional structure appearing frequently. The Seinfeld curse—overusing a working formula until it becomes predictable. Monitor for freshness. Consider rotating: "As it happens," "Plot twist:", "Meanwhile," "Anyway," or just cutting straight to the punchline.
+
 **New stats:**
 - Total jokes tracked: 3
 - Average JKLES: 9.67/10 (Hall of Fame: 1, Excellent: 2)
 - Target: 9-11/10 ✓
+- **Calibration note:** Watch "turns out" frequency—good structure but avoid becoming formulaic
