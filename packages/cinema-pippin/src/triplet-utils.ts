@@ -90,8 +90,8 @@ export function extractWordFromSingleWord(text: string): string {
 export function containsWordAsStandalone(text: string, word: string): boolean {
   // Check if text contains word as a standalone word (with word boundaries)
   // Case-insensitive matching
-  const lowerText = text.toLowerCase();
-  const lowerWord = word.toLowerCase();
+  const lowerText = text.trim().toLowerCase();
+  const lowerWord = word.trim().toLowerCase();
 
   // Use word boundary regex
   const regex = new RegExp(`\\b${escapeRegExp(lowerWord)}\\b`);

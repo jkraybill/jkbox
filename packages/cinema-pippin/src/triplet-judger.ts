@@ -1520,8 +1520,8 @@ export async function exportTopTriplets(
   const srtBasename = basename(srtFile, '.srt');
   const clipsBaseDir = join('/home/jk/jkbox/generated/clips', srtBasename);
 
-  // Calculate N = min(X/2, 6)
-  const numToExport = Math.min(Math.floor(judgments.length / 2), 6);
+  // Calculate N = min(ceil(X/2), 6) - round up so 1 judgment exports 1 clip
+  const numToExport = Math.min(Math.ceil(judgments.length / 2), 6);
 
   console.log(`\n📦 Exporting top ${numToExport} triplet sequence(s) to ${clipsBaseDir}`);
   if (sourceVideo) {
