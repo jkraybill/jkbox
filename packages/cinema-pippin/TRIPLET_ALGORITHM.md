@@ -153,7 +153,10 @@ Group all found sequences by **T1 F3 last word**. For each group:
 ### T2/T3 (Subsequent Triplets) Specific Rules
 
 #### Keyword Presence (CRITICAL)
-- Keyword must appear as **standalone word** in at least one of: F1, F2, or F3
+- Keyword must appear as **standalone word** in at least one of: F1, F2, or F3 (for EACH of T2 and T3)
+- **ADDITIONAL REQUIREMENT:** Keyword must appear in at least one of: **{ T2 F1, T2 F2, T3 F1, T3 F2 }**
+  - This ensures keyword appears in setup frames (F1/F2), not only punchline frames (F3)
+  - Sequences where keyword only appears in T2 F3 and/or T3 F3 are rejected
 - Uses word boundary matching (case-insensitive)
 - Example: keyword `"you"` matches in `"You are here"` but NOT in `"Yours"`
 
@@ -386,11 +389,12 @@ Very rare keywords (appearing only in these 3 triplets) are treated the same as 
 
 ---
 
-**Document Version:** 1.9
+**Document Version:** 2.0
 **Last Updated:** 2025-11-18
 **Code Reference:** `packages/cinema-pippin/src/triplet-finder.ts`
 
 ### Changelog
+- **v2.0 (2025-11-18):** Added stricter keyword requirement - keyword must now appear in at least one of { T2 F1, T2 F2, T3 F1, T3 F2 }, ensuring keyword appears in setup frames (F1/F2), not only punchline frames (F3)
 - **v1.9 (2025-11-18):** Changed T2/T3 Frame 3 word count requirements - T2 F3 now requires 1-5 words (was ≥2), T3 F3 now requires ≥6 words (was ≥3)
 - **v1.8 (2025-11-18):** T2/T3 Frame 2 punctuation requirement now only applies IF Frame 3 starts with lowercase letter - no requirement if F3 starts with uppercase
 - **v1.7 (2025-11-18):** Added comma (`,`) to T2/T3 Frame 2 allowed ending punctuation - now accepts `.` `!` `?` `-` `;` `,`

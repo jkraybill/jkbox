@@ -10,6 +10,7 @@ import {
   countWords,
   isExcludedWord,
   hasTimeOverlap,
+  containsWordAsStandalone,
 } from './triplet-utils.js';
 import { scoreWordByFrequency } from './word-frequency.js';
 import { stripHtmlFromSrt } from './html-utils.js';
@@ -425,6 +426,16 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
               frame3: entries[f3Frame3],
               keyword: t1.keyword,
             };
+
+            // Additional requirement: keyword must appear in at least one of T2 F1, T2 F2, T3 F1, T3 F2
+            const keywordInT2F1 = containsWordAsStandalone(triplet2.frame1.text, t1.keyword);
+            const keywordInT2F2 = containsWordAsStandalone(triplet2.frame2.text, t1.keyword);
+            const keywordInT3F1 = containsWordAsStandalone(triplet3.frame1.text, t1.keyword);
+            const keywordInT3F2 = containsWordAsStandalone(triplet3.frame2.text, t1.keyword);
+
+            if (!keywordInT2F1 && !keywordInT2F2 && !keywordInT3F1 && !keywordInT3F2) {
+              continue; // Skip this sequence - keyword only in F3 frames
+            }
 
             results.push([triplet1, triplet2, triplet3]);
 
