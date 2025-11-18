@@ -11,6 +11,7 @@ import {
   isExcludedWord,
 } from './triplet-utils.js';
 import { scoreWordByFrequency } from './word-frequency.js';
+import { stripHtmlFromSrt } from './html-utils.js';
 
 export interface Triplet {
   allEntries: SRTEntry[];
@@ -774,7 +775,11 @@ function deduplicateByFirstTripletFrame3LastWord(sequences: Triplet[][]): Triple
  * Main entry point - optimized version
  */
 export async function findAllTripletsOptimized(srtContent: string): Promise<Triplet[][]> {
-  const entries = parseSRT(srtContent);
+  // Strip all HTML tags from the SRT content FIRST
+  // This ensures triplet files written later will have clean text
+  const cleanSrtContent = stripHtmlFromSrt(srtContent);
+
+  const entries = parseSRT(cleanSrtContent);
   console.log(`Parsed ${entries.length} SRT entries`);
 
   const results = await findTripletsOptimized(entries);
