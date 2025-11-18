@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { basename, join } from 'path';
 import { execSync } from 'child_process';
 import * as readline from 'readline';
@@ -562,6 +562,29 @@ program
       console.log('='.repeat(80));
 
       await exportTopTriplets(srtPath, judgments, videoPath, audioStreamIndex);
+
+      // Step 5: Clean up temporary .txt files
+      console.log('');
+      console.log('='.repeat(80));
+      console.log('Step 5: Cleaning up temporary files...');
+      console.log('='.repeat(80));
+      console.log('');
+
+      const txtPattern = new RegExp(`^${baseFilename}\\.\\d+\\.txt$`);
+      const txtFiles = readdirSync(generatedDir).filter(f => txtPattern.test(f));
+
+      console.log(`Found ${txtFiles.length} temporary .txt file(s) to delete:`);
+      txtFiles.forEach(file => {
+        const fullPath = join(generatedDir, file);
+        unlinkSync(fullPath);
+        console.log(`  ✓ Deleted ${file}`);
+      });
+
+      if (txtFiles.length > 0) {
+        console.log('\n✅ Cleanup complete!\n');
+      } else {
+        console.log('  (No files to delete)\n');
+      }
 
       console.log('='.repeat(80));
       console.log('✨ PIPELINE COMPLETE!');
