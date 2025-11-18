@@ -99,7 +99,8 @@ export function isValidSubsequentTriplet(
   frame2Idx: number,
   frame3Idx: number,
   keyword: string,
-  minWords: number = 2
+  minWords: number = 2,
+  maxWords: number = Infinity
 ): boolean {
   if (frame1Idx < 1 || frame3Idx >= entries.length) {
     return false;
@@ -119,8 +120,9 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Frame 3 must have at least minWords words
-  if (countWords(frame3.text) < minWords) {
+  // Frame 3 must have word count in range [minWords, maxWords]
+  const wordCount = countWords(frame3.text);
+  if (wordCount < minWords || wordCount > maxWords) {
     return false;
   }
 
@@ -129,8 +131,9 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Frame 2 must end with . ! ? - ;
-  if (!endsWithPunctuation(frame2.text)) {
+  // Frame 2 must end with . ! ? - ; , (BUT only if F3 starts with lowercase letter)
+  const frame3StartsLowercase = /^[a-z]/.test(frame3.text.trim());
+  if (frame3StartsLowercase && !endsWithPunctuation(frame2.text)) {
     return false;
   }
 
@@ -177,7 +180,8 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
           if (f2Frame3Idx >= entries.length) continue;
 
-          if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2Idx, f2Frame3Idx, firstKeyword, 2)) {
+          // T2 F3 must have 1-5 words
+          if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2Idx, f2Frame3Idx, firstKeyword, 1, 5)) {
             continue;
           }
 
@@ -195,7 +199,8 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
               if (f3Frame3Idx >= entries.length) continue;
 
-              if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, 3)) {
+              // T3 F3 must have 6+ words
+              if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, 6)) {
                 continue;
               }
 

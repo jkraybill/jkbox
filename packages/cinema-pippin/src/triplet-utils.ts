@@ -13,7 +13,7 @@ export function transformToKeyword(text: string): string {
 
 export function endsWithPunctuation(text: string): boolean {
   const lastChar = text.trim().slice(-1);
-  return ['.', '!', '?', '-', ';'].includes(lastChar);
+  return ['.', '!', '?', '-', ';', ','].includes(lastChar);
 }
 
 export function endsWithStrongPunctuation(text: string): boolean {

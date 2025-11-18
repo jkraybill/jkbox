@@ -127,17 +127,17 @@ export function extractVideoSegment(
     : '';
 
   // Build audio volume filter
-  // First paddingSeconds: 25% volume
-  // Last paddingSeconds: 25% volume
+  // First paddingSeconds: SILENT (0% volume)
+  // Last paddingSeconds: SILENT (0% volume)
   // Middle section: 100% volume
   const volumeThreshold = paddedDuration - paddingSeconds;
-  const audioFilter = `-af "volume='if(lt(t,${paddingSeconds}),0.25,if(gt(t,${volumeThreshold}),0.25,1.0))'"`;
+  const audioFilter = `-af "volume='if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))'"`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
   // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
   // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
-  // -af: audio filter for fade in/out during padding seconds
+  // -af: audio filter to silence first/last paddingSeconds
   // -disposition:a:0 default: mark audio track as default (when specific stream selected)
   // -c:v libx264 -c:a aac: re-encode video and audio
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
@@ -147,7 +147,7 @@ export function extractVideoSegment(
 
   try {
     const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe' });
-    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s padding + 25% volume)`);
+    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s silent padding)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
     throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);

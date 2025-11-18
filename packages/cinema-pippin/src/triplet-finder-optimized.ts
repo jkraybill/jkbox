@@ -24,7 +24,7 @@ export interface Triplet {
 
 // Target number of triplet sequences to output
 const TARGET_N = 18;
-const TARGET_N_THIRD = TARGET_N / 3;  // 6 (used in deduplication strategy)
+const MAX_QUALIFIED_KEYWORDS = Math.floor(TARGET_N * 1.2); // 21
 
 // Overlap minimization weights
 const OVERLAP_PENALTY_WEIGHT = 50.0;  // High penalty for overlap (dominant factor)
@@ -287,20 +287,20 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
   }
 
   // Filter out keywords with frequency > 10000 (too common)
-  // BUT: Always keep at least TARGET_N keywords to ensure we can reach the target
+  // BUT: Always keep at least MAX_QUALIFIED_KEYWORDS to ensure we can reach the target
   const beforeCommonFilter = keywordScores.length;
   let filteredScores = keywordScores.filter(k => k.frequency <= 10000);
 
-  // If we filtered too aggressively and have fewer than TARGET_N keywords,
-  // add back the rarest common words until we hit TARGET_N
-  if (filteredScores.length < TARGET_N && keywordScores.length >= TARGET_N) {
+  // If we filtered too aggressively and have fewer than MAX_QUALIFIED_KEYWORDS,
+  // add back the rarest common words until we hit MAX_QUALIFIED_KEYWORDS
+  if (filteredScores.length < MAX_QUALIFIED_KEYWORDS && keywordScores.length >= MAX_QUALIFIED_KEYWORDS) {
     // Sort all keywords by frequency (rarest first)
     const sortedAll = [...keywordScores].sort((a, b) => a.frequency - b.frequency);
-    // Take the rarest TARGET_N keywords
-    filteredScores = sortedAll.slice(0, TARGET_N);
+    // Take the rarest MAX_QUALIFIED_KEYWORDS keywords
+    filteredScores = sortedAll.slice(0, MAX_QUALIFIED_KEYWORDS);
     const added = filteredScores.length - (keywordScores.filter(k => k.frequency <= 10000).length);
     console.log(`  ⚠️  Only ${filteredScores.length - added} keywords with frequency ≤ 10000`);
-    console.log(`  📈 Added ${added} less-common keywords to reach TARGET_N (${TARGET_N})`);
+    console.log(`  📈 Added ${added} less-common keywords to reach MAX_QUALIFIED_KEYWORDS (${MAX_QUALIFIED_KEYWORDS})`);
   } else if (filteredScores.length < beforeCommonFilter) {
     const removed = beforeCommonFilter - filteredScores.length;
     console.log(`  Filtered out ${removed} common keywords (frequency > 10000)`);
@@ -320,50 +320,10 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
   // Early exit if no keywords remain
   if (qualifiedKeywords.size === 0) {
     console.log('  No keywords remain after filtering - all were too common!');
-    return [];
+    return { results: [], keywordFrequencies: new Map() };
   }
 
-  // Step 3.6: If we have more than TARGET_N qualified keywords, prune by frequency
-  const maxKeywords = Math.floor(TARGET_N * 1.2); // 18 * 1.2 = 21.6 → 21
-
-  if (qualifiedKeywords.size > maxKeywords) {
-    console.log(`\n  Pruning keywords: ${qualifiedKeywords.size} > ${maxKeywords} (TARGET_N * 1.2)`);
-
-    // Remove highest frequency keywords until we're at or below TARGET_N * 1.2
-    // Sort by frequency (highest first)
-    const sortedByFrequency = [...filteredScores].sort((a, b) => b.frequency - a.frequency);
-
-    // Keep removing the highest frequency keyword until we hit the threshold
-    const toKeep = sortedByFrequency.slice(sortedByFrequency.length - maxKeywords);
-
-    console.log(`  Removed ${sortedByFrequency.length - toKeep.length} highest frequency keywords`);
-
-    qualifiedKeywords.clear();
-    toKeep.forEach(k => qualifiedKeywords.add(k.keyword));
-  } else if (qualifiedKeywords.size > TARGET_N) {
-    console.log(`\n  Keywords in acceptable range: ${qualifiedKeywords.size} (between ${TARGET_N} and ${maxKeywords})`);
-  }
-
-  // Step 3.7: If still over TARGET_N, randomly remove keywords
-  if (qualifiedKeywords.size > TARGET_N) {
-    console.log(`  Randomly trimming from ${qualifiedKeywords.size} to ${TARGET_N} keywords`);
-
-    const keywordArray = Array.from(qualifiedKeywords);
-
-    // Fisher-Yates shuffle
-    for (let i = keywordArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [keywordArray[i], keywordArray[j]] = [keywordArray[j], keywordArray[i]];
-    }
-
-    // Keep only TARGET_N keywords
-    const toKeep = keywordArray.slice(0, TARGET_N);
-
-    qualifiedKeywords.clear();
-    toKeep.forEach(k => qualifiedKeywords.add(k));
-
-    console.log(`  Final keyword count: ${qualifiedKeywords.size}`);
-  }
+  console.log(`  Final qualified keyword count: ${qualifiedKeywords.size}`);
 
   // Step 4: For each valid first triplet with qualified keyword, search for second and third
   console.log('  Searching for triplet sequences...');
@@ -483,7 +443,14 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
   }
 
   console.log(`  Found ${results.length} total sequences before deduplication`);
-  return results;
+
+  // Create keyword frequency map for selection algorithm
+  const keywordFrequencyMap = new Map<string, number>();
+  filteredScores.forEach(({ keyword, frequency }) => {
+    keywordFrequencyMap.set(keyword, frequency);
+  });
+
+  return { results, keywordFrequencies: keywordFrequencyMap };
 }
 
 // Deduplication helpers
@@ -599,16 +566,45 @@ function calculateQualityScore(sequence: Triplet[]): number {
 }
 
 /**
- * Greedy selection algorithm with PRIMARY priority on keyword uniqueness
- * and SECONDARY priority on minimal temporal overlap
- *
- * Guarantees: Each selected sequence has a UNIQUE keyword (no duplicates!)
- * Then: Minimizes temporal overlap among selected sequences
+ * Calculate total alphabetic character count across a triplet sequence
  */
-function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] {
+function getTotalAlphaCharCount(sequence: Triplet[]): number {
+  return sequence.reduce((sum, triplet) =>
+    sum + triplet.allEntries.reduce((s, e) =>
+      s + e.text.replace(/[^a-zA-Z]/g, '').length, 0), 0);
+}
+
+/**
+ * Calculate total overlapping seconds among all sequences in a set
+ * Returns sum of all pairwise overlaps (in seconds)
+ */
+function calculateTotalOverlapSeconds(sequences: Array<{ sequence: Triplet[][]; timeRange: TimeRange }>): number {
+  let totalOverlap = 0;
+
+  for (let i = 0; i < sequences.length; i++) {
+    for (let j = i + 1; j < sequences.length; j++) {
+      const range1 = sequences[i].timeRange;
+      const range2 = sequences[j].timeRange;
+
+      const overlapStart = Math.max(range1.startSeconds, range2.startSeconds);
+      const overlapEnd = Math.min(range1.endSeconds, range2.endSeconds);
+      const overlapSeconds = Math.max(0, overlapEnd - overlapStart);
+
+      totalOverlap += overlapSeconds;
+    }
+  }
+
+  return totalOverlap;
+}
+
+/**
+ * 3-iteration randomized selection algorithm
+ * Generates 3 candidate sets, picks the one with minimal overlap
+ */
+function selectSequencesWithMinimalOverlap(sequences: Triplet[][], keywordFrequencies: Map<string, number>): Triplet[][] {
   if (sequences.length === 0) return [];
 
-  console.log(`\n  Greedy selection with keyword uniqueness + overlap minimization:`);
+  console.log(`\n  3-iteration randomized selection with overlap minimization:`);
   console.log(`    Input: ${sequences.length} sequences`);
 
   // Group sequences by keyword
@@ -623,11 +619,11 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] 
 
   console.log(`    Unique keywords: ${keywordGroups.size}`);
 
-  // Calculate metadata for all sequences
+  // Pre-calculate metadata for all sequences
   const candidatesByKeyword = new Map<string, Array<{
     sequence: Triplet[][];
     timeRange: TimeRange;
-    qualityScore: number;
+    alphaCharCount: number;
     keyword: string;
   }>>();
 
@@ -635,65 +631,118 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][]): Triplet[][] 
     const candidates = seqs.map(seq => ({
       sequence: seq,
       timeRange: getSequenceTimeRange(seq),
-      qualityScore: calculateQualityScore(seq),
+      alphaCharCount: getTotalAlphaCharCount(seq),
       keyword
     }));
-    // Sort by quality (best first) within each keyword group
-    candidates.sort((a, b) => b.qualityScore - a.qualityScore);
     candidatesByKeyword.set(keyword, candidates);
   }
 
-  const selected: Array<{
-    sequence: Triplet[][];
-    timeRange: TimeRange;
-    qualityScore: number;
-    keyword: string;
+  // Run 3 iterations
+  const candidateSets: Array<{
+    sequences: Array<{ sequence: Triplet[][]; timeRange: TimeRange; alphaCharCount: number; keyword: string }>;
+    overlapSeconds: number;
+    totalAlphaChars: number;
   }> = [];
 
-  // Greedy selection: pick one sequence per keyword
-  while (selected.length < TARGET_N && candidatesByKeyword.size > 0) {
-    let bestKeyword: string | null = null;
-    let bestCandidate: typeof selected[0] | null = null;
-    let bestScore = -Infinity;
-    let bestOverlap = 0;
+  for (let iteration = 0; iteration < 3; iteration++) {
+    console.log(`\n    Iteration ${iteration + 1}:`);
 
-    // For each remaining keyword, consider its best sequence
-    for (const [keyword, candidates] of candidatesByKeyword.entries()) {
-      const candidate = candidates[0]; // Best quality sequence for this keyword
+    // Create exhaustible pool of keywords with their frequencies
+    const keywordPool = Array.from(candidatesByKeyword.keys()).map(keyword => ({
+      keyword,
+      frequency: keywordFrequencies.get(keyword) || 0
+    }));
 
-      // Calculate total overlap with all selected sequences
-      let totalOverlapPercent = 0;
-      for (const selectedSeq of selected) {
-        const overlap = calculateOverlap(candidate.timeRange, selectedSeq.timeRange);
-        totalOverlapPercent += overlap;
+    const selected: Array<{
+      sequence: Triplet[][];
+      timeRange: TimeRange;
+      alphaCharCount: number;
+      keyword: string;
+    }> = [];
+
+    // Select TARGET_N sequences
+    while (selected.length < TARGET_N && keywordPool.length > 0) {
+      // Sort pool by frequency (rarest first)
+      keywordPool.sort((a, b) => a.frequency - b.frequency);
+
+      // Get 6 rarest keywords (or fewer if pool is small)
+      const rarestCount = Math.min(6, keywordPool.length);
+      const rarestKeywords = keywordPool.slice(0, rarestCount);
+
+      // Randomly pick one of the rarest
+      const chosenIndex = Math.floor(Math.random() * rarestKeywords.length);
+      const chosen = rarestKeywords[chosenIndex];
+
+      // Remove from pool
+      const poolIndex = keywordPool.indexOf(chosen);
+      keywordPool.splice(poolIndex, 1);
+
+      const candidates = candidatesByKeyword.get(chosen.keyword)!;
+
+      let selectedCandidate: typeof candidates[0];
+
+      if (selected.length === 0) {
+        // First sequence: pick randomly
+        selectedCandidate = candidates[Math.floor(Math.random() * candidates.length)];
+      } else {
+        // Subsequent sequences: pick one with least overlap
+        let bestCandidate = candidates[0];
+        let bestOverlap = Infinity;
+        let bestAlphaChars = 0;
+
+        for (const candidate of candidates) {
+          // Calculate total overlap with all previously selected
+          let totalOverlap = 0;
+          for (const prev of selected) {
+            const overlapStart = Math.max(candidate.timeRange.startSeconds, prev.timeRange.startSeconds);
+            const overlapEnd = Math.min(candidate.timeRange.endSeconds, prev.timeRange.endSeconds);
+            totalOverlap += Math.max(0, overlapEnd - overlapStart);
+          }
+
+          // Pick based on: lowest overlap, then highest alpha chars
+          if (totalOverlap < bestOverlap ||
+              (totalOverlap === bestOverlap && candidate.alphaCharCount > bestAlphaChars)) {
+            bestCandidate = candidate;
+            bestOverlap = totalOverlap;
+            bestAlphaChars = candidate.alphaCharCount;
+          }
+        }
+
+        selectedCandidate = bestCandidate;
       }
 
-      // Combined score: quality bonus - overlap penalty
-      const score = (candidate.qualityScore * QUALITY_WEIGHT)
-                    - (totalOverlapPercent * OVERLAP_PENALTY_WEIGHT);
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestKeyword = keyword;
-        bestCandidate = candidate;
-        bestOverlap = totalOverlapPercent;
-      }
+      selected.push(selectedCandidate);
+      console.log(`      ${selected.length}. "${chosen.keyword}" (freq: ${chosen.frequency}, chars: ${selectedCandidate.alphaCharCount})`);
     }
 
-    if (bestCandidate && bestKeyword) {
-      selected.push(bestCandidate);
-      candidatesByKeyword.delete(bestKeyword); // Remove this keyword group
+    // Score this set
+    const overlapSeconds = calculateTotalOverlapSeconds(selected);
+    const totalAlphaChars = selected.reduce((sum, s) => sum + s.alphaCharCount, 0);
 
-      const avgOverlap = selected.length > 1 ? (bestOverlap / (selected.length - 1)) * 100 : 0;
-      console.log(`    ${selected.length}. "${bestCandidate.keyword}" (quality: ${bestCandidate.qualityScore.toFixed(1)}, duration: ${bestCandidate.timeRange.duration.toFixed(1)}s, avg overlap: ${avgOverlap.toFixed(1)}%)`);
-    } else {
-      break; // No more keywords available
+    candidateSets.push({ sequences: selected, overlapSeconds, totalAlphaChars });
+    console.log(`      → Total overlap: ${overlapSeconds.toFixed(1)}s, Total chars: ${totalAlphaChars}`);
+  }
+
+  // Pick best set (lowest overlap, then highest chars, then coin flip)
+  console.log(`\n    Selecting best of 3 iterations:`);
+  let bestSet = candidateSets[0];
+  let bestIndex = 0;
+
+  for (let i = 1; i < candidateSets.length; i++) {
+    const current = candidateSets[i];
+
+    if (current.overlapSeconds < bestSet.overlapSeconds ||
+        (current.overlapSeconds === bestSet.overlapSeconds && current.totalAlphaChars > bestSet.totalAlphaChars) ||
+        (current.overlapSeconds === bestSet.overlapSeconds && current.totalAlphaChars === bestSet.totalAlphaChars && Math.random() < 0.5)) {
+      bestSet = current;
+      bestIndex = i;
     }
   }
 
-  console.log(`    Selected ${selected.length} sequences (${selected.length} unique keywords, minimized overlap)`);
+  console.log(`      Winner: Iteration ${bestIndex + 1} (overlap: ${bestSet.overlapSeconds.toFixed(1)}s, chars: ${bestSet.totalAlphaChars})`);
+  console.log(`    Selected ${bestSet.sequences.length} sequences`);
 
-  return selected.map(c => c.sequence);
+  return bestSet.sequences.map(s => s.sequence);
 }
 
 function deduplicateByFirstTripletFrame3LastWord(sequences: Triplet[][]): Triplet[][] {
@@ -801,11 +850,11 @@ export async function findAllTripletsOptimized(srtContent: string): Promise<Trip
   const entries = parseSRT(cleanSrtContent);
   console.log(`Parsed ${entries.length} SRT entries`);
 
-  const results = await findTripletsOptimized(entries);
+  const { results, keywordFrequencies } = await findTripletsOptimized(entries);
   console.log(`Found ${results.length} raw triplet sequences`);
 
-  // Use greedy selection with overlap minimization
-  const selected = selectSequencesWithMinimalOverlap(results);
+  // Use 3-iteration randomized selection with overlap minimization
+  const selected = selectSequencesWithMinimalOverlap(results, keywordFrequencies);
   console.log(`After selection: ${selected.length} sequences`);
 
   return selected;

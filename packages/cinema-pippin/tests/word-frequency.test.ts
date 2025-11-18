@@ -62,7 +62,7 @@ describe('Word Frequency Module', () => {
     const scoreHyphen = scoreWordByFrequency('test-word')
     const scoreNoHyphen = scoreWordByFrequency('testword')
     expect(scoreHyphen).toBe(scoreNoHyphen) // Should be the same
-  })
+  }, 10000) // 10s timeout for slow file load
 
   it('should normalize case (uppercase all lookups)', () => {
     const upper = scoreWordByFrequency('AND')

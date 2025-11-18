@@ -73,7 +73,7 @@ Starting **after T1 ends** (T1_F3_Index + 1), try all possible combinations:
 
 **Validation:** Must pass `isValidSubsequentTriplet()` with:
 - Keyword from T1
-- `minWords = 2` (T2 F3 must have ≥2 words)
+- `minWords = 1`, `maxWords = 5` (T2 F3 must have 1-5 words)
 
 ### 4. Search for Third Triplet (T3)
 Starting **after T2 ends** (T2_F3_Index + 1), try all possible combinations:
@@ -82,7 +82,7 @@ Starting **after T2 ends** (T2_F3_Index + 1), try all possible combinations:
 
 **Validation:** Must pass `isValidSubsequentTriplet()` with:
 - Keyword from T1
-- `minWords = 3` (T3 F3 must have ≥3 words)
+- `minWords = 6` (T3 F3 must have ≥6 words)
 
 ### 5. Deduplication
 Group all found sequences by **T1 F3 last word**. For each group:
@@ -158,12 +158,13 @@ Group all found sequences by **T1 F3 last word**. For each group:
 - Example: keyword `"you"` matches in `"You are here"` but NOT in `"Yours"`
 
 #### Frame 2 Requirements
-- Must end with: `.` `!` `?` `-` `;`
+- Must end with: `.` `!` `?` `-` `;` `,` **IF AND ONLY IF** Frame 3 starts with a lowercase letter
+- No punctuation requirement if Frame 3 starts with uppercase letter
 
 #### Frame 3 Requirements
 - Must end with **strong punctuation**: `.` `!` `?` `-` (excludes `;` `,` `:`)
-- **T2 F3:** Minimum 2 words
-- **T3 F3:** Minimum 3 words
+- **T2 F3:** 1-5 words (inclusive)
+- **T3 F3:** 6+ words (minimum)
 
 ---
 
@@ -181,12 +182,12 @@ FOR each possible T1 starting position (i = 1 to N):
       FOR each possible T2 starting position (after T1):
         FOR each filler count (0, 1, 2, 3, 4, 5, 6):
           Calculate T2 F2 and F3 indices
-          IF T2 is valid (with keyword, minWords=2):
+          IF T2 is valid (with keyword, minWords=1, maxWords=5):
 
             FOR each possible T3 starting position (after T2):
               FOR each filler count (0, 1, 2, 3, 4, 5, 6):
                 Calculate T3 F2 and F3 indices
-                IF T3 is valid (with keyword, minWords=3):
+                IF T3 is valid (with keyword, minWords=6):
 
                   ✅ Found valid sequence!
                   Add [T1, T2, T3] to results
@@ -385,11 +386,14 @@ Very rare keywords (appearing only in these 3 triplets) are treated the same as 
 
 ---
 
-**Document Version:** 1.6
-**Last Updated:** 2025-11-17
+**Document Version:** 1.9
+**Last Updated:** 2025-11-18
 **Code Reference:** `packages/cinema-pippin/src/triplet-finder.ts`
 
 ### Changelog
+- **v1.9 (2025-11-18):** Changed T2/T3 Frame 3 word count requirements - T2 F3 now requires 1-5 words (was ≥2), T3 F3 now requires ≥6 words (was ≥3)
+- **v1.8 (2025-11-18):** T2/T3 Frame 2 punctuation requirement now only applies IF Frame 3 starts with lowercase letter - no requirement if F3 starts with uppercase
+- **v1.7 (2025-11-18):** Added comma (`,`) to T2/T3 Frame 2 allowed ending punctuation - now accepts `.` `!` `?` `-` `;` `,`
 - **v1.6 (2025-11-17):** T2/T3 Frame 3 must end with strong punctuation only (`.` `!` `?` `-`) - excludes semicolon, comma, and colon
 - **v1.5 (2025-11-17):** Removed opening brackets from previous frame allowed punctuation - "(" and "[" no longer allowed, only closing brackets ")" and "]" allowed
 - **v1.4 (2025-11-17):** Major simplification - removed ALL minimum character requirements; T1 F3 now just requires at least one word (no punctuation or separator requirements); T1 F2 has no restrictions

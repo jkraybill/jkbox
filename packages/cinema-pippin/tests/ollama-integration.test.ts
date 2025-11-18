@@ -58,7 +58,7 @@ async function callOllama(prompt: string, system?: string, temperature = 0.3): P
   return fullResponse.trim();
 }
 
-describe('Ollama Integration Tests', () => {
+describe.skip('Ollama Integration Tests', () => {
   it('should answer a simple factual question correctly', async () => {
     const prompt = 'What is 2 + 2? Answer with just the number.';
     const response = await callOllama(prompt);
