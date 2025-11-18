@@ -46,6 +46,31 @@ export function getDurationSeconds(firstEntry: SRTEntry, thirdEntry: SRTEntry): 
   return Math.floor(end - start);
 }
 
+/**
+ * Check if a triplet overlaps in time with any previously selected triplets
+ * @param candidate - The triplet to check
+ * @param existing - Array of previously selected triplets
+ * @returns true if there is any time overlap, false otherwise
+ */
+export function hasTimeOverlap(candidate: SRTEntry[], existing: SRTEntry[][]): boolean {
+  // Get time range for candidate triplet (first frame start to last frame end)
+  const candidateStart = timeToSeconds(candidate[0].startTime);
+  const candidateEnd = timeToSeconds(candidate[candidate.length - 1].endTime);
+
+  // Check against all existing triplets
+  for (const existingTriplet of existing) {
+    const existingStart = timeToSeconds(existingTriplet[0].startTime);
+    const existingEnd = timeToSeconds(existingTriplet[existingTriplet.length - 1].endTime);
+
+    // Check for overlap: ranges overlap if one starts before the other ends
+    if (candidateStart < existingEnd && candidateEnd > existingStart) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function isSingleWordWithPunctuation(text: string): boolean {
   // Must be exactly one word followed by one punctuation mark
   // Word can contain letters and apostrophes

@@ -10,6 +10,7 @@ import {
   containsWordAsStandalone,
   countWords,
   isExcludedWord,
+  hasTimeOverlap,
 } from './triplet-utils.js';
 import { stripHtmlFromSrt } from './html-utils.js';
 
@@ -161,6 +162,7 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
       }
 
       const firstKeyword = extractLastWord(entries[f1Frame3Idx].text);
+      const triplet1Entries = entries.slice(f1Start, f1Frame3Idx + 1);
 
       // Find second triplets (start after first triplet ends)
       for (let f2Start = f1Frame3Idx + 1; f2Start < entries.length; f2Start++) {
@@ -174,6 +176,12 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
             continue;
           }
 
+          // Check for time overlap with T1
+          const triplet2Entries = entries.slice(f2Start, f2Frame3Idx + 1);
+          if (hasTimeOverlap(triplet2Entries, [triplet1Entries])) {
+            continue;
+          }
+
           // Find third triplets (start after second triplet ends)
           for (let f3Start = f2Frame3Idx + 1; f3Start < entries.length; f3Start++) {
             for (let f3Fillers = 0; f3Fillers <= 6; f3Fillers++) {
@@ -183,6 +191,12 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
               if (f3Frame3Idx >= entries.length) continue;
 
               if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, 3)) {
+                continue;
+              }
+
+              // Check for time overlap with T1 and T2
+              const triplet3Entries = entries.slice(f3Start, f3Frame3Idx + 1);
+              if (hasTimeOverlap(triplet3Entries, [triplet1Entries, triplet2Entries])) {
                 continue;
               }
 

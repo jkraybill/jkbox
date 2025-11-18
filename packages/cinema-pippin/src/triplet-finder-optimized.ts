@@ -9,6 +9,7 @@ import {
   extractLastWord,
   countWords,
   isExcludedWord,
+  hasTimeOverlap,
 } from './triplet-utils.js';
 import { scoreWordByFrequency } from './word-frequency.js';
 import { stripHtmlFromSrt } from './html-utils.js';
@@ -390,6 +391,9 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
     const searchStart2 = t1.f1Frame3 + 1;
     const searchEnd2 = Math.min(searchStart2 + MAX_SEARCH_WINDOW, entries.length - 2);
 
+    // Get T1 entries for overlap checking
+    const triplet1Entries = entries.slice(t1.f1Start, t1.f1Frame3 + 1);
+
     // Find second triplets using keyword index
     for (let f2Start = searchStart2; f2Start < searchEnd2; f2Start++) {
       // Quick bounds check: can we fit a minimal second triplet?
@@ -402,6 +406,12 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
         if (f2Frame3 >= entries.length) break;
 
         if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2, f2Frame3, keywordData, 2)) {
+          continue;
+        }
+
+        // Check for time overlap with T1
+        const triplet2Entries = entries.slice(f2Start, f2Frame3 + 1);
+        if (hasTimeOverlap(triplet2Entries, [triplet1Entries])) {
           continue;
         }
 
@@ -419,6 +429,12 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<Triplet[][]> 
             if (f3Frame3 >= entries.length) break;
 
             if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 3)) {
+              continue;
+            }
+
+            // Check for time overlap with T1 and T2
+            const triplet3Entries = entries.slice(f3Start, f3Frame3 + 1);
+            if (hasTimeOverlap(triplet3Entries, [triplet1Entries, triplet2Entries])) {
               continue;
             }
 
