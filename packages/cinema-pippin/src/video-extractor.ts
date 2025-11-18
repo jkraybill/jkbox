@@ -132,9 +132,10 @@ export function extractVideoSegment(
   // Middle section: multiply by 1.0 (original audio)
   // Last paddingSeconds: multiply by 0 (silent samples)
   const volumeThreshold = paddedDuration - paddingSeconds;
-  // Escape for shell: use double quotes around the whole filter, escape the expression single quotes
+  // Expression uses single quotes inside double quotes: "volume='expression':eval=frame"
+  // eval=frame is required for time-based expressions (t variable)
   const volumeExpr = `if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))`;
-  const audioFilter = `-af "volume=${volumeExpr}"`;
+  const audioFilter = `-af "volume='${volumeExpr}':eval=frame"`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
   // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
