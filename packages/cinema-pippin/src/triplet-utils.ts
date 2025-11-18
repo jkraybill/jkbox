@@ -198,6 +198,16 @@ export function isValidT1Frame3(text: string): boolean {
     return false;
   }
 
+  // Cannot end with ".." (looks incomplete/weird for punchline)
+  if (trimmed.endsWith('..')) {
+    return false;
+  }
+
+  // Cannot end with "," (incomplete sentence for punchline)
+  if (trimmed.endsWith(',')) {
+    return false;
+  }
+
   // Extract words (sequences of non-whitespace characters)
   const words = trimmed.split(/\s+/).filter(w => w.length > 0);
 

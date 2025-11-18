@@ -433,4 +433,18 @@ describe('isValidT1Frame3', () => {
     expect(isValidT1Frame3('   ')).toBe(false); // Only whitespace
     expect(isValidT1Frame3('\t\n')).toBe(false); // Only whitespace
   });
+
+  it('should reject text ending with ".."', () => {
+    expect(isValidT1Frame3('BANANA..')).toBe(false);
+    expect(isValidT1Frame3('the big BANANA..')).toBe(false);
+    expect(isValidT1Frame3('A BANANA..')).toBe(false);
+    expect(isValidT1Frame3('word..')).toBe(false);
+  });
+
+  it('should reject text ending with ","', () => {
+    expect(isValidT1Frame3('BANANA,')).toBe(false);
+    expect(isValidT1Frame3('the big BANANA,')).toBe(false);
+    expect(isValidT1Frame3('A BANANA,')).toBe(false);
+    expect(isValidT1Frame3('word,')).toBe(false);
+  });
 });
