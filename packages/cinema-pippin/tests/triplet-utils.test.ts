@@ -434,11 +434,12 @@ describe('isValidT1Frame3', () => {
     expect(isValidT1Frame3('\t\n')).toBe(false); // Only whitespace
   });
 
-  it('should reject text ending with ".."', () => {
-    expect(isValidT1Frame3('BANANA..')).toBe(false);
-    expect(isValidT1Frame3('the big BANANA..')).toBe(false);
-    expect(isValidT1Frame3('A BANANA..')).toBe(false);
-    expect(isValidT1Frame3('word..')).toBe(false);
+  it('should allow text ending with ".." (ellipsis common in film subtitles)', () => {
+    expect(isValidT1Frame3('BANANA..')).toBe(true);
+    expect(isValidT1Frame3('the big BANANA..')).toBe(true);
+    expect(isValidT1Frame3('A BANANA..')).toBe(true);
+    expect(isValidT1Frame3('word..')).toBe(true);
+    expect(isValidT1Frame3('spirits...')).toBe(true); // Ellipsis (...) also allowed
   });
 
   it('should reject text ending with ","', () => {
