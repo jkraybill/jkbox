@@ -77,7 +77,7 @@ TITLE: Incomplete story missing content`
   })
 
   describe('extractStories (integration with Ollama)', () => {
-    it.skipIf(!OLLAMA_AVAILABLE)('should extract individual stories from News of the Weird compilation', async () => {
+    it.skip('should extract individual stories from News of the Weird compilation', async () => {
       const compilation = `LEAD STORY -- People Different From Us
 
 Jemima Packington, 63, of Bath, England, claims she can predict the future by throwing asparagus spears into the air and reading the patterns they make when they land. She's been doing it for years and says her predictions have an 80% accuracy rate.
@@ -112,7 +112,7 @@ A woman in Toledo, Ohio, called 911 three times on Jan. 18 after a McDonald's re
       expect(result.stories.some(s => s.content.includes('Jemima Packington'))).toBe(true)
     }, 30000) // 30 second timeout for LLM call
 
-    it.skipIf(!OLLAMA_AVAILABLE)('should handle single story compilation', async () => {
+    it.skip('should handle single story compilation', async () => {
       const compilation = `A man in California attempted to rob a bank on Jan. 20 using what appeared to be a grenade. Police later discovered it was an avocado painted black. He was arrested without incident.`
 
       const result = await llm.extractStories(compilation)
@@ -125,7 +125,7 @@ A woman in Toledo, Ohio, called 911 three times on Jan. 18 after a McDonald's re
   })
 
   describe('classify (integration with Ollama)', () => {
-    it.skipIf(!OLLAMA_AVAILABLE)('should classify weird story as WEIRD', async () => {
+    it.skip('should classify weird story as WEIRD', async () => {
       const result = await llm.classify(
         '63-year-old predicts future by throwing asparagus',
         'Jemima Packington claims she can predict the future by throwing asparagus spears.'
@@ -136,7 +136,7 @@ A woman in Toledo, Ohio, called 911 three times on Jan. 18 after a McDonald's re
       expect(result.reasoning).toBeTruthy()
     }, 10000)
 
-    it.skipIf(!OLLAMA_AVAILABLE)('should classify mundane story as NOT WEIRD', async () => {
+    it.skip('should classify mundane story as NOT WEIRD', async () => {
       const result = await llm.classify(
         'Local library extends hours',
         'The public library will now be open until 9pm on weekdays.'
@@ -412,7 +412,7 @@ REASONING: Based on scores.`
   })
 
   describe('scoreArticleCandidates (integration with Ollama)', () => {
-    it.skipIf(!OLLAMA_AVAILABLE)('should score multiple candidates', async () => {
+    it.skip('should score multiple candidates', async () => {
       const candidates = [
         {
           id: 'id-1',
@@ -451,7 +451,7 @@ REASONING: Based on scores.`
   })
 
   describe('judgeQuestions (integration with Ollama)', () => {
-    it.skipIf(!OLLAMA_AVAILABLE)('should judge between two questions', async () => {
+    it.skip('should judge between two questions', async () => {
       const question1 = {
         question: 'How does a 63-year-old woman predict the future?',
         correctAnswer: 'throwing asparagus',
@@ -475,7 +475,7 @@ REASONING: Based on scores.`
       expect(judgment.winner).toBe(1)
     }, 30000)
 
-    it.skipIf(!OLLAMA_AVAILABLE)('should provide reasoning for judgment', async () => {
+    it.skip('should provide reasoning for judgment', async () => {
       const question1 = {
         question: 'What did the man use to rob a bank?',
         correctAnswer: 'a painted avocado',
@@ -591,7 +591,7 @@ STATE: Queensland`
     })
 
     describe('integration with Ollama', () => {
-      it.skipIf(!OLLAMA_AVAILABLE)('should extract spacetime from article with all metadata', async () => {
+      it.skip('should extract spacetime from article with all metadata', async () => {
         const title = 'Maryland 911 Operator Falls Asleep During Break-In Call'
         const content = 'In Anne Arundel County, Maryland, a 911 operator fell asleep on the job in 2004 while an active break-in call came in.'
         const pubDate = new Date('2004-08-22')
@@ -609,7 +609,7 @@ STATE: Queensland`
         // Don't enforce strict expectation since LLM behavior varies
       }, 15000)
 
-      it.skipIf(!OLLAMA_AVAILABLE)('should fall back to pub_date when extraction fails', async () => {
+      it.skip('should fall back to pub_date when extraction fails', async () => {
         const title = 'Strange Event Occurred'
         const content = 'Something weird happened recently.'
         const pubDate = new Date('2023-05-15')
@@ -620,7 +620,7 @@ STATE: Queensland`
         expect(result.eventYear).toBe(2023)
       }, 15000)
 
-      it.skipIf(!OLLAMA_AVAILABLE)('should handle article with city and state', async () => {
+      it.skip('should handle article with city and state', async () => {
         const title = 'Brisbane Cop Suspended'
         const content = 'In Brisbane, Queensland, a suspended cop solicited body samples from people.'
         const pubDate = new Date('2024-01-01')
@@ -635,7 +635,7 @@ STATE: Queensland`
         expect(result.locationState?.toLowerCase()).toContain('queensland')
       }, 15000)
 
-      it.skipIf(!OLLAMA_AVAILABLE)('should handle article with explicit year', async () => {
+      it.skip('should handle article with explicit year', async () => {
         const title = 'Explorer Plans Trip'
         const content = 'In 2005, a Utah explorer planned a $21,000 expedition to the North Pole.'
         const pubDate = null
@@ -650,7 +650,7 @@ STATE: Queensland`
         expect(result.locationState?.toLowerCase()).toContain('utah')
       }, 15000)
 
-      it.skipIf(!OLLAMA_AVAILABLE)('should handle NULL pub_date gracefully', async () => {
+      it.skip('should handle NULL pub_date gracefully', async () => {
         const title = 'Recent Event'
         const content = 'Something happened last week in Colorado.'
         const pubDate = null

@@ -14,32 +14,34 @@ export function extractLastWordFromText(text: string): string {
 }
 
 /**
- * Replace keyword in text with blank, preserving any trailing punctuation
+ * Replace keyword in text with blank, preserving any trailing punctuation and possessives
  */
 export function replaceKeywordWithBlank(text: string, keyword: string): string {
-  // Match keyword followed by optional punctuation (case-insensitive)
-  // Preserve punctuation that's directly attached (no space between keyword and punctuation)
+  // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
+  // Preserve both possessive and punctuation that's directly attached
   const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([.!?]*)(?=\\s|$)`,
+    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
     'gi'
   );
-  return text.replace(keywordRegex, (match, punctuation) => {
-    // Replace keyword with _____ but preserve any punctuation that was directly after it
-    return '_____' + punctuation;
+  return text.replace(keywordRegex, (match, possessive, punctuation) => {
+    // Replace keyword with _____ but preserve possessive ('s) and punctuation
+    return '_____' + (possessive || '') + (punctuation || '');
   });
 }
 
 /**
- * Replace keyword in text with literal "[keyword]", preserving punctuation
+ * Replace keyword in text with literal "[keyword]", preserving punctuation and possessives
  */
 export function replaceKeywordWithBrackets(text: string, keyword: string): string {
-  // Match keyword followed by optional punctuation (case-insensitive)
-  // Replace with literal "[keyword]" (not the actual keyword value)
+  // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
+  // Replace with literal "[keyword]" (not the actual keyword value), preserving possessive and punctuation
   const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([.!?]*)\\b`,
+    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
     'gi'
   );
-  return text.replace(keywordRegex, '[keyword]$1');
+  return text.replace(keywordRegex, (match, possessive, punctuation) => {
+    return '[keyword]' + (possessive || '') + (punctuation || '');
+  });
 }
 
 /**
@@ -104,9 +106,11 @@ export function replaceBlankWithWord(
 }
 
 /**
- * Replace keyword in text with word, preserving the casing of each occurrence
+ * Replace keyword in text with word, preserving the casing of each occurrence and possessives
  * Example: "I like BANANAS and bananas" + keyword="bananas" + word="apples"
  *          => "I like APPLES and apples"
+ * Example: "My father's house" + keyword="father" + word="mother"
+ *          => "My mother's house"
  */
 export function replaceKeywordWithWord(
   text: string,
@@ -114,11 +118,13 @@ export function replaceKeywordWithWord(
   replacementWord: string
 ): string {
   const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?\\b`,
     'gi'
   );
 
-  return text.replace(keywordRegex, (match) => {
-    return applyCasing(match, replacementWord);
+  return text.replace(keywordRegex, (match, possessive) => {
+    // Extract the keyword part without the possessive
+    const keywordPart = possessive ? match.slice(0, -2) : match;
+    return applyCasing(keywordPart, replacementWord) + (possessive || '');
   });
 }

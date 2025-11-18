@@ -47,6 +47,15 @@ describe('Keyword Utils', () => {
       expect(replaceKeywordWithBlank('I love Bananas', 'bananas')).toBe('I love _____');
     });
 
+    it('should replace possessive forms (keyword + \'s)', () => {
+      expect(replaceKeywordWithBlank('The apartment above my father\'s.', 'father')).toBe('The apartment above my _____\'s.');
+      expect(replaceKeywordWithBlank('My Father\'s house', 'father')).toBe('My _____\'s house');
+    });
+
+    it('should replace both possessive and non-possessive occurrences', () => {
+      expect(replaceKeywordWithBlank('My father and my father\'s house', 'father')).toBe('My _____ and my _____\'s house');
+    });
+
     it('should only replace whole words', () => {
       expect(replaceKeywordWithBlank('I love bananas and banana bread', 'banana')).toBe(
         'I love bananas and _____ bread'
@@ -84,6 +93,11 @@ describe('Keyword Utils', () => {
       expect(replaceKeywordWithBrackets('Bananas are great. I love bananas.', 'bananas')).toBe(
         '[keyword] are great. I love [keyword].'
       );
+    });
+
+    it('should preserve possessive forms', () => {
+      expect(replaceKeywordWithBrackets('My father\'s house', 'father')).toBe('My [keyword]\'s house');
+      expect(replaceKeywordWithBrackets('The apartment above my father\'s.', 'father')).toBe('The apartment above my [keyword]\'s.');
     });
   });
 
@@ -134,6 +148,24 @@ describe('Keyword Utils', () => {
     it('should only replace whole words', () => {
       expect(replaceKeywordWithWord('I love bananas and banana bread', 'banana', 'apple')).toBe(
         'I love bananas and apple bread'
+      );
+    });
+
+    it('should replace possessive forms (father → father\'s)', () => {
+      expect(replaceKeywordWithWord('The apartment above my father\'s.', 'father', 'mother')).toBe(
+        'The apartment above my mother\'s.'
+      );
+    });
+
+    it('should replace possessive forms with case preservation', () => {
+      expect(replaceKeywordWithWord('Above my Father\'s house.', 'father', 'mother')).toBe(
+        'Above my Mother\'s house.'
+      );
+    });
+
+    it('should replace possessive forms alongside non-possessive', () => {
+      expect(replaceKeywordWithWord('My father and my father\'s house', 'father', 'mother')).toBe(
+        'My mother and my mother\'s house'
       );
     });
   });
