@@ -4,19 +4,19 @@ import { blankWithSpaces, replaceBlankedText } from '../src/blanking-utils.js';
 describe('Blanking Logic', () => {
   describe('blankWithSpaces', () => {
     it('should replace all non-space characters with underscores', () => {
-      expect(blankWithSpaces("I'll be back!")).toBe("____ __ _____");
+      expect(blankWithSpaces("I'll be back!")).toBe("____ __ ____");
     });
 
     it('should handle single words', () => {
-      expect(blankWithSpaces("Hello")).toBe("_____");
+      expect(blankWithSpaces("Hello")).toBe("____");
     });
 
     it('should handle multiple spaces', () => {
-      expect(blankWithSpaces("Hello  world")).toBe("_____  _____");
+      expect(blankWithSpaces("Hello  world")).toBe("____  ____");
     });
 
     it('should handle punctuation', () => {
-      expect(blankWithSpaces("What the hell?!")).toBe("____ ___ ______");
+      expect(blankWithSpaces("What the hell?!")).toBe("____ ___ ____");
     });
 
     it('should handle empty strings', () => {
@@ -29,8 +29,25 @@ describe('Blanking Logic', () => {
 
     it('should blank text across newlines correctly', () => {
       // \S matches non-whitespace, which excludes newlines
-      // So "Hello\nWorld" becomes "_____\n_____" (newline preserved)
-      expect(blankWithSpaces("Hello\nWorld")).toBe("_____\n_____");
+      // So "Hello\nWorld" becomes "____\n____" (newline preserved)
+      expect(blankWithSpaces("Hello\nWorld")).toBe("____\n____");
+    });
+
+    it('should condense underscore sequences longer than 4 down to 4', () => {
+      expect(blankWithSpaces("Hello")).toBe("____");  // 5 chars -> 4 underscores
+      expect(blankWithSpaces("bananas")).toBe("____");  // 7 chars -> 4 underscores
+      expect(blankWithSpaces("extraordinary")).toBe("____");  // 13 chars -> 4 underscores
+    });
+
+    it('should preserve sequences of 4 or fewer underscores', () => {
+      expect(blankWithSpaces("I")).toBe("_");
+      expect(blankWithSpaces("am")).toBe("__");
+      expect(blankWithSpaces("the")).toBe("___");
+      expect(blankWithSpaces("best")).toBe("____");
+    });
+
+    it('should condense within multi-word phrases', () => {
+      expect(blankWithSpaces("I love extraordinary bananas")).toBe("_ ____ ____ ____");
     });
   });
 
@@ -56,7 +73,7 @@ Hello there.
 
 2
 00:00:02,000 --> 00:00:04,000
-____ __ _____`;
+____ __ ____`;
 
       const result = replaceBlankedText(scene, "I am great!");
       expect(result).toContain("I am great!");
@@ -107,7 +124,7 @@ ____ __ _____`;
       const originalText = "I'll be back!";
       const blanked = blankWithSpaces(originalText);
 
-      expect(blanked).toBe("____ __ _____");
+      expect(blanked).toBe("____ __ ____");
 
       const scene = `Frame:\n${blanked}`;
       const replacement = "Yes I will!";
@@ -123,12 +140,12 @@ ____ __ _____`;
 But I prefer apples.`;
 
       const lines = originalFrame.split('\n');
-      const blankedText = blankWithSpaces(lines[2]); // "But I prefer apples." -> "___ _ ______ _______"
+      const blankedText = blankWithSpaces(lines[2]); // "But I prefer apples." -> "___ _ ____ ____"
       const blankedFrame = [lines[0], lines[1], blankedText].join('\n');
 
       expect(blankedFrame).toBe(`4
 00:00:06,500 --> 00:00:08,000
-___ _ ______ _______`);
+___ _ ____ ____`);
 
       // Now replace with winning phrase
       const scene = `3

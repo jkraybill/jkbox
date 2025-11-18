@@ -1298,12 +1298,12 @@ export async function judgeTriplet(
   console.log(finalScene1);
 
   // Scene 2 with T1 winner keyword replacement AND T2 winner phrase
-  const finalScene2 = blankedSecondScene.replace(/_____/g, bestPhrase);
+  const finalScene2 = replaceBlankedText(blankedSecondScene, bestPhrase);
   console.log('\n📽️  SCENE 2 (T1 keyword + T2 Winner: "' + bestPhrase + '"):');
   console.log(finalScene2);
 
   // Scene 3 with T1 winner keyword replacement AND T3 winner phrase
-  const finalScene3 = blankedThirdScene.replace(/_____/g, bestPhraseT3);
+  const finalScene3 = replaceBlankedText(blankedThirdScene, bestPhraseT3);
   console.log('\n📽️  SCENE 3 (T1 keyword + T3 Winner: "' + bestPhraseT3 + '"):');
   console.log(finalScene3);
 

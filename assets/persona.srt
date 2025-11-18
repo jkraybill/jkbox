@@ -1,0 +1,3330 @@
+1
+00:07:22,589 --> 00:07:24,798
+<font face="sans-serif" size="71">You wished
+to speak to me, Doctor?</font>
+
+2
+00:07:24,966 --> 00:07:27,384
+<font face="sans-serif" size="71">Have you seen Mrs. Vogler yet,
+Sister Alma?</font>
+
+3
+00:07:27,510 --> 00:07:28,510
+<font face="sans-serif" size="71">No, not yet.</font>
+
+4
+00:07:28,637 --> 00:07:30,721
+<font face="sans-serif" size="71">Let me explain her situation</font>
+
+5
+00:07:30,847 --> 00:07:34,475
+<font face="sans-serif" size="71">and why you've been
+hired to care for her.</font>
+
+6
+00:07:35,435 --> 00:07:37,936
+<font face="sans-serif" size="71">Mrs. Vogler is an actress,
+as you know.</font>
+
+7
+00:07:38,063 --> 00:07:41,440
+<font face="sans-serif" size="71">In the middle of her last
+performance of Electra,</font>
+
+8
+00:07:41,941 --> 00:07:46,153
+<font face="sans-serif" size="71">she fell silent and looked
+around as if in surprise.</font>
+
+9
+00:07:46,279 --> 00:07:48,906
+<font face="sans-serif" size="71">She was silent
+for over a minute.</font>
+
+10
+00:08:01,753 --> 00:08:04,338
+<font face="sans-serif" size="71">She apologized
+to her colleagues afterward,</font>
+
+11
+00:08:04,506 --> 00:08:07,174
+<font face="sans-serif" size="71">saying she'd felt
+a sudden urge to laugh.</font>
+
+12
+00:08:07,509 --> 00:08:09,677
+<font face="sans-serif" size="71">The next day
+the theater called</font>
+
+13
+00:08:09,844 --> 00:08:12,596
+<font face="sans-serif" size="71">to ask if she'd forgotten
+about rehearsal.</font>
+
+14
+00:08:12,722 --> 00:08:16,350
+<font face="sans-serif" size="71">The maid went in her room
+and found her still in bed.</font>
+
+15
+00:08:16,518 --> 00:08:19,770
+<font face="sans-serif" size="71">She was awake but wouldn't
+answer questions or move.</font>
+
+16
+00:08:20,980 --> 00:08:23,774
+<font face="sans-serif" size="71">This condition's gone on
+for three months now.</font>
+
+17
+00:08:23,900 --> 00:08:26,652
+<font face="sans-serif" size="71">She's been given
+every conceivable test.</font>
+
+18
+00:08:26,945 --> 00:08:28,862
+<font face="sans-serif" size="71">The result is clear:</font>
+
+19
+00:08:28,988 --> 00:08:32,491
+<font face="sans-serif" size="71">She's perfectly healthy,
+both mentally and physically.</font>
+
+20
+00:08:32,617 --> 00:08:36,328
+<font face="sans-serif" size="71">And it's not a question
+of some hysterical reaction either.</font>
+
+21
+00:08:36,454 --> 00:08:38,914
+<font face="sans-serif" size="71">Any questions,
+Sister Alma?</font>
+
+22
+00:08:39,374 --> 00:08:43,127
+<font face="sans-serif" size="71">If not, you can go
+see Mrs. Vogler now.</font>
+
+23
+00:08:51,177 --> 00:08:53,220
+<font face="sans-serif" size="71">Hello, Mrs. Vogler.</font>
+
+24
+00:08:54,723 --> 00:08:56,682
+<font face="sans-serif" size="71">I'm Sister Alma.</font>
+
+25
+00:08:56,808 --> 00:09:00,310
+<font face="sans-serif" size="71">I've been hired to take care
+of you for a while.</font>
+
+26
+00:09:02,480 --> 00:09:05,482
+<font face="sans-serif" size="71">Perhaps I should tell you
+a bit about myself.</font>
+
+27
+00:09:05,608 --> 00:09:08,235
+<font face="sans-serif" size="71">I'm 25 years old,
+and I'm engaged.</font>
+
+28
+00:09:08,528 --> 00:09:11,697
+<font face="sans-serif" size="71">I got my nursing certificate
+two years ago.</font>
+
+29
+00:09:12,699 --> 00:09:15,075
+<font face="sans-serif" size="71">My parents have
+a farm in the country.</font>
+
+30
+00:09:15,910 --> 00:09:19,455
+<font face="sans-serif" size="71">My mother was a nurse too,
+before she got married.</font>
+
+31
+00:09:21,166 --> 00:09:24,918
+<font face="sans-serif" size="71">I should go get your dinner tray...
+fried liver and fruit salad.</font>
+
+32
+00:09:25,128 --> 00:09:27,171
+<font face="sans-serif" size="71">It looked quite good.</font>
+
+33
+00:09:27,922 --> 00:09:31,842
+<font face="sans-serif" size="71">Shall I raise this end up?
+Are you all right like that?</font>
+
+34
+00:09:38,433 --> 00:09:42,060
+<font face="sans-serif" size="71">Sister Alma,
+what's your first impression?</font>
+
+35
+00:09:43,021 --> 00:09:45,689
+<font face="sans-serif" size="71">I don't know
+what to say, Doctor.</font>
+
+36
+00:09:46,107 --> 00:09:49,526
+<font face="sans-serif" size="71">At first her face looks soft,
+almost childish,</font>
+
+37
+00:09:49,652 --> 00:09:51,987
+<font face="sans-serif" size="71">but then
+you see her eyes...</font>
+
+38
+00:09:52,530 --> 00:09:54,948
+<font face="sans-serif" size="71">Her expression's so hard.</font>
+
+39
+00:09:55,825 --> 00:09:57,826
+<font face="sans-serif" size="71">Perhaps I shouldn't...</font>
+
+40
+00:09:57,952 --> 00:10:00,120
+<font face="sans-serif" size="71">What were you going to say?</font>
+
+41
+00:10:00,413 --> 00:10:02,956
+<font face="sans-serif" size="71">I was thinking I should
+turn down the assignment.</font>
+
+42
+00:10:03,082 --> 00:10:05,626
+<font face="sans-serif" size="71">Why? Did something
+frighten you?</font>
+
+43
+00:10:05,794 --> 00:10:07,878
+<font face="sans-serif" size="71">No, not exactly,</font>
+
+44
+00:10:08,004 --> 00:10:11,715
+<font face="sans-serif" size="71">but perhaps Mrs. Vogler
+should have an older nurse,</font>
+
+45
+00:10:11,841 --> 00:10:13,884
+<font face="sans-serif" size="71">one with more life experience.</font>
+
+46
+00:10:14,010 --> 00:10:17,304
+<font face="sans-serif" size="71">I might not be able to manage.
+- Manage? In what way?</font>
+
+47
+00:10:17,430 --> 00:10:19,640
+<font face="sans-serif" size="71">- Mentally.
+- Mentally?</font>
+
+48
+00:10:20,266 --> 00:10:24,102
+<font face="sans-serif" size="71">If she's made a conscious
+decision not to speak or move,</font>
+
+49
+00:10:24,229 --> 00:10:26,647
+<font face="sans-serif" size="71">which must be the case,
+since she's healthy...</font>
+
+50
+00:10:26,773 --> 00:10:28,398
+<font face="sans-serif" size="71">Then?</font>
+
+51
+00:10:28,525 --> 00:10:31,735
+<font face="sans-serif" size="71">Then that shows
+great mental strength.</font>
+
+52
+00:10:31,861 --> 00:10:33,862
+<font face="sans-serif" size="71">I may not be up to it.</font>
+
+53
+00:10:35,824 --> 00:10:38,534
+<font face="sans-serif" size="71">I thought you might want
+to see the twilight.</font>
+
+54
+00:10:38,660 --> 00:10:40,702
+<font face="sans-serif" size="71">I can draw
+the curtains later.</font>
+
+55
+00:10:43,665 --> 00:10:45,707
+<font face="sans-serif" size="71">Shall I turn on the radio?</font>
+
+56
+00:10:45,959 --> 00:10:48,210
+<font face="sans-serif" size="71">I think there's a play on.</font>
+
+57
+00:10:50,046 --> 00:10:52,673
+<font face="sans-serif" size="71">Forgive me, darling.</font>
+
+58
+00:10:53,132 --> 00:10:55,968
+<font face="sans-serif" size="71">You must forgive me.</font>
+
+59
+00:10:56,135 --> 00:10:59,888
+<font face="sans-serif" size="71">All I want
+is your forgiveness.</font>
+
+60
+00:11:01,266 --> 00:11:05,519
+<font face="sans-serif" size="71">What are you laughing about?
+ls the actress so funny?</font>
+
+61
+00:11:06,187 --> 00:11:10,274
+<font face="sans-serif" size="71">What do you know
+of mercy? Well?</font>
+
+62
+00:11:11,776 --> 00:11:14,278
+<font face="sans-serif" size="71">What do you know
+of mercy?</font>
+
+63
+00:11:19,284 --> 00:11:22,160
+<font face="sans-serif" size="71">I don't understand
+those sorts of things.</font>
+
+64
+00:11:22,954 --> 00:11:25,122
+<font face="sans-serif" size="71">I enjoy films
+and the theater,</font>
+
+65
+00:11:25,248 --> 00:11:27,875
+<font face="sans-serif" size="71">but I'm afraid
+I don't go very often.</font>
+
+66
+00:11:28,042 --> 00:11:31,044
+<font face="sans-serif" size="71">I have tremendous
+admiration for artists.</font>
+
+67
+00:11:31,713 --> 00:11:35,799
+<font face="sans-serif" size="71">I think art is enormously
+important in life,</font>
+
+68
+00:11:35,925 --> 00:11:40,053
+<font face="sans-serif" size="71">especially for those struggling
+for one reason or another.</font>
+
+69
+00:11:41,472 --> 00:11:46,143
+<font face="sans-serif" size="71">But I'm skating on thin ice,
+telling you about such things.</font>
+
+70
+00:11:46,436 --> 00:11:48,812
+<font face="sans-serif" size="71">Let's see
+if I can find some music.</font>
+
+71
+00:11:50,148 --> 00:11:51,899
+<font face="sans-serif" size="71">Is that all right?</font>
+
+72
+00:11:54,694 --> 00:11:56,987
+<font face="sans-serif" size="71">Good night, then.
+Sleep well.</font>
+
+73
+00:13:48,224 --> 00:13:50,100
+<font face="sans-serif" size="71">Damn it.</font>
+
+74
+00:13:58,026 --> 00:13:59,735
+<font face="sans-serif" size="71">It's funny.</font>
+
+75
+00:14:00,403 --> 00:14:02,988
+<font face="sans-serif" size="71">You can go about
+as you please...</font>
+
+76
+00:14:03,740 --> 00:14:06,074
+<font face="sans-serif" size="71">doing almost anything
+you please.</font>
+
+77
+00:14:09,120 --> 00:14:12,664
+<font face="sans-serif" size="71">I'll marry Karl-Henrik
+and we'll have a couple kids,</font>
+
+78
+00:14:12,790 --> 00:14:14,833
+<font face="sans-serif" size="71">whom I'll raise.</font>
+
+79
+00:14:15,793 --> 00:14:18,879
+<font face="sans-serif" size="71">It's all decided.
+It's inside me.</font>
+
+80
+00:14:19,714 --> 00:14:22,257
+<font face="sans-serif" size="71">I don't even have
+to think about it.</font>
+
+81
+00:14:23,384 --> 00:14:25,635
+<font face="sans-serif" size="71">It's a great feeling
+of security.</font>
+
+82
+00:14:26,763 --> 00:14:29,931
+<font face="sans-serif" size="71">I have a job
+I like and enjoy.</font>
+
+83
+00:14:31,225 --> 00:14:32,934
+<font face="sans-serif" size="71">That's good too...</font>
+
+84
+00:14:33,686 --> 00:14:35,771
+<font face="sans-serif" size="71">but in another way.</font>
+
+85
+00:14:36,647 --> 00:14:38,398
+<font face="sans-serif" size="71">But it's good.</font>
+
+86
+00:14:38,900 --> 00:14:40,400
+<font face="sans-serif" size="71">Yes...</font>
+
+87
+00:14:42,278 --> 00:14:43,904
+<font face="sans-serif" size="71">it's good.</font>
+
+88
+00:14:51,412 --> 00:14:54,498
+<font face="sans-serif" size="71">I wonder what's really
+wrong with her.</font>
+
+89
+00:14:57,418 --> 00:14:59,419
+<font face="sans-serif" size="71">Elisabet Vogler.</font>
+
+90
+00:16:40,605 --> 00:16:43,523
+<font face="sans-serif" size="71">Mrs. Vogler, would you like me
+to open the letter?</font>
+
+91
+00:16:50,573 --> 00:16:52,449
+<font face="sans-serif" size="71">Shall I read it?</font>
+
+92
+00:16:58,331 --> 00:17:00,457
+<font face="sans-serif" size="71">Shall I read it to you?</font>
+
+93
+00:17:08,966 --> 00:17:10,759
+<font face="sans-serif" size="71">"Dearest Elisabet,</font>
+
+94
+00:17:11,260 --> 00:17:14,721
+<font face="sans-serif" size="71">since I'm not allowed
+to see you, I'm writing instead.</font>
+
+95
+00:17:14,889 --> 00:17:18,683
+<font face="sans-serif" size="71">If you don't wish to read
+my letter, you can ignore it.</font>
+
+96
+00:17:20,561 --> 00:17:25,232
+<font face="sans-serif" size="71">But I can't help trying
+to contact you this way,</font>
+
+97
+00:17:25,399 --> 00:17:28,735
+<font face="sans-serif" size="71">as I'm tormented
+by a persistent question:</font>
+
+98
+00:17:28,945 --> 00:17:31,571
+<font face="sans-serif" size="71">Have I done you harm
+in some way?</font>
+
+99
+00:17:31,697 --> 00:17:34,658
+<font face="sans-serif" size="71">Have I unknowingly
+hurt you somehow?</font>
+
+100
+00:17:35,534 --> 00:17:39,579
+<font face="sans-serif" size="71">Was there some terrible
+misunderstanding between us?"</font>
+
+101
+00:17:45,711 --> 00:17:48,171
+<font face="sans-serif" size="71">Should I really go on?</font>
+
+102
+00:17:56,555 --> 00:17:59,766
+<font face="sans-serif" size="71">"As far as I know,
+we've been happy recently.</font>
+
+103
+00:17:59,892 --> 00:18:01,893
+<font face="sans-serif" size="71">Surely we've never been...</font>
+
+104
+00:18:02,603 --> 00:18:04,437
+<font face="sans-serif" size="71">so close.</font>
+
+105
+00:18:05,982 --> 00:18:08,608
+<font face="sans-serif" size="71">Do you remember saying,</font>
+
+106
+00:18:08,901 --> 00:18:11,194
+<font face="sans-serif" size="71">'I'm only just beginning
+to understand</font>
+
+107
+00:18:11,320 --> 00:18:13,571
+<font face="sans-serif" size="71">what it means
+to be married'?</font>
+
+108
+00:18:13,698 --> 00:18:15,699
+<font face="sans-serif" size="71">'You've taught me..."'</font>
+
+109
+00:18:16,367 --> 00:18:18,451
+<font face="sans-serif" size="71">I can't make it out.</font>
+
+110
+00:18:19,287 --> 00:18:22,122
+<font face="sans-serif" size="71">"'You've taught..." '
+Now I see.</font>
+
+111
+00:18:22,498 --> 00:18:26,001
+<font face="sans-serif" size="71">"'You've taught me
+that we must see each other</font>
+
+112
+00:18:26,127 --> 00:18:29,045
+<font face="sans-serif" size="71">as two anxious children</font>
+
+113
+00:18:29,171 --> 00:18:33,174
+<font face="sans-serif" size="71">full of goodwill
+and the best of intentions</font>
+
+114
+00:18:33,884 --> 00:18:37,595
+<font face="sans-serif" size="71">but gov... "'
+Now I see.</font>
+
+115
+00:18:37,722 --> 00:18:42,142
+<font face="sans-serif" size="71">"'...governed by forces
+we can only partially control.'</font>
+
+116
+00:18:42,852 --> 00:18:45,478
+<font face="sans-serif" size="71">Do you remember
+saying all that?</font>
+
+117
+00:18:46,939 --> 00:18:49,316
+<font face="sans-serif" size="71">We were walking
+in the woods,</font>
+
+118
+00:18:49,442 --> 00:18:52,360
+<font face="sans-serif" size="71">and you stopped and grabbed
+the belt of my coat..."</font>
+
+119
+00:19:00,536 --> 00:19:03,496
+<font face="sans-serif" size="71">There was a picture
+with the letter.</font>
+
+120
+00:19:04,332 --> 00:19:08,001
+<font face="sans-serif" size="71">A picture of your son.
+I don't know if...</font>
+
+121
+00:19:08,961 --> 00:19:11,046
+<font face="sans-serif" size="71">Do you want it,
+Mrs. Vogler?</font>
+
+122
+00:19:13,007 --> 00:19:15,216
+<font face="sans-serif" size="71">He looks awfully cute.</font>
+
+123
+00:19:47,500 --> 00:19:50,418
+<font face="sans-serif" size="71">Elisabet, I don't think
+there's any point</font>
+
+124
+00:19:50,544 --> 00:19:52,962
+<font face="sans-serif" size="71">in your staying here
+in the hospital.</font>
+
+125
+00:19:53,172 --> 00:19:55,256
+<font face="sans-serif" size="71">It's just hurting you
+to be here.</font>
+
+126
+00:19:55,383 --> 00:19:57,550
+<font face="sans-serif" size="71">Since you don't want
+to go home,</font>
+
+127
+00:19:57,676 --> 00:19:59,844
+<font face="sans-serif" size="71">I suggest you
+and Sister Alma move out</font>
+
+128
+00:19:59,970 --> 00:20:02,055
+<font face="sans-serif" size="71">to my summer place
+by the sea.</font>
+
+129
+00:20:04,225 --> 00:20:06,559
+<font face="sans-serif" size="71">You think
+I don't understand?</font>
+
+130
+00:20:07,061 --> 00:20:09,854
+<font face="sans-serif" size="71">The hopeless dream
+of being.</font>
+
+131
+00:20:09,980 --> 00:20:12,273
+<font face="sans-serif" size="71">Not seeming to be,
+but being.</font>
+
+132
+00:20:14,402 --> 00:20:18,321
+<font face="sans-serif" size="71">Conscious and awake
+at every moment.</font>
+
+133
+00:20:19,573 --> 00:20:22,742
+<font face="sans-serif" size="71">At the same time, the chasm
+between what you are to others</font>
+
+134
+00:20:22,910 --> 00:20:24,953
+<font face="sans-serif" size="71">and what you are
+to yourself.</font>
+
+135
+00:20:25,079 --> 00:20:28,331
+<font face="sans-serif" size="71">The feeling of vertigo,
+and the constant hunger</font>
+
+136
+00:20:28,457 --> 00:20:31,084
+<font face="sans-serif" size="71">to be unmasked
+once and for all.</font>
+
+137
+00:20:31,877 --> 00:20:35,255
+<font face="sans-serif" size="71">To be seen through,
+cut down...</font>
+
+138
+00:20:36,048 --> 00:20:38,258
+<font face="sans-serif" size="71">perhaps even annihilated.</font>
+
+139
+00:20:39,718 --> 00:20:43,221
+<font face="sans-serif" size="71">Every tone of voice a lie,
+every gesture a falsehood,</font>
+
+140
+00:20:43,347 --> 00:20:45,390
+<font face="sans-serif" size="71">every smile a grimace.</font>
+
+141
+00:20:46,434 --> 00:20:48,685
+<font face="sans-serif" size="71">Commit suicide?</font>
+
+142
+00:20:49,145 --> 00:20:51,938
+<font face="sans-serif" size="71">No, too nasty.</font>
+
+143
+00:20:53,023 --> 00:20:55,108
+<font face="sans-serif" size="71">One doesn't do
+things like that.</font>
+
+144
+00:20:55,234 --> 00:20:58,611
+<font face="sans-serif" size="71">But you can refuse
+to move or talk.</font>
+
+145
+00:20:58,863 --> 00:21:00,989
+<font face="sans-serif" size="71">Then at least
+you're not lying.</font>
+
+146
+00:21:01,115 --> 00:21:04,534
+<font face="sans-serif" size="71">You can cut yourself off,
+close yourself in.</font>
+
+147
+00:21:04,660 --> 00:21:06,870
+<font face="sans-serif" size="71">Then you needn't
+play any roles,</font>
+
+148
+00:21:06,996 --> 00:21:09,914
+<font face="sans-serif" size="71">wear any masks,
+make any false gestures.</font>
+
+149
+00:21:10,040 --> 00:21:12,041
+<font face="sans-serif" size="71">So you might think...</font>
+
+150
+00:21:12,710 --> 00:21:14,961
+<font face="sans-serif" size="71">but reality plays
+nasty tricks on you.</font>
+
+151
+00:21:15,379 --> 00:21:18,298
+<font face="sans-serif" size="71">Your hiding place
+isn't watertight enough.</font>
+
+152
+00:21:18,466 --> 00:21:21,301
+<font face="sans-serif" size="71">Life oozes in from all sides.</font>
+
+153
+00:21:24,597 --> 00:21:26,723
+<font face="sans-serif" size="71">You're forced to react.</font>
+
+154
+00:21:27,933 --> 00:21:31,060
+<font face="sans-serif" size="71">No one asks
+whether it's genuine or not,</font>
+
+155
+00:21:31,187 --> 00:21:33,897
+<font face="sans-serif" size="71">whether you're lying
+or telling the truth.</font>
+
+156
+00:21:34,023 --> 00:21:37,108
+<font face="sans-serif" size="71">Questions like that
+only matter in the theater,</font>
+
+157
+00:21:37,234 --> 00:21:39,277
+<font face="sans-serif" size="71">and hardly even there.</font>
+
+158
+00:21:40,571 --> 00:21:42,655
+<font face="sans-serif" size="71">I understand you,
+Elisabet.</font>
+
+159
+00:21:42,781 --> 00:21:45,909
+<font face="sans-serif" size="71">I understand that you're
+not speaking or moving,</font>
+
+160
+00:21:46,494 --> 00:21:50,497
+<font face="sans-serif" size="71">that you've turned this apathy
+into a fantastic setup.</font>
+
+161
+00:21:51,373 --> 00:21:53,833
+<font face="sans-serif" size="71">I understand
+and admire you.</font>
+
+162
+00:21:55,127 --> 00:21:59,172
+<font face="sans-serif" size="71">I think you should play this part
+until it's played out,</font>
+
+163
+00:21:59,882 --> 00:22:02,258
+<font face="sans-serif" size="71">until it's no longer
+interesting.</font>
+
+164
+00:22:02,384 --> 00:22:06,012
+<font face="sans-serif" size="71">Then you can drop it,
+just as you eventually drop</font>
+
+165
+00:22:06,847 --> 00:22:08,973
+<font face="sans-serif" size="71">all your other roles.</font>
+
+166
+00:22:13,187 --> 00:22:16,314
+<font face="sans-serif" size="71">Thus, at the end of the summer,
+Mrs. Vogler and Sister Alma</font>
+
+167
+00:22:16,440 --> 00:22:18,858
+<font face="sans-serif" size="71">move out to the doctor's
+summer house.</font>
+
+168
+00:22:19,026 --> 00:22:23,071
+<font face="sans-serif" size="71">The stay by the sea agrees
+very well with the actress.</font>
+
+169
+00:22:23,739 --> 00:22:26,074
+<font face="sans-serif" size="71">Her crippling apathy
+at the hospital</font>
+
+170
+00:22:26,200 --> 00:22:29,077
+<font face="sans-serif" size="71">gives way to long walks,
+fishing excursions,</font>
+
+171
+00:22:29,203 --> 00:22:32,288
+<font face="sans-serif" size="71">cooking, letter writing,
+and other diversions.</font>
+
+172
+00:22:33,207 --> 00:22:36,042
+<font face="sans-serif" size="71">Sister Alma enjoys
+the seclusion of the countryside</font>
+
+173
+00:22:36,168 --> 00:22:39,212
+<font face="sans-serif" size="71">and tends to her patient
+with utmost care.</font>
+
+174
+00:23:21,255 --> 00:23:24,591
+<font face="sans-serif" size="71">Don't you know it's bad luck
+to compare hands?</font>
+
+175
+00:23:43,152 --> 00:23:45,069
+<font face="sans-serif" size="71">Elisabet...</font>
+
+176
+00:23:45,195 --> 00:23:47,655
+<font face="sans-serif" size="71">may I read you
+something from my book?</font>
+
+177
+00:23:47,781 --> 00:23:49,741
+<font face="sans-serif" size="71">Or am I disturbing you?</font>
+
+178
+00:23:49,867 --> 00:23:51,576
+<font face="sans-serif" size="71">Here's what it says:</font>
+
+179
+00:23:51,702 --> 00:23:54,412
+<font face="sans-serif" size="71">"All the anxiety
+we carry within us,</font>
+
+180
+00:23:54,788 --> 00:23:58,791
+<font face="sans-serif" size="71">all our thwarted dreams,
+the inexplicable cruelty,</font>
+
+181
+00:23:58,917 --> 00:24:01,127
+<font face="sans-serif" size="71">our fear of extinction,</font>
+
+182
+00:24:01,378 --> 00:24:04,339
+<font face="sans-serif" size="71">the painful insight
+into our earthly condition</font>
+
+183
+00:24:05,049 --> 00:24:10,470
+<font face="sans-serif" size="71">have slowly crystallized our hope
+for an other-worldly salvation.</font>
+
+184
+00:24:11,013 --> 00:24:13,806
+<font face="sans-serif" size="71">The tremendous cry
+of our faith and doubt</font>
+
+185
+00:24:13,974 --> 00:24:16,100
+<font face="sans-serif" size="71">against the darkness
+and silence</font>
+
+186
+00:24:16,226 --> 00:24:20,063
+<font face="sans-serif" size="71">is the most terrifying proof
+of our abandonment</font>
+
+187
+00:24:20,189 --> 00:24:23,316
+<font face="sans-serif" size="71">and our unuttered knowledge."</font>
+
+188
+00:24:25,361 --> 00:24:27,654
+<font face="sans-serif" size="71">Do you think that's true?</font>
+
+189
+00:24:31,659 --> 00:24:33,826
+<font face="sans-serif" size="71">I don't believe that.</font>
+
+190
+00:24:34,995 --> 00:24:38,665
+<font face="sans-serif" size="71">To change...
+but I'm so lazy.</font>
+
+191
+00:24:39,083 --> 00:24:41,417
+<font face="sans-serif" size="71">And then
+I feel guilty about it.</font>
+
+192
+00:24:41,543 --> 00:24:43,920
+<font face="sans-serif" size="71">Karl-Henrik scolds me
+for not having any ambition,</font>
+
+193
+00:24:44,046 --> 00:24:46,255
+<font face="sans-serif" size="71">for going around
+like I'm sleepwalking.</font>
+
+194
+00:24:46,382 --> 00:24:48,216
+<font face="sans-serif" size="71">I think that's unfair.</font>
+
+195
+00:24:48,342 --> 00:24:50,885
+<font face="sans-serif" size="71">I graduated highest
+in my class.</font>
+
+196
+00:24:51,011 --> 00:24:53,262
+<font face="sans-serif" size="71">But maybe he means
+something else.</font>
+
+197
+00:24:55,974 --> 00:24:58,476
+<font face="sans-serif" size="71">You know...
+Oh, sorry.</font>
+
+198
+00:24:58,602 --> 00:25:01,354
+<font face="sans-serif" size="71">You know what
+I think about sometimes?</font>
+
+199
+00:25:01,980 --> 00:25:04,399
+<font face="sans-serif" size="71">At the hospital
+where I took my exam,</font>
+
+200
+00:25:04,525 --> 00:25:06,693
+<font face="sans-serif" size="71">there's a home
+for old nurses</font>
+
+201
+00:25:06,819 --> 00:25:10,321
+<font face="sans-serif" size="71">who were nurses all their lives
+and lived for their work</font>
+
+202
+00:25:10,447 --> 00:25:12,782
+<font face="sans-serif" size="71">and were always
+in uniform.</font>
+
+203
+00:25:12,908 --> 00:25:14,992
+<font face="sans-serif" size="71">They live
+in their little rooms there.</font>
+
+204
+00:25:15,119 --> 00:25:17,995
+<font face="sans-serif" size="71">Imagine believing
+so strongly in something</font>
+
+205
+00:25:18,122 --> 00:25:20,039
+<font face="sans-serif" size="71">that you devote
+your entire life to it.</font>
+
+206
+00:25:20,165 --> 00:25:23,126
+<font face="sans-serif" size="71">Having something to believe in,
+working at something,</font>
+
+207
+00:25:23,252 --> 00:25:26,045
+<font face="sans-serif" size="71">believing
+your life has meaning.</font>
+
+208
+00:25:26,213 --> 00:25:27,922
+<font face="sans-serif" size="71">I like that.</font>
+
+209
+00:25:28,424 --> 00:25:31,551
+<font face="sans-serif" size="71">Holding on tight to something,
+no matter what...</font>
+
+210
+00:25:31,677 --> 00:25:33,594
+<font face="sans-serif" size="71">I think that's how
+it should be.</font>
+
+211
+00:25:33,721 --> 00:25:36,556
+<font face="sans-serif" size="71">Meaning something
+to other people.</font>
+
+212
+00:25:36,724 --> 00:25:38,808
+<font face="sans-serif" size="71">Don't you agree?</font>
+
+213
+00:25:42,771 --> 00:25:46,357
+<font face="sans-serif" size="71">I know it sounds childish,
+but I believe in that.</font>
+
+214
+00:25:47,901 --> 00:25:50,236
+<font face="sans-serif" size="71">What a downpour!</font>
+
+215
+00:25:51,655 --> 00:25:54,449
+<font face="sans-serif" size="71">Oh, yes, he was married.</font>
+
+216
+00:25:54,742 --> 00:25:57,118
+<font face="sans-serif" size="71">We had an affair
+for five years.</font>
+
+217
+00:25:57,244 --> 00:25:59,829
+<font face="sans-serif" size="71">Then he got tired of it,
+of course.</font>
+
+218
+00:26:00,247 --> 00:26:03,875
+<font face="sans-serif" size="71">I was terribly in love,
+and he was the first.</font>
+
+219
+00:26:04,251 --> 00:26:07,462
+<font face="sans-serif" size="71">I remember it all
+like one long torment.</font>
+
+220
+00:26:09,006 --> 00:26:12,300
+<font face="sans-serif" size="71">Long periods of agony,
+and brief moments when...</font>
+
+221
+00:26:13,802 --> 00:26:16,846
+<font face="sans-serif" size="71">Your teaching me
+how to smoke reminded me.</font>
+
+222
+00:26:16,972 --> 00:26:18,973
+<font face="sans-serif" size="71">He smoked constantly.</font>
+
+223
+00:26:19,641 --> 00:26:22,059
+<font face="sans-serif" size="71">In hindsight
+it all seems so dreary.</font>
+
+224
+00:26:22,186 --> 00:26:24,437
+<font face="sans-serif" size="71">A real dime store novel.</font>
+
+225
+00:26:26,482 --> 00:26:29,776
+<font face="sans-serif" size="71">In some strange way
+it was never quite real.</font>
+
+226
+00:26:30,861 --> 00:26:33,446
+<font face="sans-serif" size="71">I don't know how
+to explain it.</font>
+
+227
+00:26:33,864 --> 00:26:36,783
+<font face="sans-serif" size="71">At least, I was never
+quite real to him.</font>
+
+228
+00:26:37,951 --> 00:26:40,995
+<font face="sans-serif" size="71">But my pain was real,
+that's for sure.</font>
+
+229
+00:26:42,581 --> 00:26:45,625
+<font face="sans-serif" size="71">But that was somehow
+all a part of it</font>
+
+230
+00:26:45,751 --> 00:26:47,835
+<font face="sans-serif" size="71">in some nasty way,</font>
+
+231
+00:26:47,961 --> 00:26:50,713
+<font face="sans-serif" size="71">as if that's how
+it was supposed to be.</font>
+
+232
+00:26:51,590 --> 00:26:54,258
+<font face="sans-serif" size="71">Even the things
+we said to each other.</font>
+
+233
+00:27:01,141 --> 00:27:04,519
+<font face="sans-serif" size="71">Lots of people have told me
+I'm a good listener.</font>
+
+234
+00:27:04,645 --> 00:27:06,479
+<font face="sans-serif" size="71">Isn't that funny?</font>
+
+235
+00:27:06,605 --> 00:27:09,398
+<font face="sans-serif" size="71">No one's ever bothered
+to listen to me.</font>
+
+236
+00:27:09,525 --> 00:27:12,485
+<font face="sans-serif" size="71">Like you're doing now.
+You're really listening.</font>
+
+237
+00:27:12,653 --> 00:27:16,489
+<font face="sans-serif" size="71">I think you're the first person
+who's ever listened to me.</font>
+
+238
+00:27:16,657 --> 00:27:18,825
+<font face="sans-serif" size="71">It can't be at all interesting.</font>
+
+239
+00:27:18,992 --> 00:27:21,285
+<font face="sans-serif" size="71">You could be reading
+a good book instead.</font>
+
+240
+00:27:21,411 --> 00:27:23,996
+<font face="sans-serif" size="71">How I'm going on!
+I hope I'm not irritating you.</font>
+
+241
+00:27:24,581 --> 00:27:28,459
+<font face="sans-serif" size="71">It feels so good to talk.
+It feels nice and warm.</font>
+
+242
+00:27:28,585 --> 00:27:31,921
+<font face="sans-serif" size="71">I've never felt like this
+in all my life.</font>
+
+243
+00:27:34,174 --> 00:27:36,175
+<font face="sans-serif" size="71">I've always wanted
+a sister.</font>
+
+244
+00:27:36,301 --> 00:27:38,886
+<font face="sans-serif" size="71">I have loads of brothers...
+seven.</font>
+
+245
+00:27:39,012 --> 00:27:41,097
+<font face="sans-serif" size="71">Strange, eh?
+Then I came along.</font>
+
+246
+00:27:41,223 --> 00:27:44,725
+<font face="sans-serif" size="71">I remember being surrounded
+by boys all my life.</font>
+
+247
+00:27:45,519 --> 00:27:47,520
+<font face="sans-serif" size="71">But I like boys.</font>
+
+248
+00:27:47,980 --> 00:27:49,856
+<font face="sans-serif" size="71">But I'm sure
+you know that,</font>
+
+249
+00:27:49,982 --> 00:27:52,900
+<font face="sans-serif" size="71">with all your experience
+as an actress.</font>
+
+250
+00:27:53,443 --> 00:27:56,112
+<font face="sans-serif" size="71">I like Karl-Henrik so much,</font>
+
+251
+00:27:56,738 --> 00:27:59,699
+<font face="sans-serif" size="71">but you really
+only love once.</font>
+
+252
+00:27:59,825 --> 00:28:01,868
+<font face="sans-serif" size="71">I'm faithful to him.</font>
+
+253
+00:28:01,994 --> 00:28:05,997
+<font face="sans-serif" size="71">Opportunities come up
+in this line of work, I can tell you.</font>
+
+254
+00:28:09,042 --> 00:28:12,587
+<font face="sans-serif" size="71">Karl-Henrik and I rented
+a cottage by the sea once.</font>
+
+255
+00:28:12,921 --> 00:28:16,090
+<font face="sans-serif" size="71">It was June,
+and we were all alone.</font>
+
+256
+00:28:17,593 --> 00:28:20,011
+<font face="sans-serif" size="71">One day, when Karl-Henrik
+had gone into town,</font>
+
+257
+00:28:20,137 --> 00:28:22,346
+<font face="sans-serif" size="71">I went to the beach
+on my own.</font>
+
+258
+00:28:22,723 --> 00:28:25,349
+<font face="sans-serif" size="71">It was a warm
+and lovely day.</font>
+
+259
+00:28:27,144 --> 00:28:29,687
+<font face="sans-serif" size="71">There was
+another girl there.</font>
+
+260
+00:28:29,813 --> 00:28:32,773
+<font face="sans-serif" size="71">She'd paddled over
+from another island</font>
+
+261
+00:28:32,900 --> 00:28:36,569
+<font face="sans-serif" size="71">because our beach
+was sunnier and more secluded.</font>
+
+262
+00:28:37,946 --> 00:28:41,741
+<font face="sans-serif" size="71">We lay there sunbathing beside
+one another, completely naked,</font>
+
+263
+00:28:42,075 --> 00:28:45,953
+<font face="sans-serif" size="71">dozing now and then,
+putting suntan lotion on.</font>
+
+264
+00:28:47,581 --> 00:28:51,500
+<font face="sans-serif" size="71">We had those cheap
+straw hats on, you know?</font>
+
+265
+00:28:52,753 --> 00:28:55,671
+<font face="sans-serif" size="71">I had a blue ribbon
+around mine.</font>
+
+266
+00:28:58,133 --> 00:29:01,302
+<font face="sans-serif" size="71">I lay there peeping out
+from under my hat</font>
+
+267
+00:29:01,595 --> 00:29:05,598
+<font face="sans-serif" size="71">at the landscape
+and the sea and the sun.</font>
+
+268
+00:29:05,933 --> 00:29:07,975
+<font face="sans-serif" size="71">It was kind of funny.</font>
+
+269
+00:29:13,607 --> 00:29:17,902
+<font face="sans-serif" size="71">Suddenly I saw two figures leaping
+about on the rocks above us.</font>
+
+270
+00:29:19,947 --> 00:29:22,698
+<font face="sans-serif" size="71">They would hide
+and then peek out.</font>
+
+271
+00:29:23,784 --> 00:29:26,827
+<font face="sans-serif" size="71">"There's a couple boys
+looking at us," I told the girl.</font>
+
+272
+00:29:26,954 --> 00:29:28,955
+<font face="sans-serif" size="71">Her name was Katarina.</font>
+
+273
+00:29:29,957 --> 00:29:33,960
+<font face="sans-serif" size="71">"Let them look," she said,
+and turned over on her back.</font>
+
+274
+00:29:35,379 --> 00:29:37,964
+<font face="sans-serif" size="71">It was a strange feeling.</font>
+
+275
+00:29:38,465 --> 00:29:41,425
+<font face="sans-serif" size="71">I wanted to jump up
+and put on my robe,</font>
+
+276
+00:29:41,551 --> 00:29:43,970
+<font face="sans-serif" size="71">but I just lay there
+on my stomach</font>
+
+277
+00:29:44,137 --> 00:29:46,263
+<font face="sans-serif" size="71">with my bottom in the air,</font>
+
+278
+00:29:46,390 --> 00:29:49,809
+<font face="sans-serif" size="71">not at all embarrassed,
+completely calm.</font>
+
+279
+00:29:52,479 --> 00:29:55,398
+<font face="sans-serif" size="71">Katarina lay there
+next to me the whole time,</font>
+
+280
+00:29:55,524 --> 00:29:58,526
+<font face="sans-serif" size="71">with her breasts
+and thick thighs.</font>
+
+281
+00:29:59,069 --> 00:30:02,488
+<font face="sans-serif" size="71">She just lay there
+sort of giggling to herself.</font>
+
+282
+00:30:05,492 --> 00:30:07,702
+<font face="sans-serif" size="71">I noticed that the boys
+had come closer.</font>
+
+283
+00:30:07,828 --> 00:30:10,913
+<font face="sans-serif" size="71">They just stood there
+looking at us.</font>
+
+284
+00:30:11,915 --> 00:30:14,709
+<font face="sans-serif" size="71">I noticed
+they were terribly young.</font>
+
+285
+00:30:16,086 --> 00:30:20,006
+<font face="sans-serif" size="71">Then one of them...
+the more daring of the two...</font>
+
+286
+00:30:20,799 --> 00:30:24,635
+<font face="sans-serif" size="71">came up and squatted down
+next to Katarina.</font>
+
+287
+00:30:25,345 --> 00:30:29,974
+<font face="sans-serif" size="71">He pretended to be busy
+picking at his toes.</font>
+
+288
+00:30:32,686 --> 00:30:34,895
+<font face="sans-serif" size="71">I felt so strange.</font>
+
+289
+00:30:37,232 --> 00:30:39,859
+<font face="sans-serif" size="71">Suddenly
+I heard Katarina say,</font>
+
+290
+00:30:40,402 --> 00:30:43,779
+<font face="sans-serif" size="71">"Hey, why don't you
+come over here?"</font>
+
+291
+00:30:44,698 --> 00:30:46,699
+<font face="sans-serif" size="71">She took him by the hand</font>
+
+292
+00:30:46,867 --> 00:30:49,285
+<font face="sans-serif" size="71">and helped him off
+with his jeans and shirt.</font>
+
+293
+00:30:49,411 --> 00:30:51,704
+<font face="sans-serif" size="71">Then suddenly
+he was on top of her.</font>
+
+294
+00:30:52,497 --> 00:30:56,000
+<font face="sans-serif" size="71">She guided him in
+with her hands on his behind.</font>
+
+295
+00:30:57,586 --> 00:31:00,713
+<font face="sans-serif" size="71">The other boy just sat
+on the slope and watched.</font>
+
+296
+00:31:01,882 --> 00:31:05,718
+<font face="sans-serif" size="71">I heard Katarina whisper
+in the boy's ear and laugh.</font>
+
+297
+00:31:06,887 --> 00:31:09,889
+<font face="sans-serif" size="71">His face was
+right next to mine.</font>
+
+298
+00:31:10,724 --> 00:31:13,476
+<font face="sans-serif" size="71">It was red and swollen.</font>
+
+299
+00:31:16,313 --> 00:31:18,522
+<font face="sans-serif" size="71">Suddenly
+I turned over and said,</font>
+
+300
+00:31:18,648 --> 00:31:21,275
+<font face="sans-serif" size="71">"Aren't you coming
+over to me too?"</font>
+
+301
+00:31:22,110 --> 00:31:24,987
+<font face="sans-serif" size="71">And Katarina said,
+"Go to her now."</font>
+
+302
+00:31:25,155 --> 00:31:27,323
+<font face="sans-serif" size="71">He pulled out of her</font>
+
+303
+00:31:27,741 --> 00:31:30,618
+<font face="sans-serif" size="71">and fell on top of me,
+completely hard.</font>
+
+304
+00:31:30,744 --> 00:31:32,787
+<font face="sans-serif" size="71">He grabbed my breast.</font>
+
+305
+00:31:32,913 --> 00:31:34,914
+<font face="sans-serif" size="71">It hurt so bad!</font>
+
+306
+00:31:36,833 --> 00:31:39,585
+<font face="sans-serif" size="71">I was ready somehow
+and came almost at once.</font>
+
+307
+00:31:39,711 --> 00:31:41,587
+<font face="sans-serif" size="71">Can you believe it?</font>
+
+308
+00:31:42,130 --> 00:31:46,884
+<font face="sans-serif" size="71">I was about to say,
+"Careful you don't get me pregnant"</font>
+
+309
+00:31:47,010 --> 00:31:49,220
+<font face="sans-serif" size="71">when he suddenly came.</font>
+
+310
+00:31:49,971 --> 00:31:52,890
+<font face="sans-serif" size="71">I felt it like
+never before in my life,</font>
+
+311
+00:31:53,266 --> 00:31:56,268
+<font face="sans-serif" size="71">the way he sprayed
+his seed into me.</font>
+
+312
+00:31:56,770 --> 00:31:59,814
+<font face="sans-serif" size="71">He gripped my shoulders
+and arched backward.</font>
+
+313
+00:31:59,940 --> 00:32:02,274
+<font face="sans-serif" size="71">I came over and over.</font>
+
+314
+00:32:05,695 --> 00:32:08,072
+<font face="sans-serif" size="71">Katarina lay on her side
+and watched</font>
+
+315
+00:32:08,198 --> 00:32:10,741
+<font face="sans-serif" size="71">and held him from behind.</font>
+
+316
+00:32:13,120 --> 00:32:16,330
+<font face="sans-serif" size="71">After he came,
+she took him in her arms</font>
+
+317
+00:32:16,456 --> 00:32:19,083
+<font face="sans-serif" size="71">and used his hand
+to make herself come.</font>
+
+318
+00:32:19,835 --> 00:32:21,460
+<font face="sans-serif" size="71">When she came,</font>
+
+319
+00:32:21,628 --> 00:32:23,838
+<font face="sans-serif" size="71">she screamed
+like a banshee.</font>
+
+320
+00:32:29,803 --> 00:32:32,888
+<font face="sans-serif" size="71">Then all three of us
+started laughing.</font>
+
+321
+00:32:33,014 --> 00:32:36,684
+<font face="sans-serif" size="71">We called to the other boy,
+who was sitting on the slope.</font>
+
+322
+00:32:36,810 --> 00:32:38,811
+<font face="sans-serif" size="71">His name was Peter.</font>
+
+323
+00:32:43,024 --> 00:32:45,151
+<font face="sans-serif" size="71">He came down,
+looking all confused</font>
+
+324
+00:32:45,277 --> 00:32:47,570
+<font face="sans-serif" size="71">and shivering
+despite the sunshine.</font>
+
+325
+00:32:50,198 --> 00:32:54,034
+<font face="sans-serif" size="71">Katarina unbuttoned his pants
+and started to play with him.</font>
+
+326
+00:32:55,245 --> 00:32:58,497
+<font face="sans-serif" size="71">And when he came,
+she took him in her mouth.</font>
+
+327
+00:32:59,749 --> 00:33:02,501
+<font face="sans-serif" size="71">He bent down
+and kissed her back.</font>
+
+328
+00:33:03,253 --> 00:33:06,088
+<font face="sans-serif" size="71">She turned around,
+took his head in both hands,</font>
+
+329
+00:33:06,214 --> 00:33:07,923
+<font face="sans-serif" size="71">and gave him her breast.</font>
+
+330
+00:33:08,049 --> 00:33:12,052
+<font face="sans-serif" size="71">The other boy got so excited
+that he and I started all over again.</font>
+
+331
+00:33:13,180 --> 00:33:15,347
+<font face="sans-serif" size="71">It was just as good
+as before.</font>
+
+332
+00:33:18,310 --> 00:33:20,978
+<font face="sans-serif" size="71">Then we went for a swim
+and parted ways.</font>
+
+333
+00:33:21,104 --> 00:33:24,940
+<font face="sans-serif" size="71">When I got home, Karl-Henrik
+was already back from town.</font>
+
+334
+00:33:27,611 --> 00:33:31,363
+<font face="sans-serif" size="71">We ate dinner and drank
+some red wine he'd brought.</font>
+
+335
+00:33:33,742 --> 00:33:35,784
+<font face="sans-serif" size="71">Then we had sex.</font>
+
+336
+00:33:36,786 --> 00:33:40,289
+<font face="sans-serif" size="71">It's never been as good,
+before or since.</font>
+
+337
+00:33:40,540 --> 00:33:42,041
+<font face="sans-serif" size="71">Can you understand that?</font>
+
+338
+00:33:42,792 --> 00:33:45,628
+<font face="sans-serif" size="71">I ended up pregnant,
+of course.</font>
+
+339
+00:33:47,088 --> 00:33:49,215
+<font face="sans-serif" size="71">Karl-Henrik,
+who's studying medicine,</font>
+
+340
+00:33:49,341 --> 00:33:53,385
+<font face="sans-serif" size="71">took me to a good friend of his,
+who performed an abortion.</font>
+
+341
+00:33:53,720 --> 00:33:57,556
+<font face="sans-serif" size="71">We were both relieved.
+We didn't want children.</font>
+
+342
+00:33:57,933 --> 00:34:00,226
+<font face="sans-serif" size="71">Not then, anyway.</font>
+
+343
+00:34:06,650 --> 00:34:09,068
+<font face="sans-serif" size="71">It doesn't make any sense.</font>
+
+344
+00:34:09,819 --> 00:34:12,321
+<font face="sans-serif" size="71">Nothing fits together.</font>
+
+345
+00:34:13,281 --> 00:34:16,450
+<font face="sans-serif" size="71">And the guilty conscience
+you feel over little things.</font>
+
+346
+00:34:16,576 --> 00:34:18,577
+<font face="sans-serif" size="71">You understand?</font>
+
+347
+00:34:18,745 --> 00:34:21,997
+<font face="sans-serif" size="71">And what about all the things
+you'd decided to do?</font>
+
+348
+00:34:22,123 --> 00:34:24,917
+<font face="sans-serif" size="71">Don't you have
+to do them anymore?</font>
+
+349
+00:34:26,586 --> 00:34:28,545
+<font face="sans-serif" size="71">Is it possible to be</font>
+
+350
+00:34:28,672 --> 00:34:31,674
+<font face="sans-serif" size="71">one and the same person
+at the very same time...</font>
+
+351
+00:34:31,800 --> 00:34:33,842
+<font face="sans-serif" size="71">I mean, two people?</font>
+
+352
+00:34:33,969 --> 00:34:36,136
+<font face="sans-serif" size="71">God, I'm being silly!</font>
+
+353
+00:34:36,471 --> 00:34:39,765
+<font face="sans-serif" size="71">Anyway, there's no reason
+to start blubbering.</font>
+
+354
+00:34:40,684 --> 00:34:43,102
+<font face="sans-serif" size="71">I'll get a handkerchief.</font>
+
+355
+00:35:04,582 --> 00:35:06,542
+<font face="sans-serif" size="71">It's almost morning...</font>
+
+356
+00:35:07,544 --> 00:35:09,920
+<font face="sans-serif" size="71">and it's still raining.</font>
+
+357
+00:35:16,636 --> 00:35:19,263
+<font face="sans-serif" size="71">I've been talking nonstop</font>
+
+358
+00:35:19,389 --> 00:35:21,473
+<font face="sans-serif" size="71">while you've just listened.</font>
+
+359
+00:35:21,599 --> 00:35:23,392
+<font face="sans-serif" size="71">How boring for you.</font>
+
+360
+00:35:23,518 --> 00:35:26,520
+<font face="sans-serif" size="71">What could possibly
+interest you about my life?</font>
+
+361
+00:35:27,188 --> 00:35:29,481
+<font face="sans-serif" size="71">People should be like you.</font>
+
+362
+00:35:30,942 --> 00:35:33,027
+<font face="sans-serif" size="71">You know what I thought</font>
+
+363
+00:35:33,153 --> 00:35:35,821
+<font face="sans-serif" size="71">after I saw a film
+of yours one night?</font>
+
+364
+00:35:35,989 --> 00:35:38,824
+<font face="sans-serif" size="71">When I got home and looked
+in the mirror, I thought,</font>
+
+365
+00:35:38,950 --> 00:35:40,951
+<font face="sans-serif" size="71">"We look alike."</font>
+
+366
+00:35:41,953 --> 00:35:44,371
+<font face="sans-serif" size="71">Don't get me wrong.
+You're much more beautiful.</font>
+
+367
+00:35:44,497 --> 00:35:46,498
+<font face="sans-serif" size="71">But we're alike somehow.</font>
+
+368
+00:35:46,666 --> 00:35:50,919
+<font face="sans-serif" size="71">I think I could turn into you
+if I really tried.</font>
+
+369
+00:35:51,338 --> 00:35:53,339
+<font face="sans-serif" size="71">I mean inside.</font>
+
+370
+00:35:55,175 --> 00:35:58,344
+<font face="sans-serif" size="71">You could be me
+just like that...</font>
+
+371
+00:35:59,637 --> 00:36:02,097
+<font face="sans-serif" size="71">though your soul
+would be far too big.</font>
+
+372
+00:36:02,223 --> 00:36:04,683
+<font face="sans-serif" size="71">It would stick out
+everywhere!</font>
+
+373
+00:36:08,146 --> 00:36:10,189
+<font face="sans-serif" size="71">Go to bed...</font>
+
+374
+00:36:10,315 --> 00:36:13,025
+<font face="sans-serif" size="71">or you'll fall asleep
+here at the table.</font>
+
+375
+00:36:26,539 --> 00:36:29,083
+<font face="sans-serif" size="71">I must go to bed now</font>
+
+376
+00:36:29,334 --> 00:36:31,543
+<font face="sans-serif" size="71">or I'll fall asleep
+at the table,</font>
+
+377
+00:36:31,711 --> 00:36:34,088
+<font face="sans-serif" size="71">and that would be
+rather uncomfortable.</font>
+
+378
+00:36:37,884 --> 00:36:39,385
+<font face="sans-serif" size="71">Good night.</font>
+
+379
+00:39:39,857 --> 00:39:41,567
+<font face="sans-serif" size="71">Elisabet...</font>
+
+380
+00:39:44,279 --> 00:39:46,738
+<font face="sans-serif" size="71">did you speak to me
+last night?</font>
+
+381
+00:40:18,187 --> 00:40:20,772
+<font face="sans-serif" size="71">Were you
+in my room last night?</font>
+
+382
+00:41:03,358 --> 00:41:05,692
+<font face="sans-serif" size="71">Shall I take your mail too?</font>
+
+383
+00:41:07,028 --> 00:41:08,904
+<font face="sans-serif" size="71">Let me have a taste.</font>
+
+384
+00:41:10,823 --> 00:41:12,282
+<font face="sans-serif" size="71">See ya.</font>
+
+385
+00:42:19,142 --> 00:42:22,102
+<font face="sans-serif" size="71">"Dear friend,
+I could live like this forever.</font>
+
+386
+00:42:22,228 --> 00:42:25,188
+<font face="sans-serif" size="71">The silence, the seclusion,
+reducing my needs,</font>
+
+387
+00:42:25,314 --> 00:42:29,234
+<font face="sans-serif" size="71">feeling my battered soul finally
+start to straighten itself out.</font>
+
+388
+00:42:34,574 --> 00:42:37,909
+<font face="sans-serif" size="71">Alma pampers me
+in the most touching way.</font>
+
+389
+00:42:39,954 --> 00:42:43,915
+<font face="sans-serif" size="71">I think she's actually enjoying it here
+and that she's very fond of me,</font>
+
+390
+00:42:44,041 --> 00:42:48,003
+<font face="sans-serif" size="71">perhaps even a bit smitten
+in a charming, subconscious way.</font>
+
+391
+00:42:48,129 --> 00:42:51,757
+<font face="sans-serif" size="71">In any case,
+it's a lot of fun studying her.</font>
+
+392
+00:43:01,017 --> 00:43:04,019
+<font face="sans-serif" size="71">Sometimes she cries
+over past sins...</font>
+
+393
+00:43:04,145 --> 00:43:07,230
+<font face="sans-serif" size="71">an orgy with a strange boy
+and a subsequent abortion.</font>
+
+394
+00:43:07,356 --> 00:43:10,150
+<font face="sans-serif" size="71">She complains
+that her notions about life</font>
+
+395
+00:43:10,276 --> 00:43:13,028
+<font face="sans-serif" size="71">fail to accord with her actions."</font>
+
+396
+00:48:57,456 --> 00:48:59,624
+<font face="sans-serif" size="71">I see
+you're reading a play.</font>
+
+397
+00:49:00,084 --> 00:49:03,419
+<font face="sans-serif" size="71">That's a healthy sign.
+I'll tell the doctor.</font>
+
+398
+00:49:06,757 --> 00:49:08,842
+<font face="sans-serif" size="71">You think we should
+leave here soon?</font>
+
+399
+00:49:08,968 --> 00:49:11,177
+<font face="sans-serif" size="71">I'm starting
+to miss the city.</font>
+
+400
+00:49:11,679 --> 00:49:13,388
+<font face="sans-serif" size="71">Aren't you?</font>
+
+401
+00:49:29,071 --> 00:49:32,115
+<font face="sans-serif" size="71">Would you like
+to make me really happy?</font>
+
+402
+00:49:33,325 --> 00:49:36,995
+<font face="sans-serif" size="71">I know it's asking a lot,
+but I could use your help right now.</font>
+
+403
+00:49:37,538 --> 00:49:39,122
+<font face="sans-serif" size="71">Nothing dangerous.</font>
+
+404
+00:49:39,248 --> 00:49:42,000
+<font face="sans-serif" size="71">But I do wish
+you'd talk to me.</font>
+
+405
+00:49:42,126 --> 00:49:44,335
+<font face="sans-serif" size="71">Doesn't have to be
+anything special.</font>
+
+406
+00:49:44,503 --> 00:49:48,006
+<font face="sans-serif" size="71">We could talk about anything...
+what to have for dinner,</font>
+
+407
+00:49:48,132 --> 00:49:50,758
+<font face="sans-serif" size="71">whether the water's
+cold now after the storm,</font>
+
+408
+00:49:50,885 --> 00:49:53,344
+<font face="sans-serif" size="71">whether it's too cold
+to go swimming.</font>
+
+409
+00:49:53,512 --> 00:49:56,598
+<font face="sans-serif" size="71">Just talk for a few minutes.
+One minute.</font>
+
+410
+00:49:56,724 --> 00:49:59,017
+<font face="sans-serif" size="71">You could read to me
+from your book.</font>
+
+411
+00:49:59,185 --> 00:50:00,602
+<font face="sans-serif" size="71">Just say a few words.</font>
+
+412
+00:50:03,564 --> 00:50:05,690
+<font face="sans-serif" size="71">I have to try
+not to get angry.</font>
+
+413
+00:50:05,858 --> 00:50:07,984
+<font face="sans-serif" size="71">It's your business
+if you want to keep quiet.</font>
+
+414
+00:50:08,110 --> 00:50:11,112
+<font face="sans-serif" size="71">But I need you
+to talk to me now.</font>
+
+415
+00:50:13,741 --> 00:50:15,575
+<font face="sans-serif" size="71">Can't you just say</font>
+
+416
+00:50:15,701 --> 00:50:17,243
+<font face="sans-serif" size="71">one word?</font>
+
+417
+00:50:19,872 --> 00:50:21,956
+<font face="sans-serif" size="71">I knew you'd refuse.</font>
+
+418
+00:50:23,167 --> 00:50:25,376
+<font face="sans-serif" size="71">You can't know how I feel.</font>
+
+419
+00:50:27,004 --> 00:50:29,380
+<font face="sans-serif" size="71">I always thought great artists</font>
+
+420
+00:50:29,548 --> 00:50:32,467
+<font face="sans-serif" size="71">felt this great compassion
+for other people...</font>
+
+421
+00:50:33,177 --> 00:50:35,929
+<font face="sans-serif" size="71">that they created
+out of great compassion</font>
+
+422
+00:50:36,055 --> 00:50:38,056
+<font face="sans-serif" size="71">and a need to help.</font>
+
+423
+00:50:38,224 --> 00:50:40,225
+<font face="sans-serif" size="71">That was silly of me.</font>
+
+424
+00:50:43,896 --> 00:50:46,773
+<font face="sans-serif" size="71">You've used me.
+For what, I don't know.</font>
+
+425
+00:50:46,899 --> 00:50:50,401
+<font face="sans-serif" size="71">Now that you don't need me
+anymore, you toss me aside.</font>
+
+426
+00:50:50,527 --> 00:50:54,239
+<font face="sans-serif" size="71">Yes, I hear perfectly well
+how phony that sounds!</font>
+
+427
+00:50:54,365 --> 00:50:56,824
+<font face="sans-serif" size="71">"You've used me, and now
+you're tossing me aside."</font>
+
+428
+00:50:56,951 --> 00:51:00,078
+<font face="sans-serif" size="71">But it's true... every word.
+And these glasses!</font>
+
+429
+00:51:09,088 --> 00:51:11,089
+<font face="sans-serif" size="71">You've hurt me badly.</font>
+
+430
+00:51:11,882 --> 00:51:14,550
+<font face="sans-serif" size="71">You've been laughing at me
+behind my back.</font>
+
+431
+00:51:16,428 --> 00:51:18,888
+<font face="sans-serif" size="71">I read the letter
+you wrote to the doctor.</font>
+
+432
+00:51:19,014 --> 00:51:23,101
+<font face="sans-serif" size="71">It wasn't sealed,
+and I read the whole thing.</font>
+
+433
+00:51:25,062 --> 00:51:27,313
+<font face="sans-serif" size="71">You got me to talk,</font>
+
+434
+00:51:27,439 --> 00:51:29,774
+<font face="sans-serif" size="71">to tell you things
+I've never told anyone.</font>
+
+435
+00:51:29,900 --> 00:51:33,027
+<font face="sans-serif" size="71">Then you go and pass it on.
+Great study material, eh?</font>
+
+436
+00:51:33,153 --> 00:51:34,737
+<font face="sans-serif" size="71">You're not...</font>
+
+437
+00:51:34,989 --> 00:51:36,990
+<font face="sans-serif" size="71">You're going to talk now!</font>
+
+438
+00:51:37,116 --> 00:51:40,368
+<font face="sans-serif" size="71">If you have something
+to say, by God...</font>
+
+439
+00:51:53,632 --> 00:51:55,300
+<font face="sans-serif" size="71">No, don't!</font>
+
+440
+00:52:07,187 --> 00:52:09,647
+<font face="sans-serif" size="71">Scared there for a minute,
+weren't you?</font>
+
+441
+00:52:11,483 --> 00:52:15,361
+<font face="sans-serif" size="71">For a second you were
+genuinely scared, weren't you?</font>
+
+442
+00:52:15,946 --> 00:52:18,489
+<font face="sans-serif" size="71">A genuine
+fear of death, huh?</font>
+
+443
+00:52:19,074 --> 00:52:21,659
+<font face="sans-serif" size="71">"Alma's gone crazy,"
+you thought.</font>
+
+444
+00:52:21,827 --> 00:52:24,412
+<font face="sans-serif" size="71">Just what kind of person
+are you anyway?</font>
+
+445
+00:52:25,289 --> 00:52:28,875
+<font face="sans-serif" size="71">Or maybe you just thought,
+"I'll remember that face,</font>
+
+446
+00:52:29,001 --> 00:52:31,711
+<font face="sans-serif" size="71">that tone of voice,
+that expression."</font>
+
+447
+00:52:31,837 --> 00:52:34,339
+<font face="sans-serif" size="71">I'll give you something
+you won't forget!</font>
+
+448
+00:52:56,195 --> 00:52:58,029
+<font face="sans-serif" size="71">You're laughing, are you?</font>
+
+449
+00:52:59,782 --> 00:53:02,200
+<font face="sans-serif" size="71">Things aren't
+that simple for me.</font>
+
+450
+00:53:02,743 --> 00:53:04,702
+<font face="sans-serif" size="71">Or so funny either.</font>
+
+451
+00:53:05,788 --> 00:53:08,039
+<font face="sans-serif" size="71">But you always have
+your laugh.</font>
+
+452
+00:54:33,375 --> 00:54:35,626
+<font face="sans-serif" size="71">Does it have
+to be like this?</font>
+
+453
+00:54:38,380 --> 00:54:42,508
+<font face="sans-serif" size="71">Is it really so important
+not to lie, to tell the truth,</font>
+
+454
+00:54:42,634 --> 00:54:44,969
+<font face="sans-serif" size="71">to speak in a genuine
+tone of voice?</font>
+
+455
+00:54:45,971 --> 00:54:49,307
+<font face="sans-serif" size="71">Can a person really live
+without babbling away,</font>
+
+456
+00:54:49,475 --> 00:54:53,519
+<font face="sans-serif" size="71">without lying and making up
+excuses and evading things?</font>
+
+457
+00:54:54,813 --> 00:54:57,398
+<font face="sans-serif" size="71">Isn't it better
+to just let yourself</font>
+
+458
+00:54:57,524 --> 00:55:00,359
+<font face="sans-serif" size="71">be silly and sloppy
+and dishonest?</font>
+
+459
+00:55:02,112 --> 00:55:06,324
+<font face="sans-serif" size="71">Maybe a person gets better by just
+letting herself be who she is.</font>
+
+460
+00:55:10,162 --> 00:55:12,163
+<font face="sans-serif" size="71">No, you don't understand.</font>
+
+461
+00:55:13,248 --> 00:55:14,999
+<font face="sans-serif" size="71">You don't understand
+what I'm saying.</font>
+
+462
+00:55:15,167 --> 00:55:17,210
+<font face="sans-serif" size="71">There's no reaching
+someone like you.</font>
+
+463
+00:55:17,336 --> 00:55:19,295
+<font face="sans-serif" size="71">The doctor said
+you're mentally healthy,</font>
+
+464
+00:55:19,421 --> 00:55:21,506
+<font face="sans-serif" size="71">but I wonder if your madness
+isn't the worst kind.</font>
+
+465
+00:55:21,673 --> 00:55:23,341
+<font face="sans-serif" size="71">You act healthy,</font>
+
+466
+00:55:23,509 --> 00:55:26,010
+<font face="sans-serif" size="71">and the worst thing is,
+everyone believes you.</font>
+
+467
+00:55:26,136 --> 00:55:29,347
+<font face="sans-serif" size="71">Except me, because
+I know how rotten you are.</font>
+
+468
+00:55:35,729 --> 00:55:37,522
+<font face="sans-serif" size="71">God, what am I doing?</font>
+
+469
+00:55:41,026 --> 00:55:43,152
+<font face="sans-serif" size="71">Elisabet, forgive me.</font>
+
+470
+00:55:43,278 --> 00:55:45,238
+<font face="sans-serif" size="71">I'm behaving like an idiot.</font>
+
+471
+00:55:45,364 --> 00:55:48,991
+<font face="sans-serif" size="71">I don't know what got into me.
+I'm here to help you.</font>
+
+472
+00:55:49,117 --> 00:55:51,702
+<font face="sans-serif" size="71">It was that awful letter.</font>
+
+473
+00:55:51,912 --> 00:55:53,871
+<font face="sans-serif" size="71">I was so disappointed.</font>
+
+474
+00:55:54,039 --> 00:55:57,458
+<font face="sans-serif" size="71">You asked me
+to talk about myself.</font>
+
+475
+00:55:58,043 --> 00:56:00,670
+<font face="sans-serif" size="71">It felt so good. You seemed
+so kind and understanding.</font>
+
+476
+00:56:00,796 --> 00:56:02,880
+<font face="sans-serif" size="71">I'd had a lot to drink,</font>
+
+477
+00:56:03,048 --> 00:56:05,508
+<font face="sans-serif" size="71">and it felt so good
+to talk about it all.</font>
+
+478
+00:56:05,634 --> 00:56:07,969
+<font face="sans-serif" size="71">And I suppose
+I was flattered</font>
+
+479
+00:56:08,095 --> 00:56:11,556
+<font face="sans-serif" size="71">that a great actress like you
+would bother to listen.</font>
+
+480
+00:56:11,723 --> 00:56:14,308
+<font face="sans-serif" size="71">I even thought
+it would be nice if what I said</font>
+
+481
+00:56:14,434 --> 00:56:16,727
+<font face="sans-serif" size="71">were of some use to you.</font>
+
+482
+00:56:17,229 --> 00:56:20,731
+<font face="sans-serif" size="71">But that's awful, isn't it?
+Sheer exhibitionism.</font>
+
+483
+00:56:20,899 --> 00:56:23,901
+<font face="sans-serif" size="71">Elisabet,
+I want you to forgive me.</font>
+
+484
+00:56:24,069 --> 00:56:27,280
+<font face="sans-serif" size="71">I like you so much.
+You mean so much to me.</font>
+
+485
+00:56:27,406 --> 00:56:29,323
+<font face="sans-serif" size="71">I've learned
+so much from you.</font>
+
+486
+00:56:29,449 --> 00:56:31,325
+<font face="sans-serif" size="71">Let's not part as enemies.</font>
+
+487
+00:56:54,433 --> 00:56:58,269
+<font face="sans-serif" size="71">You won't forgive me
+because you're too proud!</font>
+
+488
+00:56:58,395 --> 00:57:02,273
+<font face="sans-serif" size="71">You won't stoop to my level
+because you don't have to!</font>
+
+489
+00:57:02,441 --> 00:57:05,443
+<font face="sans-serif" size="71">I won't...</font>
+
+490
+01:01:11,481 --> 01:01:13,524
+<font face="sans-serif" size="71">...we don't speak...</font>
+
+491
+01:01:13,692 --> 01:01:14,900
+<font face="sans-serif" size="71">...don't listen...</font>
+
+492
+01:01:15,026 --> 01:01:16,735
+<font face="sans-serif" size="71">...can't understand...</font>
+
+493
+01:01:21,491 --> 01:01:23,158
+<font face="sans-serif" size="71">...what means...</font>
+
+494
+01:01:23,285 --> 01:01:25,661
+<font face="sans-serif" size="71">...to persuade... to listen...</font>
+
+495
+01:02:09,164 --> 01:02:11,999
+<font face="sans-serif" size="71">When you sleep,
+your face goes slack...</font>
+
+496
+01:02:14,878 --> 01:02:17,546
+<font face="sans-serif" size="71">and your mouth
+is swollen and ugly.</font>
+
+497
+01:02:20,592 --> 01:02:23,260
+<font face="sans-serif" size="71">There's a nasty wrinkle
+on your forehead.</font>
+
+498
+01:02:31,519 --> 01:02:34,271
+<font face="sans-serif" size="71">You smell
+of sleep and tears...</font>
+
+499
+01:02:38,276 --> 01:02:41,028
+<font face="sans-serif" size="71">and I can see
+the pulse in your neck.</font>
+
+500
+01:02:42,280 --> 01:02:45,324
+<font face="sans-serif" size="71">There's a scar there
+that you cover with makeup.</font>
+
+501
+01:02:51,456 --> 01:02:53,499
+<font face="sans-serif" size="71">He's calling again.</font>
+
+502
+01:02:55,043 --> 01:02:57,544
+<font face="sans-serif" size="71">I'll find out
+what he wants from us...</font>
+
+503
+01:02:58,546 --> 01:03:01,548
+<font face="sans-serif" size="71">far away out here
+in our solitude.</font>
+
+504
+01:03:28,702 --> 01:03:30,828
+<font face="sans-serif" size="71">Sorry if I frightened you.</font>
+
+505
+01:03:32,080 --> 01:03:33,914
+<font face="sans-serif" size="71">I'm not Elisabet.</font>
+
+506
+01:03:34,290 --> 01:03:36,709
+<font face="sans-serif" size="71">I'm not here
+to make demands.</font>
+
+507
+01:03:37,168 --> 01:03:39,294
+<font face="sans-serif" size="71">I didn't mean to disturb you.</font>
+
+508
+01:03:39,504 --> 01:03:41,588
+<font face="sans-serif" size="71">You think
+I don't understand?</font>
+
+509
+01:03:41,715 --> 01:03:44,508
+<font face="sans-serif" size="71">The doctor
+explained everything.</font>
+
+510
+01:03:45,844 --> 01:03:49,638
+<font face="sans-serif" size="71">But the hardest part
+is explaining to your little boy.</font>
+
+511
+01:03:49,764 --> 01:03:51,807
+<font face="sans-serif" size="71">I do the best I can.</font>
+
+512
+01:03:53,351 --> 01:03:57,229
+<font face="sans-serif" size="71">There's something deeper down,
+hard to get a grip on.</font>
+
+513
+01:03:58,690 --> 01:04:02,317
+<font face="sans-serif" size="71">You love someone...
+or rather, you say you do.</font>
+
+514
+01:04:03,236 --> 01:04:07,114
+<font face="sans-serif" size="71">It's something tangible...
+at least, as far as words can be.</font>
+
+515
+01:04:08,533 --> 01:04:12,036
+<font face="sans-serif" size="71">Mr. Vogler,
+I'm not your wife.</font>
+
+516
+01:04:12,203 --> 01:04:14,413
+<font face="sans-serif" size="71">And you're loved as well.</font>
+
+517
+01:04:14,539 --> 01:04:16,540
+<font face="sans-serif" size="71">You build a community.</font>
+
+518
+01:04:17,083 --> 01:04:19,168
+<font face="sans-serif" size="71">It gives you security.</font>
+
+519
+01:04:19,544 --> 01:04:22,171
+<font face="sans-serif" size="71">You see a possible way
+of enduring, don't you?</font>
+
+520
+01:04:25,258 --> 01:04:29,386
+<font face="sans-serif" size="71">How can I say everything
+I've thought without getting lost...</font>
+
+521
+01:04:29,721 --> 01:04:31,889
+<font face="sans-serif" size="71">without boring you?</font>
+
+522
+01:04:39,731 --> 01:04:43,400
+<font face="sans-serif" size="71">I love you
+as much as ever.</font>
+
+523
+01:04:50,450 --> 01:04:53,285
+<font face="sans-serif" size="71">No, don't worry, my love.</font>
+
+524
+01:04:53,787 --> 01:04:57,081
+<font face="sans-serif" size="71">We have each other.
+We have faith in each other.</font>
+
+525
+01:04:57,207 --> 01:05:00,292
+<font face="sans-serif" size="71">We know each other's thoughts.
+We love each other.</font>
+
+526
+01:05:00,418 --> 01:05:02,503
+<font face="sans-serif" size="71">That's true, isn't it?
+- Yes.</font>
+
+527
+01:05:02,879 --> 01:05:06,882
+<font face="sans-serif" size="71">And it's the effort that counts,
+not what we achieve, right?</font>
+
+528
+01:05:09,511 --> 01:05:11,345
+<font face="sans-serif" size="71">To see each other
+as children,</font>
+
+529
+01:05:11,471 --> 01:05:14,181
+<font face="sans-serif" size="71">tormented, helpless,
+lonely children.</font>
+
+530
+01:05:16,726 --> 01:05:20,354
+<font face="sans-serif" size="71">Tell our little boy
+Mommy will be back soon,</font>
+
+531
+01:05:20,897 --> 01:05:24,566
+<font face="sans-serif" size="71">that Mommy's been ill,
+but she longs for her little boy.</font>
+
+532
+01:05:24,818 --> 01:05:27,778
+<font face="sans-serif" size="71">Remember to buy
+a toy for him.</font>
+
+533
+01:05:27,946 --> 01:05:30,364
+<font face="sans-serif" size="71">A present from Mommy.
+Don't forget.</font>
+
+534
+01:05:30,490 --> 01:05:32,866
+<font face="sans-serif" size="71">I feel such great
+tenderness for you.</font>
+
+535
+01:05:36,788 --> 01:05:38,956
+<font face="sans-serif" size="71">It's almost unbearable.</font>
+
+536
+01:05:40,375 --> 01:05:43,210
+<font face="sans-serif" size="71">I don't know what to do
+with my tenderness.</font>
+
+537
+01:05:45,088 --> 01:05:47,673
+<font face="sans-serif" size="71">I thrive on your tenderness.</font>
+
+538
+01:05:49,300 --> 01:05:52,511
+<font face="sans-serif" size="71">Elisabet, is it good
+for you with me?</font>
+
+539
+01:05:53,096 --> 01:05:55,097
+<font face="sans-serif" size="71">Is it good for you?</font>
+
+540
+01:05:57,308 --> 01:06:00,602
+<font face="sans-serif" size="71">You're a wonderful lover.
+You know that.</font>
+
+541
+01:06:00,728 --> 01:06:02,312
+<font face="sans-serif" size="71">Darling!</font>
+
+542
+01:06:04,149 --> 01:06:06,233
+<font face="sans-serif" size="71">Give me a sedative.</font>
+
+543
+01:06:06,359 --> 01:06:09,653
+<font face="sans-serif" size="71">Toss me aside.
+I can't go on!</font>
+
+544
+01:06:09,821 --> 01:06:11,071
+<font face="sans-serif" size="71">My darling...</font>
+
+545
+01:06:11,197 --> 01:06:12,614
+<font face="sans-serif" size="71">Leave me alone!</font>
+
+546
+01:06:12,740 --> 01:06:14,908
+<font face="sans-serif" size="71">This is shameful, all of it!</font>
+
+547
+01:06:15,493 --> 01:06:17,161
+<font face="sans-serif" size="71">Leave me alone!</font>
+
+548
+01:06:17,328 --> 01:06:19,955
+<font face="sans-serif" size="71">I'm cold and rotten
+and indifferent.</font>
+
+549
+01:06:20,874 --> 01:06:23,667
+<font face="sans-serif" size="71">It's all just a sham and lies!</font>
+
+550
+01:06:33,219 --> 01:06:34,887
+<font face="sans-serif" size="71">What have you got there?</font>
+
+551
+01:06:35,680 --> 01:06:38,182
+<font face="sans-serif" size="71">What are you hiding
+under your hand?</font>
+
+552
+01:06:38,349 --> 01:06:39,933
+<font face="sans-serif" size="71">Let me see.</font>
+
+553
+01:06:43,188 --> 01:06:47,524
+<font face="sans-serif" size="71">It's the picture of your little boy,
+the one you tore up.</font>
+
+554
+01:06:47,650 --> 01:06:49,735
+<font face="sans-serif" size="71">We have to talk about this.</font>
+
+555
+01:06:57,702 --> 01:06:59,870
+<font face="sans-serif" size="71">Tell me now, Elisabet.</font>
+
+556
+01:07:01,122 --> 01:07:02,998
+<font face="sans-serif" size="71">Then I will.</font>
+
+557
+01:07:04,292 --> 01:07:07,336
+<font face="sans-serif" size="71">It happened at a party one night,
+didn't it?</font>
+
+558
+01:07:07,879 --> 01:07:10,464
+<font face="sans-serif" size="71">It was late, and the party
+was quite rowdy.</font>
+
+559
+01:07:11,633 --> 01:07:14,801
+<font face="sans-serif" size="71">Toward morning someone
+in the group said to you...</font>
+
+560
+01:07:15,470 --> 01:07:17,930
+<font face="sans-serif" size="71">"Elisabet, you have
+practically everything</font>
+
+561
+01:07:18,056 --> 01:07:20,057
+<font face="sans-serif" size="71">as a woman
+and as an artist,</font>
+
+562
+01:07:20,225 --> 01:07:22,517
+<font face="sans-serif" size="71">but you lack motherliness."</font>
+
+563
+01:07:24,395 --> 01:07:27,397
+<font face="sans-serif" size="71">You laughed,
+thinking it was ridiculous,</font>
+
+564
+01:07:28,107 --> 01:07:32,110
+<font face="sans-serif" size="71">but later you found yourself
+thinking about what he'd said.</font>
+
+565
+01:07:33,905 --> 01:07:36,198
+<font face="sans-serif" size="71">You grew
+more and more worried...</font>
+
+566
+01:07:37,033 --> 01:07:39,785
+<font face="sans-serif" size="71">so you let your husband
+get you pregnant.</font>
+
+567
+01:07:39,911 --> 01:07:42,079
+<font face="sans-serif" size="71">You wanted
+to be a mother.</font>
+
+568
+01:07:43,414 --> 01:07:46,917
+<font face="sans-serif" size="71">When you knew it was definite,
+you became afraid...</font>
+
+569
+01:07:47,043 --> 01:07:50,045
+<font face="sans-serif" size="71">afraid of responsibility,
+of being tied down,</font>
+
+570
+01:07:50,171 --> 01:07:52,547
+<font face="sans-serif" size="71">of leaving
+the theater behind,</font>
+
+571
+01:07:53,174 --> 01:07:55,801
+<font face="sans-serif" size="71">afraid of pain,
+afraid of dying,</font>
+
+572
+01:07:56,052 --> 01:07:58,679
+<font face="sans-serif" size="71">afraid of your body
+that was swelling up.</font>
+
+573
+01:07:59,889 --> 01:08:02,391
+<font face="sans-serif" size="71">But you played
+the part the whole time,</font>
+
+574
+01:08:02,517 --> 01:08:06,061
+<font face="sans-serif" size="71">the part of the young,
+happy, expectant mother.</font>
+
+575
+01:08:07,146 --> 01:08:09,481
+<font face="sans-serif" size="71">Everyone said,
+"Isn't she beautiful now?</font>
+
+576
+01:08:09,607 --> 01:08:11,942
+<font face="sans-serif" size="71">She's never been
+so beautiful."</font>
+
+577
+01:08:14,779 --> 01:08:18,198
+<font face="sans-serif" size="71">Meanwhile you tried
+several times to abort.</font>
+
+578
+01:08:19,742 --> 01:08:21,618
+<font face="sans-serif" size="71">But you failed.</font>
+
+579
+01:08:22,412 --> 01:08:24,621
+<font face="sans-serif" size="71">When you realized
+it was inevitable,</font>
+
+580
+01:08:24,747 --> 01:08:27,040
+<font face="sans-serif" size="71">you began
+to hate the baby</font>
+
+581
+01:08:27,166 --> 01:08:29,876
+<font face="sans-serif" size="71">and hoped
+it would be stillborn.</font>
+
+582
+01:08:33,256 --> 01:08:36,216
+<font face="sans-serif" size="71">You hoped
+the baby would be dead.</font>
+
+583
+01:08:38,428 --> 01:08:41,138
+<font face="sans-serif" size="71">You wanted a dead baby.</font>
+
+584
+01:08:45,977 --> 01:08:48,854
+<font face="sans-serif" size="71">It was a long
+and difficult delivery.</font>
+
+585
+01:08:48,980 --> 01:08:51,148
+<font face="sans-serif" size="71">You were in agony
+for days.</font>
+
+586
+01:08:52,525 --> 01:08:55,068
+<font face="sans-serif" size="71">The baby was finally
+delivered with forceps.</font>
+
+587
+01:08:55,194 --> 01:08:59,489
+<font face="sans-serif" size="71">You looked with disgust at your
+squealing child and whispered,</font>
+
+588
+01:08:59,615 --> 01:09:02,367
+<font face="sans-serif" size="71">"Can't you just die?
+Can't you die?"</font>
+
+589
+01:09:04,829 --> 01:09:06,747
+<font face="sans-serif" size="71">But he survived.</font>
+
+590
+01:09:08,333 --> 01:09:11,001
+<font face="sans-serif" size="71">The boy cried
+day and night...</font>
+
+591
+01:09:14,047 --> 01:09:16,089
+<font face="sans-serif" size="71">and you hated him.</font>
+
+592
+01:09:16,924 --> 01:09:20,427
+<font face="sans-serif" size="71">You were afraid.
+You had a guilty conscience.</font>
+
+593
+01:09:22,680 --> 01:09:25,015
+<font face="sans-serif" size="71">In the end,
+some relatives and a nanny</font>
+
+594
+01:09:25,141 --> 01:09:27,184
+<font face="sans-serif" size="71">took care of the boy,</font>
+
+595
+01:09:27,310 --> 01:09:31,313
+<font face="sans-serif" size="71">and you could leave your sickbed
+and return to the theater.</font>
+
+596
+01:09:34,150 --> 01:09:36,526
+<font face="sans-serif" size="71">But the suffering wasn't over.</font>
+
+597
+01:09:37,653 --> 01:09:39,696
+<font face="sans-serif" size="71">The boy was seized</font>
+
+598
+01:09:39,864 --> 01:09:42,616
+<font face="sans-serif" size="71">by a vast, unfathomable love
+for his mother.</font>
+
+599
+01:09:42,992 --> 01:09:44,951
+<font face="sans-serif" size="71">You resist.</font>
+
+600
+01:09:45,078 --> 01:09:47,412
+<font face="sans-serif" size="71">You resist desperately,</font>
+
+601
+01:09:47,789 --> 01:09:50,665
+<font face="sans-serif" size="71">because you feel
+you can't return that love.</font>
+
+602
+01:09:50,792 --> 01:09:53,168
+<font face="sans-serif" size="71">You try and try...</font>
+
+603
+01:09:54,379 --> 01:09:58,173
+<font face="sans-serif" size="71">but your encounters with him
+are cruel and awkward.</font>
+
+604
+01:09:58,299 --> 01:10:00,050
+<font face="sans-serif" size="71">You can't do it.</font>
+
+605
+01:10:00,176 --> 01:10:02,219
+<font face="sans-serif" size="71">You're cold and indifferent.</font>
+
+606
+01:10:03,262 --> 01:10:05,389
+<font face="sans-serif" size="71">And he looks at you.</font>
+
+607
+01:10:05,556 --> 01:10:08,475
+<font face="sans-serif" size="71">He loves you,
+and he's so soft,</font>
+
+608
+01:10:08,601 --> 01:10:12,062
+<font face="sans-serif" size="71">and you want to hit him
+for not leaving you alone.</font>
+
+609
+01:10:13,147 --> 01:10:17,150
+<font face="sans-serif" size="71">You find him repulsive,
+with his thick lips and ugly body</font>
+
+610
+01:10:17,276 --> 01:10:19,903
+<font face="sans-serif" size="71">and his moist, pleading eyes.</font>
+
+611
+01:10:20,029 --> 01:10:22,572
+<font face="sans-serif" size="71">You find him repulsive,
+and you're afraid.</font>
+
+612
+01:10:23,783 --> 01:10:25,826
+<font face="sans-serif" size="71">What have you got there?</font>
+
+613
+01:10:26,202 --> 01:10:28,745
+<font face="sans-serif" size="71">What are you hiding
+under your hand?</font>
+
+614
+01:10:29,080 --> 01:10:30,622
+<font face="sans-serif" size="71">Let me see.</font>
+
+615
+01:10:35,002 --> 01:10:38,755
+<font face="sans-serif" size="71">It's the picture of your little boy,
+the one you tore up.</font>
+
+616
+01:10:39,006 --> 01:10:41,216
+<font face="sans-serif" size="71">We have to talk about this.</font>
+
+617
+01:10:49,892 --> 01:10:52,185
+<font face="sans-serif" size="71">Tell me now, Elisabet.</font>
+
+618
+01:10:55,106 --> 01:10:57,023
+<font face="sans-serif" size="71">Then I will.</font>
+
+619
+01:10:59,777 --> 01:11:02,529
+<font face="sans-serif" size="71">It happened at a party one night,
+didn't it?</font>
+
+620
+01:11:03,364 --> 01:11:05,699
+<font face="sans-serif" size="71">It was late, and the party
+was quite rowdy.</font>
+
+621
+01:11:07,535 --> 01:11:10,871
+<font face="sans-serif" size="71">Toward morning someone
+in the group said to you...</font>
+
+622
+01:11:11,414 --> 01:11:14,082
+<font face="sans-serif" size="71">"Elisabet, you have
+practically everything</font>
+
+623
+01:11:14,208 --> 01:11:16,334
+<font face="sans-serif" size="71">as a woman
+and as an artist,</font>
+
+624
+01:11:16,544 --> 01:11:18,962
+<font face="sans-serif" size="71">but you lack motherliness."</font>
+
+625
+01:11:20,756 --> 01:11:24,050
+<font face="sans-serif" size="71">You laughed,
+thinking it was ridiculous,</font>
+
+626
+01:11:25,136 --> 01:11:29,139
+<font face="sans-serif" size="71">but later you found yourself
+thinking about what he'd said.</font>
+
+627
+01:11:29,474 --> 01:11:31,808
+<font face="sans-serif" size="71">You grew
+more and more worried...</font>
+
+628
+01:11:32,602 --> 01:11:35,353
+<font face="sans-serif" size="71">so you let your husband
+get you pregnant.</font>
+
+629
+01:11:37,106 --> 01:11:39,274
+<font face="sans-serif" size="71">You wanted
+to be a mother.</font>
+
+630
+01:11:41,736 --> 01:11:45,238
+<font face="sans-serif" size="71">When you knew it was definite,
+you became afraid...</font>
+
+631
+01:11:46,157 --> 01:11:49,910
+<font face="sans-serif" size="71">afraid of responsibility,
+of being tied down,</font>
+
+632
+01:11:50,036 --> 01:11:52,329
+<font face="sans-serif" size="71">of leaving
+the theater behind,</font>
+
+633
+01:11:53,039 --> 01:11:55,582
+<font face="sans-serif" size="71">afraid of pain,
+afraid of dying,</font>
+
+634
+01:11:56,000 --> 01:11:58,710
+<font face="sans-serif" size="71">afraid of your body
+that was swelling up.</font>
+
+635
+01:12:01,047 --> 01:12:03,507
+<font face="sans-serif" size="71">But you played
+the part the whole time,</font>
+
+636
+01:12:03,633 --> 01:12:07,010
+<font face="sans-serif" size="71">the part of the young,
+happy, expectant mother.</font>
+
+637
+01:12:08,346 --> 01:12:10,555
+<font face="sans-serif" size="71">Everyone said,
+"Isn't she beautiful now?</font>
+
+638
+01:12:10,681 --> 01:12:12,682
+<font face="sans-serif" size="71">She's never been
+so beautiful."</font>
+
+639
+01:12:14,268 --> 01:12:17,771
+<font face="sans-serif" size="71">Meanwhile you tried
+several times to abort.</font>
+
+640
+01:12:18,648 --> 01:12:20,607
+<font face="sans-serif" size="71">But you failed.</font>
+
+641
+01:12:22,235 --> 01:12:24,694
+<font face="sans-serif" size="71">When you realized
+it was inevitable...</font>
+
+642
+01:12:26,322 --> 01:12:28,740
+<font face="sans-serif" size="71">you began
+to hate the baby...</font>
+
+643
+01:12:30,701 --> 01:12:33,453
+<font face="sans-serif" size="71">and hoped
+it would be stillborn.</font>
+
+644
+01:12:36,832 --> 01:12:39,834
+<font face="sans-serif" size="71">You hoped
+the baby would be dead.</font>
+
+645
+01:12:44,048 --> 01:12:46,675
+<font face="sans-serif" size="71">You wanted a dead baby.</font>
+
+646
+01:12:50,972 --> 01:12:53,848
+<font face="sans-serif" size="71">It was a long
+and difficult delivery.</font>
+
+647
+01:12:54,517 --> 01:12:56,768
+<font face="sans-serif" size="71">You were in agony
+for days.</font>
+
+648
+01:12:58,062 --> 01:13:00,730
+<font face="sans-serif" size="71">The baby was finally
+delivered with forceps.</font>
+
+649
+01:13:01,399 --> 01:13:05,694
+<font face="sans-serif" size="71">You looked with disgust at your
+squealing child and whispered,</font>
+
+650
+01:13:05,820 --> 01:13:07,946
+<font face="sans-serif" size="71">"Can't you just die?</font>
+
+651
+01:13:08,072 --> 01:13:09,906
+<font face="sans-serif" size="71">Can't you die?"</font>
+
+652
+01:13:10,575 --> 01:13:13,201
+<font face="sans-serif" size="71">The boy cried
+day and night,</font>
+
+653
+01:13:13,327 --> 01:13:15,412
+<font face="sans-serif" size="71">and you hated him.</font>
+
+654
+01:13:16,122 --> 01:13:19,583
+<font face="sans-serif" size="71">You were afraid.
+You had a guilty conscience.</font>
+
+655
+01:13:21,752 --> 01:13:24,087
+<font face="sans-serif" size="71">In the end,
+some relatives and a nanny</font>
+
+656
+01:13:24,213 --> 01:13:26,214
+<font face="sans-serif" size="71">took care of the boy,</font>
+
+657
+01:13:26,340 --> 01:13:30,260
+<font face="sans-serif" size="71">and you could leave your sickbed
+and return to the theater.</font>
+
+658
+01:13:32,305 --> 01:13:34,180
+<font face="sans-serif" size="71">But the suffering wasn't over.</font>
+
+659
+01:13:36,642 --> 01:13:38,685
+<font face="sans-serif" size="71">The boy was seized</font>
+
+660
+01:13:38,811 --> 01:13:41,730
+<font face="sans-serif" size="71">by a vast, unfathomable love
+for his mother.</font>
+
+661
+01:13:42,231 --> 01:13:45,025
+<font face="sans-serif" size="71">You resist desperately,</font>
+
+662
+01:13:45,151 --> 01:13:48,361
+<font face="sans-serif" size="71">because you feel
+you can't return that love.</font>
+
+663
+01:13:48,487 --> 01:13:50,780
+<font face="sans-serif" size="71">You try and try...</font>
+
+664
+01:13:51,824 --> 01:13:55,493
+<font face="sans-serif" size="71">but your encounters with him
+are cruel and awkward.</font>
+
+665
+01:13:55,620 --> 01:13:57,454
+<font face="sans-serif" size="71">You can't do it.</font>
+
+666
+01:13:58,122 --> 01:14:00,582
+<font face="sans-serif" size="71">You're cold and indifferent.</font>
+
+667
+01:14:01,459 --> 01:14:03,543
+<font face="sans-serif" size="71">And he looks at you.</font>
+
+668
+01:14:03,794 --> 01:14:06,630
+<font face="sans-serif" size="71">He loves you,
+and he's so soft,</font>
+
+669
+01:14:06,881 --> 01:14:10,467
+<font face="sans-serif" size="71">and you want to hit him
+for not leaving you alone.</font>
+
+670
+01:14:11,344 --> 01:14:15,305
+<font face="sans-serif" size="71">You find him repulsive,
+with his thick lips and ugly body</font>
+
+671
+01:14:15,473 --> 01:14:18,058
+<font face="sans-serif" size="71">and his moist, pleading eyes.</font>
+
+672
+01:14:18,184 --> 01:14:20,769
+<font face="sans-serif" size="71">You find him repulsive,
+and you're afraid.</font>
+
+673
+01:14:28,861 --> 01:14:30,362
+<font face="sans-serif" size="71">No!</font>
+
+674
+01:14:31,822 --> 01:14:33,823
+<font face="sans-serif" size="71">I'm not like you.</font>
+
+675
+01:14:34,158 --> 01:14:36,493
+<font face="sans-serif" size="71">I don't feel
+the same way you do.</font>
+
+676
+01:14:37,119 --> 01:14:40,622
+<font face="sans-serif" size="71">I'm Sister Alma.
+I'm only here to help you.</font>
+
+677
+01:14:40,915 --> 01:14:42,957
+<font face="sans-serif" size="71">I'm not Elisabet Vogler.</font>
+
+678
+01:14:43,084 --> 01:14:45,251
+<font face="sans-serif" size="71">You're Elisabet Vogler.</font>
+
+679
+01:14:45,670 --> 01:14:47,796
+<font face="sans-serif" size="71">I'd really like to have...</font>
+
+680
+01:14:49,090 --> 01:14:51,007
+<font face="sans-serif" size="71">I love...</font>
+
+681
+01:14:53,344 --> 01:14:54,844
+<font face="sans-serif" size="71">I haven't...</font>
+
+682
+01:15:29,046 --> 01:15:31,131
+<font face="sans-serif" size="71">I've learned quite a lot.</font>
+
+683
+01:15:45,855 --> 01:15:48,231
+<font face="sans-serif" size="71">Let's see how long
+I can hold out.</font>
+
+684
+01:15:54,363 --> 01:15:58,241
+<font face="sans-serif" size="71">I'll never be like you.
+I change all the time.</font>
+
+685
+01:15:58,367 --> 01:16:01,244
+<font face="sans-serif" size="71">You can do what you want.
+You won't get to me.</font>
+
+686
+01:16:35,488 --> 01:16:37,280
+<font face="sans-serif" size="71">Say nothing.</font>
+
+687
+01:16:38,407 --> 01:16:40,283
+<font face="sans-serif" size="71">Cut a candle.</font>
+
+688
+01:16:40,409 --> 01:16:42,368
+<font face="sans-serif" size="71">A kind of otherness.</font>
+
+689
+01:16:42,578 --> 01:16:45,121
+<font face="sans-serif" size="71">Not now. No, no.</font>
+
+690
+01:16:46,499 --> 01:16:49,167
+<font face="sans-serif" size="71">Warning and outside time.</font>
+
+691
+01:16:49,293 --> 01:16:50,835
+<font face="sans-serif" size="71">Unforeseen.</font>
+
+692
+01:16:50,961 --> 01:16:54,798
+<font face="sans-serif" size="71">When it was supposed to happen,
+it didn't, so... failure.</font>
+
+693
+01:16:54,965 --> 01:16:56,883
+<font face="sans-serif" size="71">You stand there,</font>
+
+694
+01:16:57,009 --> 01:16:58,968
+<font face="sans-serif" size="71">but I should do it.</font>
+
+695
+01:16:59,136 --> 01:17:01,012
+<font face="sans-serif" size="71">Not inward, no.</font>
+
+696
+01:17:01,138 --> 01:17:03,389
+<font face="sans-serif" size="71">Say collect
+and advise others.</font>
+
+697
+01:17:03,516 --> 01:17:05,850
+<font face="sans-serif" size="71">A desperate maybe.</font>
+
+698
+01:17:11,065 --> 01:17:14,818
+<font face="sans-serif" size="71">I take, yes...
+but what is closest?</font>
+
+699
+01:17:15,528 --> 01:17:17,570
+<font face="sans-serif" size="71">What's it called?</font>
+
+700
+01:17:17,696 --> 01:17:19,322
+<font face="sans-serif" size="71">No, no, no.</font>
+
+701
+01:17:19,782 --> 01:17:22,700
+<font face="sans-serif" size="71">Us, we, me, I.</font>
+
+702
+01:17:22,827 --> 01:17:25,286
+<font face="sans-serif" size="71">Many words
+and then disgust,</font>
+
+703
+01:17:25,412 --> 01:17:28,873
+<font face="sans-serif" size="71">unbearable pain,
+the nausea.</font>
+
+704
+01:19:00,925 --> 01:19:03,259
+<font face="sans-serif" size="71">Try and listen to me now.</font>
+
+705
+01:19:03,969 --> 01:19:06,262
+<font face="sans-serif" size="71">Repeat after me.</font>
+
+706
+01:19:10,643 --> 01:19:12,226
+<font face="sans-serif" size="71">Nothing.</font>
+
+707
+01:19:15,773 --> 01:19:17,273
+<font face="sans-serif" size="71">Nothing.</font>
+
+708
+01:19:18,651 --> 01:19:20,485
+<font face="sans-serif" size="71">No, nothing.</font>
+
+709
+01:19:27,451 --> 01:19:28,952
+<font face="sans-serif" size="71">Nothing.</font>
+
+710
+01:19:30,454 --> 01:19:32,038
+<font face="sans-serif" size="71">That's it.</font>
+
+711
+01:19:32,414 --> 01:19:34,123
+<font face="sans-serif" size="71">That's good.</font>
+
+712
+01:19:34,249 --> 01:19:36,292
+<font face="sans-serif" size="71">That's how it should be.</font>
+
+713
+01:23:51,340 --> 01:23:56,552
+<font face="sans-serif" size="71">DIGITALLY RESTORED IN 2011
+BY SVENSK FILMINDUSTRI</font>
+

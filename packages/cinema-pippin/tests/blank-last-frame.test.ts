@@ -52,8 +52,8 @@ I'll be back!`;
 
     const result = blankLastFrame(scene);
 
-    // Should preserve spaces in last frame: "I'll be back!" -> "____ __ _____"
-    expect(result).toContain('____ __ _____');
+    // Should preserve spaces in last frame: "I'll be back!" -> "____ __ ____"
+    expect(result).toContain('____ __ ____');
     expect(result).not.toContain("I'll be back!"); // Should be blanked
     expect(result).toContain('First frame.'); // Earlier frames unchanged
     expect(result).toContain('Second frame here.');
@@ -85,7 +85,7 @@ Hello!`;
 
     const result = blankLastFrame(scene);
 
-    expect(result).toContain('______'); // "Hello!" -> "______"
+    expect(result).toContain('____'); // "Hello!" -> "____" (condensed)
     expect(result).not.toContain('Hello');
   });
 
@@ -96,8 +96,8 @@ Word  with   spaces`;
 
     const result = blankLastFrame(scene);
 
-    // Should preserve the spacing pattern
-    expect(result).toContain('____  ____   ______');
+    // Should preserve the spacing pattern (with condensing)
+    expect(result).toContain('____  ____   ____');
   });
 
   it('should handle realistic Cinema Pippin frame from persona.srt', () => {
@@ -132,8 +132,8 @@ But that's not it!`;
     const result = blankLastFrame(scene);
 
     // Should preserve space pattern in "But that's not it!"
-    // "But that's not it!" becomes "___ ______ ___ ___" (apostrophe blanked)
-    expect(result).toContain('___ ______ ___ ___');
+    // "But that's not it!" becomes "___ ____ ___ ___" (apostrophe blanked, long words condensed)
+    expect(result).toContain('___ ____ ___ ___');
     expect(result).not.toContain("But that's not it!");
     expect(result).toContain('I knew you'); // Earlier frames unchanged
   });

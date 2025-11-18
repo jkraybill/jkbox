@@ -1,16 +1,22 @@
 /**
  * Helper function to blank out text while preserving spaces
- * Replaces all non-space characters (excluding newlines) with underscores
+ * Replaces all non-space characters (excluding newlines) with underscores,
+ * then condenses sequences of more than 4 underscores down to exactly 4.
  *
  * @param text - The text to blank
- * @returns The blanked text with spaces preserved
+ * @returns The blanked text with spaces preserved and long words condensed
  *
  * @example
- * blankWithSpaces("I'll be back!") // Returns "____ __ _____"
- * blankWithSpaces("Hello world")   // Returns "_____ _____"
+ * blankWithSpaces("I'll be back!") // Returns "____ __ ____"
+ * blankWithSpaces("Hello world")   // Returns "____ ____"
+ * blankWithSpaces("extraordinary") // Returns "____"
  */
 export function blankWithSpaces(text: string): string {
-  return text.replace(/\S/g, '_');
+  // First, replace all non-whitespace characters with underscores
+  const blanked = text.replace(/\S/g, '_');
+
+  // Then condense any sequence of 5+ underscores down to exactly 4
+  return blanked.replace(/_{5,}/g, '____');
 }
 
 /**
