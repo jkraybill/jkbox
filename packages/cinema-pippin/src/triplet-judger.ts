@@ -12,6 +12,7 @@ import {
   applyCasing
 } from './keyword-utils.js';
 import { extractVideosForSequence, extractTimestampRange, rebaseSrtTimestamps } from './video-extractor.js';
+import { blankWithSpaces, replaceBlankedText } from './blanking-utils.js';
 
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
 const MODEL = 'qwen2.5:14b';
@@ -840,7 +841,7 @@ async function judgePhrasesInternal(
 ): Promise<number> {
   // Create 5 versions of the scene with each phrase
   const versions = phrases.map((phrase, idx) => {
-    const filledScene = sceneTemplate.replace(/_____/g, phrase);
+    const filledScene = replaceBlankedText(sceneTemplate, phrase);
     return `VERSION ${idx + 1}:\n${filledScene}`;
   });
 
@@ -1164,11 +1165,13 @@ export async function judgeTriplet(
     throw new Error(`Last frame in second scene has invalid format`);
   }
 
-  // Keep index (line 0) and timestamp (line 1), replace text lines with _____
+  // Keep index (line 0) and timestamp (line 1), blank text while preserving spaces
+  const originalText = lastFrameLines.slice(2).join('\n');
+  const blankedText = blankWithSpaces(originalText);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
-    '_____'            // Replace all text with blank
+    blankedText        // Replace text with space-preserving blanks
   ].join('\n');
 
   // Reconstruct second scene with blanked last frame
@@ -1237,10 +1240,12 @@ export async function judgeTriplet(
     throw new Error(`Last frame in third scene has invalid format`);
   }
 
+  const originalTextT3 = lastFrameLinesT3.slice(2).join('\n');
+  const blankedTextT3 = blankWithSpaces(originalTextT3);
   const blankedLastFrameT3 = [
     lastFrameLinesT3[0], // Index
     lastFrameLinesT3[1], // Timestamp
-    '_____'              // Replace all text with blank
+    blankedTextT3        // Replace text with space-preserving blanks
   ].join('\n');
 
   const blankedThirdScene = [
