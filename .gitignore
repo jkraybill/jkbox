@@ -54,6 +54,10 @@ temp/
 # Generated content (cinema-pippin output, etc.)
 generated/
 
+# Cinema Pippin processing output
+assets/succeeded/
+assets/failed/
+
 # Content packs (added separately, not in repo by default)
 content-packs/
 

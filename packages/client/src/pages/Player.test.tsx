@@ -23,9 +23,12 @@ vi.mock('../store/game-store', () => ({
       isConnected: true
     },
     room: {
-      id: 'TEST',
-      state: 'lobby',
-      players: []
+      phase: 'lobby',
+      roomId: 'TEST',
+      players: [],
+      gameVotes: {},
+      readyStates: {},
+      selectedGame: null
     }
   })
 }))
