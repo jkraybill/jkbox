@@ -164,6 +164,8 @@ describe('RetryHandler', () => {
   })
 
   it('should respect max delay cap', async () => {
+    vi.useFakeTimers()
+
     const handler = new RetryHandler({
       maxRetries: 5,
       initialDelay: 50,
@@ -181,18 +183,32 @@ describe('RetryHandler', () => {
       return 'done'
     })
 
-    await handler.execute(fn)
+    const executePromise = handler.execute(fn)
+
+    // Advance through delays: 50, 100, 100 (capped), 100 (capped), 100 (capped)
+    await vi.advanceTimersByTimeAsync(50)  // First retry
+    await vi.advanceTimersByTimeAsync(100) // Second retry
+    await vi.advanceTimersByTimeAsync(100) // Third retry (capped)
+    await vi.advanceTimersByTimeAsync(100) // Fourth retry (capped)
+    await vi.advanceTimersByTimeAsync(100) // Fifth retry (capped)
+
+    await executePromise
 
     // Later delays should be capped at maxDelay (100ms)
     // exponential would be: 50, 100, 200, 400, 800
     // but capped at:       50, 100, 100, 100, 100
-    const delay3 = timestamps[3]! - timestamps[2]! // Should be capped at 100
-    const delay4 = timestamps[4]! - timestamps[3]! // Should be capped at 100
-    const delay5 = timestamps[5]! - timestamps[4]! // Should be capped at 100
+    const delay1 = timestamps[1]! - timestamps[0]!
+    const delay2 = timestamps[2]! - timestamps[1]!
+    const delay3 = timestamps[3]! - timestamps[2]!
+    const delay4 = timestamps[4]! - timestamps[3]!
+    const delay5 = timestamps[5]! - timestamps[4]!
 
-    // All should be capped at maxDelay (with some tolerance for system timing variations)
-    expect(delay3).toBeLessThanOrEqual(150)
-    expect(delay4).toBeLessThanOrEqual(150)
-    expect(delay5).toBeLessThanOrEqual(150)
+    expect(delay1).toBe(50)  // First delay uncapped
+    expect(delay2).toBe(100) // Second delay at cap
+    expect(delay3).toBe(100) // Capped
+    expect(delay4).toBe(100) // Capped
+    expect(delay5).toBe(100) // Capped
+
+    vi.useRealTimers()
   })
 })

@@ -101,10 +101,20 @@ while IFS= read -r -d '' video_file; do
 
     # Use mkvextract for MKV files
     if [[ "$filename" =~ \.mkv$ ]]; then
-        if mkvextract tracks "$video_file" "${subtitle_track}:${basename_no_ext}.sub" 2>&1 | tee -a "$LOG_FILE" | grep -q "Progress: 100%"; then
-            log "  ✓ Subtitle stream extracted"
+        if mkvextract tracks "$video_file" "${subtitle_track}:${basename_no_ext}.sub" >> "$LOG_FILE" 2>&1; then
+            # Verify .sub and .idx files were created
+            if [ -f "${basename_no_ext}.sub" ] && [ -f "${basename_no_ext}.idx" ]; then
+                log "  ✓ Subtitle stream extracted ($(du -h "${basename_no_ext}.sub" | cut -f1))"
+            else
+                error "  Failed to extract subtitle stream - .sub/.idx files missing"
+                ((failed++))
+                rm -f "$TEMP_DIR"/*
+                cd - > /dev/null
+                echo ""
+                continue
+            fi
         else
-            error "  Failed to extract subtitle stream with mkvextract"
+            error "  Failed to extract subtitle stream with mkvextract (exit code: $?)"
             ((failed++))
             rm -f "$TEMP_DIR"/*
             cd - > /dev/null
@@ -116,15 +126,26 @@ while IFS= read -r -d '' video_file; do
         log "  Remuxing to MKV for subtitle extraction..."
         temp_mkv="${basename_no_ext}_temp.mkv"
 
-        if ffmpeg -i "$video_file" -map 0:s:0 -c copy "$temp_mkv" -y 2>&1 | tee -a "$LOG_FILE" | grep -q "Output"; then
-            log "  ✓ Remuxed to temporary MKV"
+        # Run ffmpeg and check exit code (0 = success)
+        if ffmpeg -i "$video_file" -map 0:s:0 -c copy "$temp_mkv" -y >> "$LOG_FILE" 2>&1; then
+            # Verify output file exists and has content
+            if [ -f "$temp_mkv" ] && [ -s "$temp_mkv" ]; then
+                log "  ✓ Remuxed to temporary MKV ($(du -h "$temp_mkv" | cut -f1))"
 
-            # Extract subtitle from temp MKV
-            if mkvextract tracks "$temp_mkv" "0:${basename_no_ext}.sub" 2>&1 | tee -a "$LOG_FILE" | grep -q "Progress: 100%"; then
-                log "  ✓ Subtitle stream extracted"
-                rm -f "$temp_mkv"  # Clean up temp MKV
+                # Extract subtitle from temp MKV
+                if mkvextract tracks "$temp_mkv" "0:${basename_no_ext}.sub" 2>&1 | tee -a "$LOG_FILE" | grep -q "Progress: 100%"; then
+                    log "  ✓ Subtitle stream extracted"
+                    rm -f "$temp_mkv"  # Clean up temp MKV
+                else
+                    error "  Failed to extract subtitle stream from temp MKV"
+                    ((failed++))
+                    rm -f "$TEMP_DIR"/*
+                    cd - > /dev/null
+                    echo ""
+                    continue
+                fi
             else
-                error "  Failed to extract subtitle stream from temp MKV"
+                error "  Remux created empty or missing file"
                 ((failed++))
                 rm -f "$TEMP_DIR"/*
                 cd - > /dev/null
@@ -132,7 +153,7 @@ while IFS= read -r -d '' video_file; do
                 continue
             fi
         else
-            error "  Failed to remux to MKV"
+            error "  Failed to remux to MKV (ffmpeg exit code: $?)"
             ((failed++))
             rm -f "$TEMP_DIR"/*
             cd - > /dev/null
@@ -143,13 +164,14 @@ while IFS= read -r -d '' video_file; do
 
     # Run vobsub2srt on extracted subtitle (without --lang flag, works better)
     log "  Running OCR..."
+    srt_file="${basename_no_ext}.srt"
 
-    if vobsub2srt "$basename_no_ext" 2>&1 | tee -a "$LOG_FILE" | grep -q "Wrote Subtitles"; then
-        # Check if SRT file was created
-        srt_file="${basename_no_ext}.srt"
-
+    if vobsub2srt "$basename_no_ext" >> "$LOG_FILE" 2>&1; then
+        # Check if SRT file was created and has content
         if [ -f "$srt_file" ] && [ -s "$srt_file" ]; then
-            log "  ✓ OCR successful ($(wc -l < "$srt_file") lines), moving files..."
+            line_count=$(wc -l < "$srt_file")
+            file_size=$(du -h "$srt_file" | cut -f1)
+            log "  ✓ OCR successful ($line_count lines, $file_size), moving files..."
 
             # Move SRT to assets
             mv "$srt_file" "$ASSETS_DIR/"
@@ -160,11 +182,15 @@ while IFS= read -r -d '' video_file; do
             log "  ✓ Moved to: $ASSETS_DIR/"
             ((success++))
         else
-            error "  SRT file is empty or missing"
+            error "  vobsub2srt succeeded but SRT file is empty or missing"
             ((failed++))
         fi
     else
-        error "  vobsub2srt failed"
+        error "  vobsub2srt failed (exit code: $?)"
+        # Check if partial SRT was created
+        if [ -f "$srt_file" ]; then
+            warn "  Partial SRT file created ($(wc -l < "$srt_file" 2>/dev/null || echo 0) lines) but OCR incomplete"
+        fi
         ((failed++))
     fi
 

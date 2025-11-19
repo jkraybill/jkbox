@@ -151,7 +151,7 @@ async function loadRatings(ratingsPath: string): Promise<Map<string, MovieRating
       process.stdout.write(`  Processed ${totalCount.toLocaleString()} ratings (matched: ${matchedCount.toLocaleString()})\r`);
     }
 
-    const data = parseTsvLine(line, headers) as MovieRating;
+    const data = parseTsvLine(line, headers) as unknown as MovieRating;
     const rating = parseFloat(data.averageRating);
     const votes = parseInt(data.numVotes, 10);
 
@@ -214,7 +214,7 @@ async function findMatchingMovies(
       process.stdout.write(`  Processed ${totalCount.toLocaleString()} titles (matched: ${matches.length})\r`);
     }
 
-    const data = parseTsvLine(line, headers) as MovieBasics;
+    const data = parseTsvLine(line, headers) as unknown as MovieBasics;
 
     // Filter: must be a movie
     if (data.titleType !== 'movie') continue;
