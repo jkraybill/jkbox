@@ -37,9 +37,8 @@ const OVERLAP_PENALTY_WEIGHT = 50.0;  // High penalty for overlap (dominant fact
 const QUALITY_WEIGHT = 1.0;            // Baseline quality weight
 
 // Memory safety limits (prevent OOM on large files)
-const MAX_RESULTS_PER_KEYWORD = 50;     // Stop after 50 sequences per keyword
-const MAX_SEARCH_WINDOW = 800;          // Only search 800 frames ahead for T2/T3
-const MAX_TOTAL_SEQUENCES = 500;        // Hard cap on total sequences found
+const MAX_RESULTS_PER_KEYWORD = 300;    // Stop after 300 sequences per keyword
+const MAX_SEARCH_WINDOW = 3000;         // Only search 3000 frames ahead for T2/T3
 
 interface TimeRange {
   startSeconds: number;  // T1 F1 start time
@@ -309,23 +308,34 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
   }
 
   // Filter out keywords with frequency > 10000 (too common)
-  // BUT: Always keep at least MAX_QUALIFIED_KEYWORDS to ensure we can reach the target
+  // BUT: Keywords with frequency ≤ 1000 ALWAYS survive (always safe)
+  // AND: Always keep at least MAX_QUALIFIED_KEYWORDS to ensure we can reach the target
   const beforeCommonFilter = keywordScores.length;
-  let filteredScores = keywordScores.filter(k => k.frequency <= 10000);
 
-  // If we filtered too aggressively and have fewer than MAX_QUALIFIED_KEYWORDS,
-  // add back the rarest common words until we hit MAX_QUALIFIED_KEYWORDS
-  if (filteredScores.length < MAX_QUALIFIED_KEYWORDS && keywordScores.length >= MAX_QUALIFIED_KEYWORDS) {
-    // Sort all keywords by frequency (rarest first)
-    const sortedAll = [...keywordScores].sort((a, b) => a.frequency - b.frequency);
-    // Take the rarest MAX_QUALIFIED_KEYWORDS keywords
-    filteredScores = sortedAll.slice(0, MAX_QUALIFIED_KEYWORDS);
-    const added = filteredScores.length - (keywordScores.filter(k => k.frequency <= 10000).length);
-    console.log(`  ⚠️  Only ${filteredScores.length - added} keywords with frequency ≤ 10000`);
-    console.log(`  📈 Added ${added} less-common keywords to reach MAX_QUALIFIED_KEYWORDS (${MAX_QUALIFIED_KEYWORDS})`);
-  } else if (filteredScores.length < beforeCommonFilter) {
+  // Always safe: freq ≤ 1000
+  const alwaysSafe = keywordScores.filter(k => k.frequency <= 1000);
+
+  // Conditional: 1001-10000 freq (keep these)
+  const conditional = keywordScores.filter(k => k.frequency > 1000 && k.frequency <= 10000);
+
+  // Too common: > 10000 freq (initially exclude)
+  const tooCommon = keywordScores.filter(k => k.frequency > 10000);
+
+  // Start with always safe + conditional
+  let filteredScores = [...alwaysSafe, ...conditional];
+
+  // If we don't have enough, add back rarest from "too common" pool
+  if (filteredScores.length < MAX_QUALIFIED_KEYWORDS && tooCommon.length > 0) {
+    const needed = MAX_QUALIFIED_KEYWORDS - filteredScores.length;
+    const sortedCommon = tooCommon.sort((a, b) => a.frequency - b.frequency);
+    const addBack = sortedCommon.slice(0, needed);
+    filteredScores = [...filteredScores, ...addBack];
+    console.log(`  ⚠️  Only ${alwaysSafe.length} keywords with frequency ≤ 1000, ${conditional.length} with 1001-10000`);
+    console.log(`  📈 Added ${addBack.length} less-common keywords (from >10000 pool) to reach MAX_QUALIFIED_KEYWORDS (${MAX_QUALIFIED_KEYWORDS})`);
+  } else if (beforeCommonFilter > filteredScores.length) {
     const removed = beforeCommonFilter - filteredScores.length;
     console.log(`  Filtered out ${removed} common keywords (frequency > 10000)`);
+    console.log(`  Kept ${alwaysSafe.length} always-safe keywords (frequency ≤ 1000)`);
   }
 
   // Sort by frequency (rarest first) and display
@@ -360,12 +370,6 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
     checked++;
     if (checked % 100 === 0) {
       console.log(`    Progress: ${checked}/${totalToCheck} first triplets checked...`);
-    }
-
-    // Safety: stop if we've hit global sequence limit
-    if (results.length >= MAX_TOTAL_SEQUENCES) {
-      console.log(`    ⚠️  Hit MAX_TOTAL_SEQUENCES (${MAX_TOTAL_SEQUENCES}), stopping search early`);
-      break;
     }
 
     // Safety: stop if we've found enough sequences for this keyword
@@ -715,8 +719,11 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][], keywordFreque
       // Sort pool by frequency (rarest first)
       keywordPool.sort((a, b) => a.frequency - b.frequency);
 
-      // Get 6 rarest keywords (or fewer if pool is small)
-      const rarestCount = Math.min(6, keywordPool.length);
+      // Always include ALL keywords with freq ≤ 1000 (always safe)
+      const alwaysSafe = keywordPool.filter(k => k.frequency <= 1000);
+
+      // Expand to at least 6 total (if available)
+      const rarestCount = Math.max(alwaysSafe.length, Math.min(6, keywordPool.length));
       const rarestKeywords = keywordPool.slice(0, rarestCount);
 
       // Randomly pick one of the rarest
