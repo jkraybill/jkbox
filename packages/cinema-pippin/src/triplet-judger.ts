@@ -478,6 +478,14 @@ No explanations, no other text. Just the JSON array of couplets.`;
 
   let jsonStr = jsonMatch[0];
 
+  // Fix flat JSON responses (LLM returns: ["a", "b"], ["c", "d"], ["e", "f"])
+  // instead of: [["a", "b"], ["c", "d"], ["e", "f"]]
+  // Pattern: Starts with [ followed by quoted text, then ],  (note the comma and space after ])
+  // This indicates multiple arrays at the same level, not nested arrays
+  if (/^\[(?:"[^"]*"|'[^']*')\s*,\s*(?:"[^"]*"|'[^']*')\s*\]\s*,\s*\[/.test(jsonStr)) {
+    jsonStr = '[' + jsonStr + ']';
+  }
+
   // Fix common JSON issues from LLM responses
   // Note: Constraints now use single quotes (e.g., "The letter 'E'") which don't need escaping in JSON
   // However, if LLM mistakenly uses double quotes, we still need to fix them
@@ -768,6 +776,14 @@ No explanations, no other text. Just the JSON array of couplets.`;
   }
 
   let jsonStr = jsonMatch[0];
+
+  // Fix flat JSON responses (LLM returns: ["a", "b"], ["c", "d"], ["e", "f"])
+  // instead of: [["a", "b"], ["c", "d"], ["e", "f"]]
+  // Pattern: Starts with [ followed by quoted text, then ],  (note the comma and space after ])
+  // This indicates multiple arrays at the same level, not nested arrays
+  if (/^\[(?:"[^"]*"|'[^']*')\s*,\s*(?:"[^"]*"|'[^']*')\s*\]\s*,\s*\[/.test(jsonStr)) {
+    jsonStr = '[' + jsonStr + ']';
+  }
 
   // Fix common JSON issues (same as T1)
   jsonStr = jsonStr.replace(/(letter\s+)"([A-Za-z0-9])"(\s+--)/gi, '$1\\"$2\\"$3');
@@ -1163,6 +1179,14 @@ No explanations, no other text. Just the JSON array of couplets.`;
   }
 
   let jsonStr = jsonMatch[0];
+
+  // Fix flat JSON responses (LLM returns: ["a", true], ["b", false], ["c", true])
+  // instead of: [["a", true], ["b", false], ["c", true]]
+  // Pattern: Starts with [ followed by quoted text, then ],  (note the comma and space after ])
+  // This indicates multiple arrays at the same level, not nested arrays
+  if (/^\[(?:"[^"]*"|'[^']*')\s*,\s*(?:true|false)\s*\]\s*,\s*\[/.test(jsonStr)) {
+    jsonStr = '[' + jsonStr + ']';
+  }
 
   // Fix LLM using single quotes for array elements instead of double quotes (invalid JSON)
   // JSON standard requires double quotes only
