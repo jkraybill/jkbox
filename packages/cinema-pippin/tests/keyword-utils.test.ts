@@ -23,8 +23,12 @@ describe('Keyword Utils', () => {
       expect(extractLastWordFromText('I love BANANAS')).toBe('bananas');
     });
 
-    it('should handle empty string', () => {
-      expect(extractLastWordFromText('')).toBe('');
+    it('should throw error for empty string', () => {
+      expect(() => extractLastWordFromText('')).toThrow('Cannot extract keyword: last word "" contains no letters');
+    });
+
+    it('should throw error for punctuation-only last word', () => {
+      expect(() => extractLastWordFromText('test ...')).toThrow('Cannot extract keyword: last word "..." contains no letters');
     });
 
     it('should preserve hyphens', () => {

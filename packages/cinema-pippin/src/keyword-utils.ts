@@ -11,7 +11,10 @@
  */
 export function extractLastWordFromText(text: string): string {
   const words = text.trim().split(/\s+/);
-  if (words.length === 0) return '';
+  if (words.length === 0) {
+    throw new Error('Cannot extract keyword: text is empty or contains only whitespace');
+  }
+
   let lastWord = words[words.length - 1];
 
   // First, check if it contains 's followed by punctuation or end of string
@@ -23,13 +26,24 @@ export function extractLastWordFromText(text: string): string {
   }
 
   // Then remove all remaining punctuation and convert to lowercase
-  return lastWord.replace(/[^a-zA-Z-]/g, '').toLowerCase();
+  const keyword = lastWord.replace(/[^a-zA-Z-]/g, '').toLowerCase();
+
+  if (!keyword) {
+    throw new Error(`Cannot extract keyword: last word "${lastWord}" contains no letters`);
+  }
+
+  return keyword;
 }
 
 /**
  * Replace keyword in text with blank, preserving any trailing punctuation and possessives
  */
 export function replaceKeywordWithBlank(text: string, keyword: string): string {
+  // Validate keyword to prevent regex chaos
+  if (!keyword || keyword.length < 2) {
+    throw new Error(`Invalid keyword for blanking: "${keyword}" (must be at least 2 characters)`);
+  }
+
   // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
   // Preserve both possessive and punctuation that's directly attached
   const keywordRegex = new RegExp(
@@ -46,6 +60,11 @@ export function replaceKeywordWithBlank(text: string, keyword: string): string {
  * Replace keyword in text with literal "[keyword]", preserving punctuation and possessives
  */
 export function replaceKeywordWithBrackets(text: string, keyword: string): string {
+  // Validate keyword to prevent regex chaos
+  if (!keyword || keyword.length < 2) {
+    throw new Error(`Invalid keyword for bracket replacement: "${keyword}" (must be at least 2 characters)`);
+  }
+
   // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
   // Replace with literal "[keyword]" (not the actual keyword value), preserving possessive and punctuation
   const keywordRegex = new RegExp(
@@ -130,6 +149,14 @@ export function replaceKeywordWithWord(
   keyword: string,
   replacementWord: string
 ): string {
+  // Validate inputs to prevent regex chaos
+  if (!keyword || keyword.length < 2) {
+    throw new Error(`Invalid keyword for replacement: "${keyword}" (must be at least 2 characters)`);
+  }
+  if (!replacementWord) {
+    throw new Error(`Invalid replacement word: "${replacementWord}"`);
+  }
+
   const keywordRegex = new RegExp(
     `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?\\b`,
     'gi'

@@ -1262,6 +1262,11 @@ export async function judgeTriplet(
   const keyword = extractKeywordFromScene(firstScene);
   console.log(`🔑 Keyword extracted: "${keyword}"`);
 
+  // Validate keyword (must be at least 2 characters to avoid regex chaos)
+  if (!keyword || keyword.length < 2) {
+    throw new Error(`Invalid keyword extracted: "${keyword}" (must be at least 2 characters). Check the last word of the first scene's final frame.`);
+  }
+
   // 3. Blank out keyword
   const blankedScene = firstScene
     .split('\n')
