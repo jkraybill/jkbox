@@ -331,26 +331,15 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
   let checked = 0;
   const totalToCheck = qualifiedFirstTriplets.length;
 
-  // Safety limits to prevent OOM
-  const MAX_RESULTS_PER_KEYWORD = 100; // Stop after finding this many sequences per keyword
-  const MAX_SEARCH_WINDOW = 1000; // Only search this many frames ahead for T2/T3
-  const keywordResultCounts = new Map<string, number>();
-
   for (const t1 of qualifiedFirstTriplets) {
     checked++;
     if (checked % 100 === 0) {
       console.log(`    Progress: ${checked}/${totalToCheck} first triplets checked...`);
     }
 
-    // Skip if we already have enough results for this keyword
-    const currentCount = keywordResultCounts.get(t1.keyword) || 0;
-    if (currentCount >= MAX_RESULTS_PER_KEYWORD) {
-      continue;
-    }
-
     const keywordData = keywordIndex.get(t1.keyword)!;
     const searchStart2 = t1.f1Frame3 + 1;
-    const searchEnd2 = Math.min(searchStart2 + MAX_SEARCH_WINDOW, entries.length - 2);
+    const searchEnd2 = entries.length - 2;
 
     // Get T1 entries for overlap checking
     const triplet1Entries = entries.slice(t1.f1Start, t1.f1Frame3 + 1);
@@ -381,7 +370,7 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
         }
 
         const searchStart3 = f2Frame3 + 1;
-        const searchEnd3 = Math.min(searchStart3 + MAX_SEARCH_WINDOW, entries.length - 2);
+        const searchEnd3 = entries.length - 2;
 
         // Find third triplets
         for (let f3Start = searchStart3; f3Start < searchEnd3; f3Start++) {
@@ -457,18 +446,9 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
             }
 
             results.push([triplet1, triplet2, triplet3]);
-
-            // Update count and check limit
-            keywordResultCounts.set(t1.keyword, (keywordResultCounts.get(t1.keyword) || 0) + 1);
-            if (keywordResultCounts.get(t1.keyword)! >= MAX_RESULTS_PER_KEYWORD) {
-              break; // Stop searching for this keyword
-            }
           }
-          if (keywordResultCounts.get(t1.keyword)! >= MAX_RESULTS_PER_KEYWORD) break;
         }
-        if (keywordResultCounts.get(t1.keyword)! >= MAX_RESULTS_PER_KEYWORD) break;
       }
-      if (keywordResultCounts.get(t1.keyword)! >= MAX_RESULTS_PER_KEYWORD) break;
     }
   }
 
