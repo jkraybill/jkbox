@@ -1,7 +1,23 @@
 // Core type exports for jkbox
 
-// Room types
-export type { Room, RoomConfig, RoomState } from './room'
+// Room types (legacy - being migrated)
+export type { Room, RoomConfig } from './room'
+
+// Phase-based room state (new discriminated union pattern)
+export type {
+  RoomState,
+  LobbyState,
+  CountdownState,
+  PlayingState,
+  ResultsState,
+  Achievement
+} from './room-state'
+export {
+  isLobbyState,
+  isCountdownState,
+  isPlayingState,
+  isResultsState
+} from './room-state'
 
 // Player types
 export type { Player } from './player'
