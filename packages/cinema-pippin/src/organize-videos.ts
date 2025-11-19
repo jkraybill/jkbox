@@ -46,7 +46,7 @@ async function hasSubtitleStream(filePath: string): Promise<boolean> {
 }
 
 /**
- * Sanitize filename: lowercase, replace spaces with hyphens, remove non-alphanumeric
+ * Sanitize filename: lowercase, replace spaces/dots with hyphens, remove non-alphanumeric
  * If sanitization results in empty filename, keep original name
  */
 function sanitizeFilename(filename: string): string {
@@ -58,6 +58,9 @@ function sanitizeFilename(filename: string): string {
 
   // Replace spaces with hyphens
   sanitized = sanitized.replace(/\s+/g, '-');
+
+  // Replace dots with hyphens
+  sanitized = sanitized.replace(/\./g, '-');
 
   // Remove all characters except a-z, 0-9, and hyphens
   sanitized = sanitized.replace(/[^a-z0-9-]/g, '');
