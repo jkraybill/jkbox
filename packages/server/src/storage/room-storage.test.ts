@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { RoomStorage } from './room-storage'
-import type { Room, Player } from '@jkbox/shared'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import type { LobbyState, PlayingState, Player } from '@jkbox/shared'
 
 describe('RoomStorage', () => {
   let storage: RoomStorage
@@ -18,28 +16,21 @@ describe('RoomStorage', () => {
 
   describe('saveRoom', () => {
     it('should save room to database', () => {
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
         players: [],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       storage.saveRoom(room)
       const loaded = storage.getRoom('TEST')
 
       expect(loaded).toBeDefined()
-      expect(loaded?.id).toBe('TEST')
-      expect(loaded?.hostId).toBe('player-1')
-      expect(loaded?.state).toBe('lobby')
+      expect(loaded?.roomId).toBe('TEST')
+      expect(loaded?.phase).toBe('lobby')
     })
 
     it('should save room with players', () => {
@@ -70,19 +61,13 @@ describe('RoomStorage', () => {
         }
       ]
 
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
         players,
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       storage.saveRoom(room)
@@ -95,31 +80,33 @@ describe('RoomStorage', () => {
     })
 
     it('should update existing room', () => {
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
         players: [],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       storage.saveRoom(room)
 
-      // Update state
-      room.state = 'playing'
-      room.currentGame = 'fake-facts'
-      storage.saveRoom(room)
+      // Update state to playing
+      const playingRoom: PlayingState = {
+        phase: 'playing',
+        roomId: 'TEST',
+        players: [],
+        gameId: 'fake-facts',
+        roundNumber: 1,
+        currentRound: null
+      }
+      storage.saveRoom(playingRoom)
 
       const loaded = storage.getRoom('TEST')
-      expect(loaded?.state).toBe('playing')
-      expect(loaded?.currentGame).toBe('fake-facts')
+      expect(loaded?.phase).toBe('playing')
+      if (loaded?.phase === 'playing') {
+        expect(loaded.gameId).toBe('fake-facts')
+      }
     })
   })
 
@@ -130,60 +117,55 @@ describe('RoomStorage', () => {
     })
 
     it('should restore Date objects correctly', () => {
-      const createdAt = new Date('2025-01-01T12:00:00Z')
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
-        players: [],
-        createdAt,
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+      const connectedAt = new Date('2025-01-01T12:00:00Z')
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
+        players: [
+          {
+            id: 'player-1',
+            roomId: 'TEST',
+            nickname: 'Alice',
+            sessionToken: 'token-1',
+            isAdmin: false,
+            isHost: false,
+            score: 0,
+            connectedAt,
+            lastSeenAt: connectedAt,
+            isConnected: true
+          }
+        ],
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       storage.saveRoom(room)
       const loaded = storage.getRoom('TEST')
 
-      expect(loaded?.createdAt).toBeInstanceOf(Date)
-      expect(loaded?.createdAt.toISOString()).toBe(createdAt.toISOString())
+      expect(loaded?.players[0]?.connectedAt).toBeInstanceOf(Date)
+      expect(loaded?.players[0]?.connectedAt.toISOString()).toBe(connectedAt.toISOString())
     })
   })
 
   describe('getAllRooms', () => {
     it('should return all rooms', () => {
-      const room1: Room = {
-        id: 'ROOM1',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+      const room1: LobbyState = {
+        phase: 'lobby',
+        roomId: 'ROOM1',
         players: [],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
-      const room2: Room = {
-        id: 'ROOM2',
-        hostId: 'player-2',
-        adminIds: ['player-2'],
-        state: 'playing',
-        currentGame: 'fake-facts',
+      const room2: PlayingState = {
+        phase: 'playing',
+        roomId: 'ROOM2',
         players: [],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 8,
-          allowMidGameJoin: true,
-          autoAdvanceTimers: false
-        }
+        gameId: 'fake-facts',
+        roundNumber: 1,
+        currentRound: null
       }
 
       storage.saveRoom(room1)
@@ -191,7 +173,7 @@ describe('RoomStorage', () => {
 
       const rooms = storage.getAllRooms()
       expect(rooms).toHaveLength(2)
-      expect(rooms.map(r => r.id).sort()).toEqual(['ROOM1', 'ROOM2'])
+      expect(rooms.map(r => r.roomId).sort()).toEqual(['ROOM1', 'ROOM2'])
     })
 
     it('should return empty array when no rooms exist', () => {
@@ -201,13 +183,10 @@ describe('RoomStorage', () => {
   })
 
   describe('deleteRoom', () => {
-    it('should delete room and associated players', () => {
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+    it('should delete room', () => {
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
         players: [
           {
             id: 'player-1',
@@ -222,12 +201,9 @@ describe('RoomStorage', () => {
             isConnected: true
           }
         ],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       storage.saveRoom(room)
@@ -246,19 +222,13 @@ describe('RoomStorage', () => {
     it('should create tables from schema file', () => {
       // Schema already applied in constructor
       // Verify by inserting and retrieving data
-      const room: Room = {
-        id: 'TEST',
-        hostId: 'player-1',
-        adminIds: ['player-1'],
-        state: 'lobby',
-        currentGame: null,
+      const room: LobbyState = {
+        phase: 'lobby',
+        roomId: 'TEST',
         players: [],
-        createdAt: new Date(),
-        config: {
-          maxPlayers: 12,
-          allowMidGameJoin: false,
-          autoAdvanceTimers: true
-        }
+        gameVotes: {},
+        readyStates: {},
+        selectedGame: null
       }
 
       expect(() => storage.saveRoom(room)).not.toThrow()

@@ -10,51 +10,37 @@ describe('RoomManager', () => {
 
   describe('createRoom', () => {
     it('should create a room with unique ID', () => {
-      const room = manager.createRoom('host-1')
+      const room = manager.createRoom()
 
-      expect(room.id).toBeDefined()
-      expect(room.id.length).toBeGreaterThan(0)
-      expect(room.hostId).toBe('host-1')
-      expect(room.state).toBe('lobby')
+      expect(room.roomId).toBeDefined()
+      expect(room.roomId.length).toBeGreaterThan(0)
+      expect(room.phase).toBe('lobby')
       expect(room.players).toHaveLength(0)
     })
 
     it('should create rooms with different IDs', () => {
-      const room1 = manager.createRoom('host-1')
-      const room2 = manager.createRoom('host-2')
+      const room1 = manager.createRoom()
+      const room2 = manager.createRoom()
 
-      expect(room1.id).not.toBe(room2.id)
+      expect(room1.roomId).not.toBe(room2.roomId)
     })
 
-    it('should initialize with default config', () => {
-      const room = manager.createRoom('host-1')
+    it('should initialize lobby state with voting properties', () => {
+      const room = manager.createRoom()
 
-      expect(room.config.maxPlayers).toBe(12)
-      expect(room.config.allowMidGameJoin).toBe(false)
-      expect(room.config.autoAdvanceTimers).toBe(true)
-    })
-
-    it('should set host as admin', () => {
-      const room = manager.createRoom('host-1')
-
-      expect(room.adminIds).toContain('host-1')
-      expect(room.adminIds).toHaveLength(1)
-    })
-
-    it('should initialize with no current game', () => {
-      const room = manager.createRoom('host-1')
-
-      expect(room.currentGame).toBeNull()
+      expect(room.gameVotes).toEqual({})
+      expect(room.readyStates).toEqual({})
+      expect(room.selectedGame).toBeNull()
     })
   })
 
   describe('getRoom', () => {
     it('should retrieve existing room by ID', () => {
-      const created = manager.createRoom('host-1')
-      const retrieved = manager.getRoom(created.id)
+      const created = manager.createRoom()
+      const retrieved = manager.getRoom(created.roomId)
 
       expect(retrieved).toBeDefined()
-      expect(retrieved?.id).toBe(created.id)
+      expect(retrieved?.roomId).toBe(created.roomId)
     })
 
     it('should return undefined for non-existent room', () => {
@@ -66,10 +52,10 @@ describe('RoomManager', () => {
 
   describe('getRoomByPlayerId', () => {
     it('should find room containing player', () => {
-      const room = manager.createRoom('host-1')
-      manager.addPlayer(room.id, {
+      const room = manager.createRoom()
+      manager.addPlayer(room.roomId, {
         id: 'player-1',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice',
         sessionToken: 'token-1',
         isAdmin: false,
@@ -83,11 +69,11 @@ describe('RoomManager', () => {
       const found = manager.getRoomByPlayerId('player-1')
 
       expect(found).toBeDefined()
-      expect(found?.id).toBe(room.id)
+      expect(found?.roomId).toBe(room.roomId)
     })
 
     it('should return undefined if player not in any room', () => {
-      manager.createRoom('host-1')
+      manager.createRoom()
       const found = manager.getRoomByPlayerId('nonexistent')
 
       expect(found).toBeUndefined()
@@ -96,11 +82,11 @@ describe('RoomManager', () => {
 
   describe('addPlayer', () => {
     it('should add player to room', () => {
-      const room = manager.createRoom('host-1')
+      const room = manager.createRoom()
 
-      manager.addPlayer(room.id, {
+      manager.addPlayer(room.roomId, {
         id: 'player-1',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice',
         sessionToken: 'token-1',
         isAdmin: false,
@@ -111,19 +97,19 @@ describe('RoomManager', () => {
         isConnected: true
       })
 
-      const updated = manager.getRoom(room.id)
+      const updated = manager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(1)
       expect(updated?.players[0]?.id).toBe('player-1')
     })
 
     it('should not add player if room is full', () => {
-      const room = manager.createRoom('host-1')
+      const room = manager.createRoom()
 
       // Add max players (12)
       for (let i = 0; i < 12; i++) {
-        manager.addPlayer(room.id, {
+        manager.addPlayer(room.roomId, {
           id: `player-${i}`,
-          roomId: room.id,
+          roomId: room.roomId,
           nickname: `Player${i}`,
           sessionToken: `token-${i}`,
           isAdmin: false,
@@ -136,9 +122,9 @@ describe('RoomManager', () => {
       }
 
       // Try to add 13th player
-      const result = manager.addPlayer(room.id, {
+      const result = manager.addPlayer(room.roomId, {
         id: 'player-13',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Overflow',
         sessionToken: 'token-13',
         isAdmin: false,
@@ -150,17 +136,17 @@ describe('RoomManager', () => {
       })
 
       expect(result).toBe(false)
-      const updated = manager.getRoom(room.id)
+      const updated = manager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(12)
     })
   })
 
   describe('removePlayer', () => {
     it('should remove player from room', () => {
-      const room = manager.createRoom('host-1')
-      manager.addPlayer(room.id, {
+      const room = manager.createRoom()
+      manager.addPlayer(room.roomId, {
         id: 'player-1',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice',
         sessionToken: 'token-1',
         isAdmin: false,
@@ -171,27 +157,27 @@ describe('RoomManager', () => {
         isConnected: true
       })
 
-      manager.removePlayer(room.id, 'player-1')
+      manager.removePlayer(room.roomId, 'player-1')
 
-      const updated = manager.getRoom(room.id)
+      const updated = manager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(0)
     })
 
     it('should not error when removing non-existent player', () => {
-      const room = manager.createRoom('host-1')
+      const room = manager.createRoom()
 
       expect(() => {
-        manager.removePlayer(room.id, 'nonexistent')
+        manager.removePlayer(room.roomId, 'nonexistent')
       }).not.toThrow()
     })
   })
 
   describe('updatePlayer', () => {
     it('should update player properties', () => {
-      const room = manager.createRoom('host-1')
-      manager.addPlayer(room.id, {
+      const room = manager.createRoom()
+      manager.addPlayer(room.roomId, {
         id: 'player-1',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice',
         sessionToken: 'token-1',
         isAdmin: false,
@@ -202,12 +188,12 @@ describe('RoomManager', () => {
         isConnected: true
       })
 
-      manager.updatePlayer(room.id, 'player-1', {
+      manager.updatePlayer(room.roomId, 'player-1', {
         score: 100,
         isAdmin: true
       })
 
-      const updated = manager.getRoom(room.id)
+      const updated = manager.getRoom(room.roomId)
       const player = updated?.players.find(p => p.id === 'player-1')
       expect(player?.score).toBe(100)
       expect(player?.isAdmin).toBe(true)
@@ -217,10 +203,10 @@ describe('RoomManager', () => {
 
   describe('deleteRoom', () => {
     it('should delete room', () => {
-      const room = manager.createRoom('host-1')
-      manager.deleteRoom(room.id)
+      const room = manager.createRoom()
+      manager.deleteRoom(room.roomId)
 
-      const found = manager.getRoom(room.id)
+      const found = manager.getRoom(room.roomId)
       expect(found).toBeUndefined()
     })
   })

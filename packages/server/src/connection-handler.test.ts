@@ -55,23 +55,23 @@ describe('ConnectionHandler', () => {
 
   describe('handleJoin', () => {
     it('should create player and add to room', () => {
-      const room = roomManager.createRoom('host-1')
+      const room = roomManager.createRoom()
       const socket = createMockSocket('socket-1')
 
       handler.handleJoin(socket as Socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice'
       })
 
-      const updated = roomManager.getRoom(room.id)
+      const updated = roomManager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(1)
       expect(updated?.players[0]?.nickname).toBe('Alice')
       expect(updated?.players[0]?.isConnected).toBe(true)
     })
 
-    it('should emit join:success with player and room after successful join', () => {
-      const room = roomManager.createRoom('host-1')
+    it('should emit join:success with player and state after successful join', () => {
+      const room = roomManager.createRoom()
       const socket = createMockSocket('socket-1') as Socket & {
         _getEmittedEvents: () => Array<{ event: string; data: unknown }>
         _getJoinedRooms: () => string[]
@@ -79,7 +79,7 @@ describe('ConnectionHandler', () => {
 
       handler.handleJoin(socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice'
       })
 
@@ -88,15 +88,16 @@ describe('ConnectionHandler', () => {
 
       expect(joinSuccessEvent).toBeDefined()
 
-      const data = joinSuccessEvent?.data as { type: string; player: { nickname: string; sessionToken: string }; room: { id: string } }
+      const data = joinSuccessEvent?.data as { type: string; player: { nickname: string; sessionToken: string }; state: { roomId: string; phase: string } }
       expect(data.type).toBe('join:success')
       expect(data.player.nickname).toBe('Alice')
       expect(data.player.sessionToken).toBeDefined()
-      expect(data.room.id).toBe(room.id)
+      expect(data.state.roomId).toBe(room.roomId)
+      expect(data.state.phase).toBe('lobby')
     })
 
-    it('should make socket join room and broadcast room update', () => {
-      const room = roomManager.createRoom('host-1')
+    it('should make socket join room and broadcast room state', () => {
+      const room = roomManager.createRoom()
       const socket = createMockSocket('socket-1') as Socket & {
         _getEmittedEvents: () => Array<{ event: string; data: unknown }>
         _getJoinedRooms: () => string[]
@@ -104,22 +105,23 @@ describe('ConnectionHandler', () => {
 
       handler.handleJoin(socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice'
       })
 
       // Check socket joined the room
       const joinedRooms = socket._getJoinedRooms()
-      expect(joinedRooms).toContain(room.id)
+      expect(joinedRooms).toContain(room.roomId)
 
       // Check broadcast to room
       const broadcasts = io._getBroadcastEvents()
-      const roomUpdateBroadcast = broadcasts.find(b => b.room === room.id && b.event === 'room:update')
+      const roomStateBroadcast = broadcasts.find(b => b.room === room.roomId && b.event === 'room:state')
 
-      expect(roomUpdateBroadcast).toBeDefined()
-      const broadcastData = roomUpdateBroadcast?.data as { type: string; room: { id: string } }
-      expect(broadcastData.type).toBe('room:update')
-      expect(broadcastData.room.id).toBe(room.id)
+      expect(roomStateBroadcast).toBeDefined()
+      const broadcastData = roomStateBroadcast?.data as { type: string; state: { roomId: string; phase: string } }
+      expect(broadcastData.type).toBe('room:state')
+      expect(broadcastData.state.roomId).toBe(room.roomId)
+      expect(broadcastData.state.phase).toBe('lobby')
     })
 
     it('should emit error if room does not exist', () => {
@@ -141,13 +143,13 @@ describe('ConnectionHandler', () => {
     })
 
     it('should emit error if room is full', () => {
-      const room = roomManager.createRoom('host-1')
+      const room = roomManager.createRoom()
 
       // Fill room to capacity
       for (let i = 0; i < 12; i++) {
-        roomManager.addPlayer(room.id, {
+        roomManager.addPlayer(room.roomId, {
           id: `player-${i}`,
-          roomId: room.id,
+          roomId: room.roomId,
           nickname: `Player${i}`,
           sessionToken: `token-${i}`,
           isAdmin: false,
@@ -165,7 +167,7 @@ describe('ConnectionHandler', () => {
 
       handler.handleJoin(socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Overflow'
       })
 
@@ -179,37 +181,37 @@ describe('ConnectionHandler', () => {
 
   describe('handleDisconnect', () => {
     it('should mark player as disconnected', () => {
-      const room = roomManager.createRoom('host-1')
+      const room = roomManager.createRoom()
       const socket = createMockSocket('socket-1')
 
       handler.handleJoin(socket as Socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice'
       })
 
       handler.handleDisconnect(socket as Socket)
 
-      const updated = roomManager.getRoom(room.id)
+      const updated = roomManager.getRoom(room.roomId)
       const player = updated?.players[0]
 
       expect(player?.isConnected).toBe(false)
     })
 
     it('should update lastSeenAt timestamp', () => {
-      const room = roomManager.createRoom('host-1')
+      const room = roomManager.createRoom()
       const socket = createMockSocket('socket-1')
       const beforeDisconnect = new Date()
 
       handler.handleJoin(socket as Socket, {
         type: 'join',
-        roomId: room.id,
+        roomId: room.roomId,
         nickname: 'Alice'
       })
 
       handler.handleDisconnect(socket as Socket)
 
-      const updated = roomManager.getRoom(room.id)
+      const updated = roomManager.getRoom(room.roomId)
       const player = updated?.players[0]
 
       expect(player?.lastSeenAt.getTime()).toBeGreaterThanOrEqual(beforeDisconnect.getTime())
