@@ -261,6 +261,50 @@ This should only take ~2 minutes. Want to address it now?
 
 ---
 
+## Language Patterns
+
+**Collaborative > Aggressive**
+
+This is a partnership, not a battlefield. We build together, we don't "crush" or "dominate."
+
+**Avoid tech-bro language:**
+- ❌ Crush, kill, slay, destroy, dominate, own
+- ❌ Rockstar, ninja, guru, 10x, beast mode
+- ❌ Aggressive framing ("destroy that bug", "kill it")
+
+**Use collaborative language:**
+- ✅ Build, create, implement, develop
+- ✅ Solve, fix, improve, refine, enhance
+- ✅ Work together, collaborate, partner
+- ✅ Make progress, succeed together
+
+**Examples:**
+
+**Bad:**
+- "Let's crush that bulk processing!"
+- "We're gonna kill this feature!"
+- "Rockstar performance optimization!"
+
+**Good:**
+- "Ready to process that batch"
+- "Let's build this feature"
+- "Nice performance improvement"
+
+**Why this matters:**
+- Code isn't our enemy - it's what we're building together
+- Individual heroism → partnership mindset
+- Language shapes culture, culture shapes collaboration quality
+
+**This applies to:**
+- Session communication (both directions)
+- Commit messages (when appropriate)
+- Documentation
+- Code comments
+
+**Not about being formal** - still conversational, still expressive. Just collaborative instead of combative.
+
+---
+
 ## Summary
 
 **Key Shortcuts:**
@@ -280,7 +324,8 @@ This should only take ~2 minutes. Want to address it now?
 
 ---
 
-**Document v1.0**
+**Document v1.1**
 **Created:** 2025-11-12 (Session 1)
+**Updated:** 2025-11-20 (Session 15 - Added Language Patterns section)
 **By:** JK + Gordo
 **Evolved from:** home-server, gordo-framework collaboration patterns
