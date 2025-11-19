@@ -12,7 +12,7 @@ import {
   applyCasing
 } from './keyword-utils.js';
 import { extractVideosForSequence, extractTimestampRange, rebaseSrtTimestamps } from './video-extractor.js';
-import { blankWithSpaces, replaceBlankedText, condenseAndBlank } from './blanking-utils.js';
+import { replaceBlankedText, condenseAndBlank } from './blanking-utils.js';
 
 const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
 const MODEL = 'qwen-fast'; // Optimized qwen2.5:14b (num_ctx=2048, num_batch=512) - ~40% faster
@@ -1260,6 +1260,7 @@ export async function judgeTriplet(
   // NEW RULE: Condense multi-line to single line (with spaces), then blank with max 8 words
   const textLines = lastFrameLines.slice(2);
   const blankedText = condenseAndBlank(textLines);
+  console.log(`🐛 DEBUG T2: Input lines=${textLines.length}, Blanked="${blankedText}", WordCount=${blankedText.split(/\s+/).length}`);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
@@ -1339,6 +1340,7 @@ export async function judgeTriplet(
   // NEW RULE: Condense multi-line to single line (with spaces), then blank with max 8 words
   const textLinesT3 = lastFrameLinesT3.slice(2);
   const blankedTextT3 = condenseAndBlank(textLinesT3);
+  console.log(`🐛 DEBUG T3: Input lines=${textLinesT3.length}, Blanked="${blankedTextT3}", WordCount=${blankedTextT3.split(/\s+/).length}`);
   const blankedLastFrameT3 = [
     lastFrameLinesT3[0], // Index
     lastFrameLinesT3[1], // Timestamp
@@ -1535,9 +1537,9 @@ export async function judgeAllTriplets(srtFile: string): Promise<TripletJudgment
 }
 
 /**
- * Helper: Blank out the last frame of a scene with space-preserving blanks
- * Replaces non-whitespace characters with underscores while preserving spaces
- * Example: "I'll be back!" becomes "____ __ _____"
+ * Helper: Blank out the last frame of a scene with condensed blanks (max 8 words)
+ * Uses condenseAndBlank to ensure consistent behavior with T2/T3 processing
+ * Example: "I'll be back!" becomes "____ __ ____"
  */
 function blankLastFrame(scene: string): string {
   const frames = scene.split(/\n\n+/);
@@ -1552,13 +1554,13 @@ function blankLastFrame(scene: string): string {
     return scene;
   }
 
-  // Keep index (line 0) and timestamp (line 1), blank text while preserving spaces
-  const originalText = lastFrameLines.slice(2).join('\n');
-  const blankedText = blankWithSpaces(originalText);
+  // Keep index (line 0) and timestamp (line 1), blank text with condenseAndBlank (max 8 words)
+  const textLines = lastFrameLines.slice(2);
+  const blankedText = condenseAndBlank(textLines);
   const blankedLastFrame = [
     lastFrameLines[0], // Index
     lastFrameLines[1], // Timestamp
-    blankedText        // Replace text with space-preserving blanks
+    blankedText        // Condensed + blanked text (max 8 blank words)
   ].join('\n');
 
   // Reconstruct scene with blanked last frame
