@@ -334,9 +334,10 @@ async function generateReplacementWordsInternal(
     .join('\n');
 
   // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
-  const exampleConstraint1 = constraints[0];
-  const exampleConstraint2 = constraints[1];
-  const exampleConstraint3 = constraints[2];
+  // Extract just the constraint name (before " -- ") to keep examples concise
+  const exampleConstraint1 = constraints[0].split(' -- ')[0];
+  const exampleConstraint2 = constraints[1].split(' -- ')[0];
+  const exampleConstraint3 = constraints[2].split(' -- ')[0];
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER one-word punchlines that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
@@ -421,8 +422,8 @@ Given constraints:
 2. ${exampleConstraint2}
 3. ${exampleConstraint3}
 
-BAD Output: [["${exampleConstraint1}", "word1"], ["Foodie -- this punchline should be food-related.", "word2"], ["Pop culture -- this punchline should reference movies.", "word3"]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2.split(' -- ')[0]}". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraint1}", "word1"], ["Foodie", "word2"], ["Pop culture", "word3"]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
@@ -436,9 +437,6 @@ GOOD Output: [["${exampleConstraint1}", "word1"], ["${exampleConstraint2}", "wor
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-word pairs).
 Each couplet is [constraint_text, word] where constraint_text is EXACTLY copied from above.
-
-Format:
-[["constraint 1 full text here", "word1"], ["constraint 2 full text here", "word2"], ["constraint 3 full text here", "word3"], ["constraint 4 full text here", "word4"], ["constraint 5 full text here", "word5"], ["constraint 6 full text here", "word6"]]
 
 No explanations, no other text. Just the JSON array of couplets.`;
 
@@ -626,9 +624,10 @@ async function generateReplacementPhrasesInternal(
     .join('\n');
 
   // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
-  const exampleConstraint1 = constraintsWithWordCount[0];
-  const exampleConstraint2 = constraintsWithWordCount[1];
-  const exampleConstraint3 = constraintsWithWordCount[2];
+  // Extract just the constraint name + word count (before " -- ") to keep examples concise
+  const exampleConstraint1 = constraintsWithWordCount[0].split(' -- ')[0];
+  const exampleConstraint2 = constraintsWithWordCount[1].split(' -- ')[0];
+  const exampleConstraint3 = constraintsWithWordCount[2].split(' -- ')[0];
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER multi-word punchlines and phrases that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
@@ -713,8 +712,8 @@ Given constraints:
 2. ${exampleConstraint2}
 3. ${exampleConstraint3}
 
-BAD Output: [["${exampleConstraint1}", "phrase1."], ["Foodie (5 words) -- this punchline should be food-related.", "phrase2."], ["Pop culture (4 words) -- this punchline should reference movies.", "phrase3."]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2.split(' -- ')[0]}". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraint1}", "phrase1."], ["Foodie (5 words)", "phrase2."], ["Pop culture (4 words)", "phrase3."]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
@@ -728,9 +727,6 @@ GOOD Output: [["${exampleConstraint1}", "phrase1."], ["${exampleConstraint2}", "
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-phrase pairs).
 Each couplet is [constraint_text, phrase] where constraint_text is EXACTLY copied from above.
-
-Format:
-[["constraint 1 full text here", "phrase 1"], ["constraint 2 full text here", "phrase 2"], ["constraint 3 full text here", "phrase 3"], ["constraint 4 full text here", "phrase 4"], ["constraint 5 full text here", "phrase 5"], ["constraint 6 full text here", "phrase 6"]]
 
 No explanations, no other text. Just the JSON array of couplets.`;
 
