@@ -337,19 +337,34 @@ async function generateReplacementWordsInternal(
 
   const prompt = `Generate 6 HILARIOUS one-word replacements for a blank in this film scene.
 
+🚨 CRITICAL: DO NOT REORDER OR MODIFY CONSTRAINT NAMES! 🚨
+The #1 failure mode is putting constraints in the wrong array position.
+Your response WILL BE REJECTED if array positions don't match constraint numbers.
+
 🎯 CRITICAL RULES - FOLLOW EXACTLY:
 • Generate EXACTLY 6 words in a JSON array
 • Array position MUST match constraint number:
-  - Array[0] = word for constraint 1
-  - Array[1] = word for constraint 2
-  - Array[2] = word for constraint 3
-  - Array[3] = word for constraint 4
-  - Array[4] = word for constraint 5
-  - Array[5] = word for constraint 6
+  - Array[0] = word for constraint 1 (FIRST constraint below)
+  - Array[1] = word for constraint 2 (SECOND constraint below)
+  - Array[2] = word for constraint 3 (THIRD constraint below)
+  - Array[3] = word for constraint 4 (FOURTH constraint below)
+  - Array[4] = word for constraint 5 (FIFTH constraint below)
+  - Array[5] = word for constraint 6 (SIXTH constraint below)
+• COPY the constraint name EXACTLY as written - DO NOT modify, paraphrase, or reorder
 • EACH word satisfies ONLY its ONE assigned constraint
 • Words must be SINGLE WORDS (no phrases, no hyphens unless part of one word)
 • Maximize ABSURDITY, SURPRISE, and HUMOR in context
 • This is an ADULTS-ONLY game - dark humor, sexual innuendo, toilet humor all ENCOURAGED
+
+📝 STEP-BY-STEP PROCESS (follow this order):
+1. Read the 6 constraints below (numbered 1-6)
+2. For constraint #1: Generate a funny word, create couplet [constraint_1_text, word_1]
+3. For constraint #2: Generate a funny word, create couplet [constraint_2_text, word_2]
+4. For constraint #3: Generate a funny word, create couplet [constraint_3_text, word_3]
+5. For constraint #4: Generate a funny word, create couplet [constraint_4_text, word_4]
+6. For constraint #5: Generate a funny word, create couplet [constraint_5_text, word_5]
+7. For constraint #6: Generate a funny word, create couplet [constraint_6_text, word_6]
+8. Return array: [couplet_1, couplet_2, couplet_3, couplet_4, couplet_5, couplet_6]
 
 📝 WORD FORMAT RULES (CRITICAL):
 
@@ -386,23 +401,32 @@ ${blankedScene}
 - Shock value + cleverness = gold
 - If multiple words fit a constraint, pick the FUNNIEST one
 
-❌ WRONG EXAMPLE (constraint mismatch):
-Constraints:
+❌ WRONG EXAMPLE #1 (reordered constraints):
+Given constraints:
 1. The letter 'S' -- this punchline must begin with the letter 'S'.
 2. Foodie -- this punchline should be food-related.
 3. Geographical -- this punchline should be geography-related.
 
-Output: [["Foodie -- this punchline should be food-related.", "ravioli"], ["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Geographical -- this punchline should be geography-related.", "France"]]
-← WRONG! Constraints are in wrong order (1 and 2 swapped)!
+BAD Output: [["Foodie -- this punchline should be food-related.", "ravioli"], ["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Geographical -- this punchline should be geography-related.", "France"]]
+← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
+
+❌ WRONG EXAMPLE #2 (made up different constraint names):
+Given constraints:
+1. The letter 'S' -- this punchline must begin with the letter 'S'.
+2. Quotes -- this punchline should reference famous quotes.
+3. Geographical -- this punchline should be geography-related.
+
+BAD Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Foodie -- this punchline should be food-related.", "ravioli"], ["Pop culture -- this punchline should reference movies.", "Yoda"]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "Quotes". Array[2] has "Pop culture" but constraint #3 was "Geographical". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
-Constraints:
+Given constraints:
 1. The letter 'S' -- this punchline must begin with the letter 'S'.
 2. Foodie -- this punchline should be food-related.
 3. Geographical -- this punchline should be geography-related.
 
-Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Foodie -- this punchline should be food-related.", "ravioli"], ["Geographical -- this punchline should be geography-related.", "France"]]
-← RIGHT! Each couplet pairs constraint with its word in correct order. Words are SINGLE WORDS with NO PUNCTUATION!
+GOOD Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Foodie -- this punchline should be food-related.", "ravioli"], ["Geographical -- this punchline should be geography-related.", "France"]]
+← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Words are SINGLE WORDS with NO PUNCTUATION!
 
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-word pairs).
@@ -600,19 +624,34 @@ async function generateReplacementPhrasesInternal(
 
   const prompt = `Generate 6 HILARIOUS phrase/sentence replacements for a blank in this film scene.
 
+🚨 CRITICAL: DO NOT REORDER OR MODIFY CONSTRAINT NAMES! 🚨
+The #1 failure mode is putting constraints in the wrong array position.
+Your response WILL BE REJECTED if array positions don't match constraint numbers.
+
 🎯 CRITICAL RULES - FOLLOW EXACTLY:
 • Generate EXACTLY 6 phrases/sentences in a JSON array
 • Array position MUST match constraint number:
-  - Array[0] = phrase for constraint 1
-  - Array[1] = phrase for constraint 2
-  - Array[2] = phrase for constraint 3
-  - Array[3] = phrase for constraint 4
-  - Array[4] = phrase for constraint 5
-  - Array[5] = phrase for constraint 6
+  - Array[0] = phrase for constraint 1 (FIRST constraint below)
+  - Array[1] = phrase for constraint 2 (SECOND constraint below)
+  - Array[2] = phrase for constraint 3 (THIRD constraint below)
+  - Array[3] = phrase for constraint 4 (FOURTH constraint below)
+  - Array[4] = phrase for constraint 5 (FIFTH constraint below)
+  - Array[5] = phrase for constraint 6 (SIXTH constraint below)
+• COPY the constraint name EXACTLY as written - DO NOT modify, paraphrase, or reorder
 • EACH phrase satisfies ONLY its ONE assigned constraint
 • Phrases can be MULTIPLE WORDS - aim for the target word count but ±1-2 words is OK
 • Maximize ABSURDITY, SURPRISE, and HUMOR in context
 • This is an ADULTS-ONLY game - dark humor, sexual innuendo, toilet humor all ENCOURAGED
+
+📝 STEP-BY-STEP PROCESS (follow this order):
+1. Read the 6 constraints below (numbered 1-6)
+2. For constraint #1: Generate a funny phrase, create couplet [constraint_1_text, phrase_1]
+3. For constraint #2: Generate a funny phrase, create couplet [constraint_2_text, phrase_2]
+4. For constraint #3: Generate a funny phrase, create couplet [constraint_3_text, phrase_3]
+5. For constraint #4: Generate a funny phrase, create couplet [constraint_4_text, phrase_4]
+6. For constraint #5: Generate a funny phrase, create couplet [constraint_5_text, phrase_5]
+7. For constraint #6: Generate a funny phrase, create couplet [constraint_6_text, phrase_6]
+8. Return array: [couplet_1, couplet_2, couplet_3, couplet_4, couplet_5, couplet_6]
 
 📝 CASING & PUNCTUATION RULES:
 
@@ -649,23 +688,32 @@ ${blankedScene}
 - Word count is flexible - prioritize HUMOR over exact count
 - Think phrases/sentences, NOT single words!
 
-❌ WRONG EXAMPLE (constraint mismatch):
-Constraints:
+❌ WRONG EXAMPLE #1 (reordered constraints):
+Given constraints:
 1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
 2. Foodie (5 words) -- this punchline should be food-related.
 3. Geographical (4 words) -- this punchline should be geography-related.
 
-Output: [["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti with meatballs."], ["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexually charged!"], ["Geographical (4 words) -- this punchline should be geography-related.", "somewhere in rural France."]]
-← WRONG! Constraints are in wrong order (1 and 2 swapped)!
+BAD Output: [["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti."], ["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexual!"], ["Geographical (4 words) -- this punchline should be geography-related.", "in rural France."]]
+← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
+
+❌ WRONG EXAMPLE #2 (made up different constraint names):
+Given constraints:
+1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
+2. Quotes (5 words) -- this punchline should reference famous quotes...
+3. Geographical (4 words) -- this punchline should be geography-related.
+
+BAD Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexual!"], ["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti."], ["Pop culture (4 words) -- this punchline should reference movies...", "May the Force!"]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "Quotes". Array[2] has "Pop culture" but constraint #3 was "Geographical". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
-Constraints:
+Given constraints:
 1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
 2. Foodie (5 words) -- this punchline should be food-related.
 3. Geographical (4 words) -- this punchline should be geography-related.
 
-Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexually charged!"], ["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti with meatballs."], ["Geographical (4 words) -- this punchline should be geography-related.", "somewhere in rural France."]]
-← RIGHT! Each couplet pairs constraint with its phrase in correct order. Notice phrase word counts match targets AND all phrases end with punctuation!
+GOOD Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexually charged!"], ["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti with meatballs."], ["Geographical (4 words) -- this punchline should be geography-related.", "somewhere in rural France."]]
+← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Phrases end with punctuation!
 
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-phrase pairs).
