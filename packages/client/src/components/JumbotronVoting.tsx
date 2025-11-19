@@ -32,7 +32,7 @@ export function JumbotronVoting({ players }: JumbotronVotingProps) {
   }, [socket])
 
   // Calculate vote tallies
-  const voteTallies = votingState
+  const voteTallies: Record<GameId, number> = votingState
     ? Array.from(votingState.votes.values()).reduce(
         (acc, vote) => {
           acc[vote.gameId] = (acc[vote.gameId] ?? 0) + 1
@@ -40,7 +40,7 @@ export function JumbotronVoting({ players }: JumbotronVotingProps) {
         },
         {} as Record<GameId, number>
       )
-    : {}
+    : {} as Record<GameId, number>
 
   const maxVotes = Math.max(...Object.values(voteTallies), 1)
   const selectedGame = votingState?.selectedGame

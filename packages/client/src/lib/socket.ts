@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client'
 import type { ServerMessage, ClientMessage } from '@jkbox/shared'
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'
+const SERVER_URL = import.meta.env['VITE_SERVER_URL'] || 'http://localhost:3001'
 
 class SocketClient {
   private socket: Socket | null = null
@@ -47,7 +47,7 @@ class SocketClient {
       return
     }
 
-    this.socket.on(eventType, handler)
+    this.socket.on(eventType, handler as any)
   }
 
   off(eventType: string, handler?: (...args: unknown[]) => void): void {

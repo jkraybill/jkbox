@@ -18,6 +18,7 @@ export function Pippin({ variant = 'corner', onIntroComplete }: PippinProps) {
       }, 3000)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [variant, onIntroComplete])
 
   // Jack-in-the-box intro animation

@@ -25,7 +25,7 @@ const GAME_OPTIONS: Array<{ id: GameId; name: string; description: string }> = [
   },
 ]
 
-export function LobbyVoting({ roomId, playerId }: LobbyVotingProps) {
+export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotingProps) {
   const { socket } = useSocket()
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
   const [isReady, setIsReady] = useState(false)
@@ -88,7 +88,7 @@ export function LobbyVoting({ roomId, playerId }: LobbyVotingProps) {
   }
 
   // Calculate vote tallies
-  const voteTallies = votingState
+  const voteTallies: Record<GameId, number> = votingState
     ? Array.from(votingState.votes.values()).reduce(
         (acc, vote) => {
           acc[vote.gameId] = (acc[vote.gameId] ?? 0) + 1
@@ -96,7 +96,7 @@ export function LobbyVoting({ roomId, playerId }: LobbyVotingProps) {
         },
         {} as Record<GameId, number>
       )
-    : {}
+    : {} as Record<GameId, number>
 
   // Count ready players
   const readyCount = votingState
