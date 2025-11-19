@@ -36,6 +36,11 @@ const MAX_QUALIFIED_KEYWORDS = Math.floor(TARGET_N * 1.2); // 21
 const OVERLAP_PENALTY_WEIGHT = 50.0;  // High penalty for overlap (dominant factor)
 const QUALITY_WEIGHT = 1.0;            // Baseline quality weight
 
+// Memory safety limits (prevent OOM on large files)
+const MAX_RESULTS_PER_KEYWORD = 50;     // Stop after 50 sequences per keyword
+const MAX_SEARCH_WINDOW = 800;          // Only search 800 frames ahead for T2/T3
+const MAX_TOTAL_SEQUENCES = 500;        // Hard cap on total sequences found
+
 interface TimeRange {
   startSeconds: number;  // T1 F1 start time
   endSeconds: number;    // T3 F3 end time
@@ -349,6 +354,7 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
 
   let checked = 0;
   const totalToCheck = qualifiedFirstTriplets.length;
+  const keywordSequenceCounts = new Map<string, number>(); // Track sequences per keyword
 
   for (const t1 of qualifiedFirstTriplets) {
     checked++;
@@ -356,9 +362,21 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
       console.log(`    Progress: ${checked}/${totalToCheck} first triplets checked...`);
     }
 
+    // Safety: stop if we've hit global sequence limit
+    if (results.length >= MAX_TOTAL_SEQUENCES) {
+      console.log(`    ⚠️  Hit MAX_TOTAL_SEQUENCES (${MAX_TOTAL_SEQUENCES}), stopping search early`);
+      break;
+    }
+
+    // Safety: stop if we've found enough sequences for this keyword
+    const keywordCount = keywordSequenceCounts.get(t1.keyword) || 0;
+    if (keywordCount >= MAX_RESULTS_PER_KEYWORD) {
+      continue; // Skip this T1, move to next
+    }
+
     const keywordData = keywordIndex.get(t1.keyword)!;
     const searchStart2 = t1.f1Frame3 + 1;
-    const searchEnd2 = entries.length - 2;
+    const searchEnd2 = Math.min(entries.length - 2, searchStart2 + MAX_SEARCH_WINDOW);
 
     // Get T1 entries for overlap checking
     const triplet1Entries = entries.slice(t1.f1Start, t1.f1Frame3 + 1);
@@ -389,7 +407,7 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
         }
 
         const searchStart3 = f2Frame3 + 1;
-        const searchEnd3 = entries.length - 2;
+        const searchEnd3 = Math.min(entries.length - 2, searchStart3 + MAX_SEARCH_WINDOW);
 
         // Find third triplets
         for (let f3Start = searchStart3; f3Start < searchEnd3; f3Start++) {
@@ -465,6 +483,9 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
             }
 
             results.push([triplet1, triplet2, triplet3]);
+
+            // Increment keyword counter
+            keywordSequenceCounts.set(t1.keyword, (keywordSequenceCounts.get(t1.keyword) || 0) + 1);
           }
         }
       }
