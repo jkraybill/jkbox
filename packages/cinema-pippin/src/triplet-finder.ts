@@ -64,24 +64,6 @@ export function isValidFirstTriplet(
     return false;
   }
 
-  // Keyword cannot appear earlier in T1 (F1, F2, or earlier in F3)
-  const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const keywordRegex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
-
-  // Check F1 and F2
-  if (keywordRegex.test(frame1.text) || keywordRegex.test(frame2.text)) {
-    return false;
-  }
-
-  // Check F3 (excluding last word)
-  const words = frame3.text.trim().split(/\s+/);
-  if (words.length > 1) {
-    const textWithoutLastWord = words.slice(0, -1).join(' ');
-    if (keywordRegex.test(textWithoutLastWord)) {
-      return false;
-    }
-  }
-
   // Previous frame must end with . ! ? - ; ) ] OR F1 starts with capital
   if (!endsWithPunctuationOrBracketOrNextCapital(prevEntry.text, frame1)) {
     return false;
@@ -89,18 +71,9 @@ export function isValidFirstTriplet(
 
   // Frame 2 no longer requires question mark - any text is valid
 
-  // Duration must be 5-20 seconds
+  // Duration must be 4-20 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 20) {
-    return false;
-  }
-
-  // Frame durations must be increasing: F1 < F2 < F3
-  const f1Duration = getFrameDuration(frame1);
-  const f2Duration = getFrameDuration(frame2);
-  const f3Duration = getFrameDuration(frame3);
-
-  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
+  if (duration < 4 || duration > 20) {
     return false;
   }
 
@@ -151,18 +124,9 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Duration must be 5-20 seconds
+  // Duration must be 4-20 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 20) {
-    return false;
-  }
-
-  // Frame durations must be increasing: F1 < F2 < F3
-  const f1Duration = getFrameDuration(frame1);
-  const f2Duration = getFrameDuration(frame2);
-  const f3Duration = getFrameDuration(frame3);
-
-  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
+  if (duration < 4 || duration > 20) {
     return false;
   }
 

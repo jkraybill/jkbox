@@ -473,7 +473,7 @@ describe('isValidSubsequentTriplet', () => {
     expect(result).toBe(true);
   });
 
-  it('should return false when keyword does not appear in any frame', () => {
+  it('should validate triplet even when keyword does not appear (keyword checked at sequence level)', () => {
     const entries: SRTEntry[] = [
       {
         index: 1,
@@ -519,8 +519,9 @@ describe('isValidSubsequentTriplet', () => {
       },
     ];
 
+    // Keyword checking moved to sequence level, so triplet-level validation no longer checks keyword
     const result = isValidSubsequentTriplet(entries, 3, 4, 5, 'hello');
-    expect(result).toBe(false);
+    expect(result).toBe(true);
   });
 
   it('should return false if minWords is 2 and frame 3 has only 1 word', () => {

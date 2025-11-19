@@ -87,34 +87,9 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
       const keyword = extractLastWord(frame3.text);
       if (!keyword || isExcludedWord(keyword)) continue;
 
-      // Keyword cannot appear earlier in T1 (F1, F2, or earlier in F3)
-      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const keywordRegex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
-
-      // Check F1 and F2
-      if (keywordRegex.test(frame1.text) || keywordRegex.test(frame2.text)) {
-        continue;
-      }
-
-      // Check F3 (excluding last word)
-      const words = frame3.text.trim().split(/\s+/);
-      if (words.length > 1) {
-        const textWithoutLastWord = words.slice(0, -1).join(' ');
-        if (keywordRegex.test(textWithoutLastWord)) {
-          continue;
-        }
-      }
-
-      // Validate duration
+      // Validate duration (4-20 seconds)
       const duration = getDurationSeconds(frame1, frame3);
-      if (duration < 5 || duration > 20) continue;
-
-      // Frame durations must be increasing: F1 < F2 < F3
-      const f1Duration = getFrameDuration(frame1);
-      const f2Duration = getFrameDuration(frame2);
-      const f3Duration = getFrameDuration(frame3);
-
-      if (f1Duration >= f2Duration || f2Duration >= f3Duration) continue;
+      if (duration < 4 || duration > 20) continue;
 
       validFirstTriplets.push({
         f1Start: i,
@@ -230,18 +205,9 @@ function isValidSubsequentTriplet(
     return false;
   }
 
-  // Duration validation
+  // Duration validation (4-20 seconds)
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 5 || duration > 20) {
-    return false;
-  }
-
-  // Frame durations must be increasing: F1 < F2 < F3
-  const f1Duration = getFrameDuration(frame1);
-  const f2Duration = getFrameDuration(frame2);
-  const f3Duration = getFrameDuration(frame3);
-
-  if (f1Duration >= f2Duration || f2Duration >= f3Duration) {
+  if (duration < 4 || duration > 20) {
     return false;
   }
 
