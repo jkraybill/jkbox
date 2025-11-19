@@ -813,11 +813,20 @@ No explanations, no other text. Just the JSON array of couplets.`;
     const [returnedConstraint, phrase] = couplet;
     const expectedConstraint = constraintsWithWordCount[i];
 
-    // For T2, validate just the constraint name + word count (not the full description)
-    // LLMs often truncate/omit the long constraint descriptions
-    // Extract just "Constraint Name (N words)" without the " -- description" part
+    // For T2/T3, validate just the constraint name (not word count or description)
+    // LLMs often use different word counts, which is fine since word count is just a guideline
+    // Extract just "Constraint Name" without "(N words)" or " -- description"
     const expectedPrefix = expectedConstraint.split(' -- ')[0];  // e.g., "The letter 'R' (5 words)"
     const returnedPrefix = returnedConstraint.split(' -- ')[0];  // What LLM returned
+
+    // Extract constraint name by removing "(N words)" suffix
+    // e.g., "Suggestive (6 words)" -> "Suggestive"
+    const extractConstraintName = (str: string) => {
+      return str.replace(/\s*\(\d+\s+words?\)\s*$/i, '').trim();
+    };
+
+    const expectedName = extractConstraintName(expectedPrefix);
+    const returnedName = extractConstraintName(returnedPrefix);
 
     // Normalize both for comparison: strip surrounding quotes, unescape internal quotes
     const normalizeConstraint = (str: string) => {
@@ -828,22 +837,22 @@ No explanations, no other text. Just the JSON array of couplets.`;
         .toLowerCase();
     };
 
-    const expectedNorm = normalizeConstraint(expectedPrefix);
-    const returnedNorm = normalizeConstraint(returnedPrefix);
+    const expectedNorm = normalizeConstraint(expectedName);
+    const returnedNorm = normalizeConstraint(returnedName);
 
-    // Check if the returned prefix matches the expected prefix (normalized)
-    // Be lenient - just check that it starts with or equals the expected prefix
+    // Check if the returned constraint name matches the expected name (normalized)
+    // Be lenient - just check that it starts with or equals the expected name
     if (returnedNorm !== expectedNorm && !returnedNorm.startsWith(expectedNorm)) {
       throw new Error(
         `❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
-        `Expected constraint name:\n"${expectedPrefix}"\n\n` +
-        `Got:\n"${returnedPrefix}"\n\n` +
+        `Expected constraint name:\n"${expectedName}"\n\n` +
+        `Got:\n"${returnedName}"\n\n` +
         `This means the LLM either:\n` +
         `1. Swapped constraint order (put constraint ${i + 1} in wrong position)\n` +
-        `2. Modified the constraint name/word count\n` +
+        `2. Modified the constraint name\n` +
         `3. Misunderstood the couplet format\n\n` +
         `Full response:\n${JSON.stringify(couplets, null, 2)}\n\n` +
-        `Expected constraints order:\n${constraintsWithWordCount.map((c, idx) => `${idx + 1}. ${c.split(' -- ')[0]}`).join('\n')}`
+        `Expected constraints order:\n${constraintsWithWordCount.map((c, idx) => `${idx + 1}. ${extractConstraintName(c.split(' -- ')[0])}`).join('\n')}`
       );
     }
 
