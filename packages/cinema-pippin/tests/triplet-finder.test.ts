@@ -906,7 +906,7 @@ tasted wonderful and-
 
 7
 00:00:23,000 --> 00:00:29,500
-Everyone loved it the most delicious banana ever.
+The best banana here.
 
 8
 00:00:30,000 --> 00:00:32,500
@@ -918,7 +918,7 @@ survive in darkness-
 
 10
 00:00:36,000 --> 00:00:42,500
-We need it to keep the fresh yellow banana in the fridge.`;
+Fresh yellow banana in fridge today.`;
 
     const optimized = await findAllTripletsOptimized(srt);
 

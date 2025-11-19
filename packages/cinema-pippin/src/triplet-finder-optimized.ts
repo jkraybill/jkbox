@@ -195,7 +195,8 @@ function isValidSubsequentTriplet(
   frame2Idx: number,
   frame3Idx: number,
   keywordData: KeywordIndex,
-  minWords: number
+  minWords: number,
+  maxWords: number = Infinity
 ): boolean {
   if (tripletStart < 1 || frame3Idx >= entries.length) return false;
 
@@ -204,8 +205,9 @@ function isValidSubsequentTriplet(
   const frame2 = entries[frame2Idx];
   const frame3 = entries[frame3Idx];
 
-  // Check minimum word count
-  if (countWords(frame3.text) < minWords) return false;
+  // Check word count range
+  const wordCount = countWords(frame3.text);
+  if (wordCount < minWords || wordCount > maxWords) return false;
 
   // Fast keyword check using pre-built index
   if (!tripletContainsKeyword(keywordData, tripletStart, frame3Idx)) {
@@ -281,7 +283,8 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
         const f2Frame3 = f2Frame2 + 1;
         if (f2Frame3 >= entries.length) break;
 
-        if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2, f2Frame3, keywordData, 2)) {
+        // T2 F3 must have 1+ words (no max limit for pre-qualification)
+        if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2, f2Frame3, keywordData, 1)) {
           continue;
         }
 
@@ -293,8 +296,8 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
             const f3Frame3 = f3Frame2 + 1;
             if (f3Frame3 >= entries.length) break;
 
-            // T3 F3 must have 6+ words
-            if (isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 6)) {
+            // T3 F3 must have 2+ words (conservative check for pre-qualification)
+            if (isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 2)) {
               // Found complete T1→T2→T3 chain!
               foundCompleteSequence = true;
               qualifiedKeywords.add(t1.keyword);
@@ -397,9 +400,13 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
 
         if (f2Frame3 >= entries.length) break;
 
-        if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2, f2Frame3, keywordData, 2)) {
+        // T2 F3 must have 1-6 words
+        if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2, f2Frame3, keywordData, 1, 6)) {
           continue;
         }
+
+        // Get T2 F3 word count for T3 validation
+        const t2F3WordCount = countWords(entries[f2Frame3].text);
 
         // Check for time overlap with T1
         const triplet2Entries = entries.slice(f2Start, f2Frame3 + 1);
@@ -420,8 +427,9 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
 
             if (f3Frame3 >= entries.length) break;
 
-            // T3 F3 must have 6+ words (not 3!)
-            if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 6)) {
+            // T3 F3 must have at least 1 word more than T2 F3
+            const minT3Words = t2F3WordCount + 1;
+            if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, minT3Words)) {
               continue;
             }
 

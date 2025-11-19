@@ -204,10 +204,13 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
           if (f2Frame3Idx >= entries.length) continue;
 
-          // T2 F3 must have 1-5 words
-          if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2Idx, f2Frame3Idx, firstKeyword, 1, 5)) {
+          // T2 F3 must have 1-6 words
+          if (!isValidSubsequentTriplet(entries, f2Start, f2Frame2Idx, f2Frame3Idx, firstKeyword, 1, 6)) {
             continue;
           }
+
+          // Get T2 F3 word count for T3 validation
+          const t2F3WordCount = countWords(entries[f2Frame3Idx].text);
 
           // Check for time overlap with T1
           const triplet2Entries = entries.slice(f2Start, f2Frame3Idx + 1);
@@ -223,8 +226,9 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
               if (f3Frame3Idx >= entries.length) continue;
 
-              // T3 F3 must have 6+ words
-              if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, 6)) {
+              // T3 F3 must have at least 1 word more than T2 F3
+              const minT3Words = t2F3WordCount + 1;
+              if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, minT3Words)) {
                 continue;
               }
 
