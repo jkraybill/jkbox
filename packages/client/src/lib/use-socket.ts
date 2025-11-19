@@ -3,7 +3,7 @@ import { useMachine } from '@xstate/react'
 import { connectionMachine } from '../fsm/connection-machine'
 import { socketClient } from './socket'
 import { useGameStore } from '../store/game-store'
-import type { RoomUpdateMessage, ErrorMessage } from '@jkbox/shared'
+import type { RoomStateMessage, ErrorMessage } from '@jkbox/shared'
 
 export function useSocket() {
   const [state, send] = useMachine(connectionMachine)
@@ -30,8 +30,8 @@ export function useSocket() {
     })
 
     // Game event handlers
-    socket.on('room:update', (message: RoomUpdateMessage) => {
-      setRoom(message.room)
+    socket.on('room:state', (message: RoomStateMessage) => {
+      setRoom(message.state)
     })
 
     socket.on('error', (message: ErrorMessage) => {
@@ -53,7 +53,7 @@ export function useSocket() {
       socket.off('connect')
       socket.off('disconnect')
       socket.off('connect_error')
-      socket.off('room:update')
+      socket.off('room:state')
       socket.off('error')
     }
   }, [state.value, state.context.retryDelay, send, setConnected, setRoom])

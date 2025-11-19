@@ -1,10 +1,10 @@
 import { create } from 'zustand'
-import type { Room, Player } from '@jkbox/shared'
+import type { RoomState, Player } from '@jkbox/shared'
 
 interface GameState {
   // Room state
-  room: Room | null
-  setRoom: (room: Room) => void
+  room: RoomState | null
+  setRoom: (room: RoomState) => void
 
   // Current player
   currentPlayer: Player | null

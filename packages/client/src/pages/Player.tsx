@@ -5,7 +5,7 @@ import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
 import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
-import type { RoomUpdateMessage, LobbyCountdownMessage } from '@jkbox/shared'
+import type { LobbyCountdownMessage } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
   'fake-facts': 'Fake Facts',
@@ -16,16 +16,11 @@ const GAME_NAMES: Record<string, string> = {
 export function Player() {
   const { roomId } = useParams<{ roomId: string }>()
   const { socket, isConnected } = useSocket()
-  const { currentPlayer, room, setRoom } = useGameStore()
+  const { currentPlayer, room } = useGameStore()
   const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
 
   useEffect(() => {
     if (!socket) return
-
-    // Listen for room updates
-    const handleRoomUpdate = (message: RoomUpdateMessage) => {
-      setRoom(message.room)
-    }
 
     // Listen for countdown messages
     const handleCountdown = (message: LobbyCountdownMessage) => {
@@ -33,14 +28,12 @@ export function Player() {
       setCountdown({ count: message.countdown, game: gameName })
     }
 
-    socket.on('room:update', handleRoomUpdate)
     socket.on('lobby:countdown', handleCountdown)
 
     return () => {
-      socket.off('room:update', handleRoomUpdate)
       socket.off('lobby:countdown', handleCountdown)
     }
-  }, [socket, setRoom])
+  }, [socket])
 
   if (!currentPlayer) {
     return (
@@ -58,17 +51,17 @@ export function Player() {
       </div>
 
       <div style={styles.content}>
-        {room?.state === 'lobby' && roomId && currentPlayer && (
+        {room?.phase === 'lobby' && roomId && currentPlayer && (
           <LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
         )}
 
-        {room?.state === 'playing' && (
+        {room?.phase === 'playing' && (
           <div style={styles.gameCard}>
             <div style={styles.gameText}>Game in progress!</div>
           </div>
         )}
 
-        {room?.state === 'finished' && (
+        {room?.phase === 'results' && (
           <div style={styles.gameCard}>
             <div style={styles.gameText}>Game finished!</div>
           </div>

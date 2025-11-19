@@ -31,7 +31,7 @@ export function Join() {
       // Store player data and session token
       setCurrentPlayer(message.player)
       setSessionToken(message.player.sessionToken)
-      setRoom(message.room)
+      setRoom(message.state)
 
       // Save nickname to cookie (90-day expiration)
       saveNickname(message.player.nickname)

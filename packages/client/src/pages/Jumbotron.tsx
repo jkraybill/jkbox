@@ -16,7 +16,7 @@ const GAME_NAMES: Record<string, string> = {
 
 export function Jumbotron() {
   const { roomId } = useParams<{ roomId: string }>()
-  const { room, setRoom } = useGameStore()
+  const { room } = useGameStore()
   const { socket, isConnected } = useSocket()
   const [showIntro, setShowIntro] = useState(true)
   const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
@@ -32,11 +32,6 @@ export function Jumbotron() {
       roomId
     })
 
-    // Listen for room updates
-    socket.on('room:update', (message: any) => {
-      setRoom(message.room)
-    })
-
     // Listen for countdown messages
     socket.on('lobby:countdown', (message: LobbyCountdownMessage) => {
       const gameName = GAME_NAMES[message.selectedGame] || message.selectedGame
@@ -44,10 +39,9 @@ export function Jumbotron() {
     })
 
     return () => {
-      socket.off('room:update')
       socket.off('lobby:countdown')
     }
-  }, [socket, roomId, isConnected, setRoom])
+  }, [socket, roomId, isConnected])
 
   if (!room) {
     return (
@@ -62,7 +56,7 @@ export function Jumbotron() {
       <div style={styles.header}>
         <h1 style={styles.title}>Pippin's Playhouse</h1>
         <div style={styles.roomCode}>
-          Room Code: <span style={styles.roomCodeValue}>{room.id}</span>
+          Room Code: <span style={styles.roomCodeValue}>{room.roomId}</span>
         </div>
       </div>
 
@@ -79,7 +73,7 @@ export function Jumbotron() {
 
           <div style={styles.playerSection}>
             <h2 style={styles.sectionTitle}>
-              Players ({room.players.length}/{room.config.maxPlayers})
+              Players ({room.players.length}/12)
             </h2>
             <div style={styles.emptyState}>Waiting for players to join...</div>
           </div>
@@ -90,7 +84,7 @@ export function Jumbotron() {
       )}
 
       <div style={styles.footer}>
-        <div>State: {room.state}</div>
+        <div>Phase: {room.phase}</div>
         <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
       </div>
 
