@@ -333,11 +333,9 @@ async function generateReplacementWordsInternal(
     .map((c, i) => `${i + 1}. ${c}`)
     .join('\n');
 
-  // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
+  // Use ALL 6 actual constraints in examples (prevents confusion from showing different count)
   // Extract just the constraint name (before " -- ") to keep examples concise
-  const exampleConstraint1 = constraints[0].split(' -- ')[0];
-  const exampleConstraint2 = constraints[1].split(' -- ')[0];
-  const exampleConstraint3 = constraints[2].split(' -- ')[0];
+  const exampleConstraints = constraints.map(c => c.split(' -- ')[0]);
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER one-word punchlines that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
@@ -409,30 +407,39 @@ ${blankedScene}
 
 ❌ WRONG EXAMPLE #1 (reordered constraints):
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-BAD Output: [["${exampleConstraint2}", "word2"], ["${exampleConstraint1}", "word1"], ["${exampleConstraint3}", "word3"]]
+BAD Output: [["${exampleConstraints[1]}", "word2"], ["${exampleConstraints[0]}", "word1"], ["${exampleConstraints[2]}", "word3"], ["${exampleConstraints[3]}", "word4"], ["${exampleConstraints[4]}", "word5"], ["${exampleConstraints[5]}", "word6"]]
 ← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
 
 ❌ WRONG EXAMPLE #2 (made up different constraint names):
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-BAD Output: [["${exampleConstraint1}", "word1"], ["Foodie", "word2"], ["Pop culture", "word3"]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2}". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraints[0]}", "word1"], ["Foodie", "word2"], ["Pop culture", "word3"], ["${exampleConstraints[3]}", "word4"], ["${exampleConstraints[4]}", "word5"], ["${exampleConstraints[5]}", "word6"]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraints[1]}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-GOOD Output: [["${exampleConstraint1}", "word1"], ["${exampleConstraint2}", "word2"], ["${exampleConstraint3}", "word3"]]
-← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Words are SINGLE WORDS with NO PUNCTUATION!
+GOOD Output: [["${exampleConstraints[0]}", "word1"], ["${exampleConstraints[1]}", "word2"], ["${exampleConstraints[2]}", "word3"], ["${exampleConstraints[3]}", "word4"], ["${exampleConstraints[4]}", "word5"], ["${exampleConstraints[5]}", "word6"]]
+← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3, Array[3]=constraint #4, Array[4]=constraint #5, Array[5]=constraint #6. Constraint names copied EXACTLY. Words are SINGLE WORDS with NO PUNCTUATION!
 
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-word pairs).
@@ -623,11 +630,9 @@ async function generateReplacementPhrasesInternal(
     .map((c, i) => `${i + 1}. ${c}`)
     .join('\n');
 
-  // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
+  // Use ALL 6 actual constraints in examples (prevents confusion from showing different count)
   // Extract just the constraint name + word count (before " -- ") to keep examples concise
-  const exampleConstraint1 = constraintsWithWordCount[0].split(' -- ')[0];
-  const exampleConstraint2 = constraintsWithWordCount[1].split(' -- ')[0];
-  const exampleConstraint3 = constraintsWithWordCount[2].split(' -- ')[0];
+  const exampleConstraints = constraintsWithWordCount.map(c => c.split(' -- ')[0]);
 
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER multi-word punchlines and phrases that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
@@ -699,30 +704,39 @@ ${blankedScene}
 
 ❌ WRONG EXAMPLE #1 (reordered constraints):
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-BAD Output: [["${exampleConstraint2}", "phrase2."], ["${exampleConstraint1}", "phrase1."], ["${exampleConstraint3}", "phrase3."]]
+BAD Output: [["${exampleConstraints[1]}", "phrase2."], ["${exampleConstraints[0]}", "phrase1."], ["${exampleConstraints[2]}", "phrase3."], ["${exampleConstraints[3]}", "phrase4."], ["${exampleConstraints[4]}", "phrase5."], ["${exampleConstraints[5]}", "phrase6."]]
 ← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
 
 ❌ WRONG EXAMPLE #2 (made up different constraint names):
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-BAD Output: [["${exampleConstraint1}", "phrase1."], ["Foodie (5 words)", "phrase2."], ["Pop culture (4 words)", "phrase3."]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2}". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraints[0]}", "phrase1."], ["Foodie (5 words)", "phrase2."], ["Pop culture (4 words)", "phrase3."], ["${exampleConstraints[3]}", "phrase4."], ["${exampleConstraints[4]}", "phrase5."], ["${exampleConstraints[5]}", "phrase6."]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraints[1]}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
-1. ${exampleConstraint1}
-2. ${exampleConstraint2}
-3. ${exampleConstraint3}
+1. ${exampleConstraints[0]}
+2. ${exampleConstraints[1]}
+3. ${exampleConstraints[2]}
+4. ${exampleConstraints[3]}
+5. ${exampleConstraints[4]}
+6. ${exampleConstraints[5]}
 
-GOOD Output: [["${exampleConstraint1}", "phrase1."], ["${exampleConstraint2}", "phrase2."], ["${exampleConstraint3}", "phrase3."]]
-← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Phrases end with punctuation!
+GOOD Output: [["${exampleConstraints[0]}", "phrase1."], ["${exampleConstraints[1]}", "phrase2."], ["${exampleConstraints[2]}", "phrase3."], ["${exampleConstraints[3]}", "phrase4."], ["${exampleConstraints[4]}", "phrase5."], ["${exampleConstraints[5]}", "phrase6."]]
+← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3, Array[3]=constraint #4, Array[4]=constraint #5, Array[5]=constraint #6. Constraint names copied EXACTLY. Phrases end with punctuation!
 
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-phrase pairs).
