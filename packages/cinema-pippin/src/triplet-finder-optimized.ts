@@ -37,8 +37,8 @@ const OVERLAP_PENALTY_WEIGHT = 50.0;  // High penalty for overlap (dominant fact
 const QUALITY_WEIGHT = 1.0;            // Baseline quality weight
 
 // Memory safety limits (prevent OOM on large files)
-const MAX_RESULTS_PER_KEYWORD = 300;    // Stop after 300 sequences per keyword
-const MAX_SEARCH_WINDOW = 3000;         // Only search 3000 frames ahead for T2/T3
+const MAX_RESULTS_PER_KEYWORD = 600;    // Stop after 600 sequences per keyword
+const MAX_SEARCH_WINDOW = 6000;         // Only search 6000 frames ahead for T2/T3
 
 interface TimeRange {
   startSeconds: number;  // T1 F1 start time
