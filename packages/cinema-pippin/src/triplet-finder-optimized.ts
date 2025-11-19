@@ -29,6 +29,7 @@ export interface Triplet {
 
 // Target number of triplet sequences to output
 const TARGET_N = 18;
+const TARGET_N_THIRD = Math.floor(TARGET_N / 3); // 6
 const MAX_QUALIFIED_KEYWORDS = Math.floor(TARGET_N * 1.2); // 21
 
 // Overlap minimization weights
@@ -85,7 +86,8 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
 
       // Extract and validate keyword
       const keyword = extractLastWord(frame3.text);
-      if (!keyword || isExcludedWord(keyword)) continue;
+      // Filter out: empty, too short (<2 chars), or excluded common words
+      if (!keyword || keyword.length < 2 || isExcludedWord(keyword)) continue;
 
       // Validate duration (4-20 seconds)
       const duration = getDurationSeconds(frame1, frame3);
@@ -588,7 +590,7 @@ function getTotalAlphaCharCount(sequence: Triplet[]): number {
  * Calculate total overlapping seconds among all sequences in a set
  * Returns sum of all pairwise overlaps (in seconds)
  */
-function calculateTotalOverlapSeconds(sequences: Array<{ sequence: Triplet[][]; timeRange: TimeRange }>): number {
+function calculateTotalOverlapSeconds(sequences: Array<{ sequence: Triplet[]; timeRange: TimeRange }>): number {
   let totalOverlap = 0;
 
   for (let i = 0; i < sequences.length; i++) {
@@ -631,7 +633,7 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][], keywordFreque
 
   // Pre-calculate metadata for all sequences
   const candidatesByKeyword = new Map<string, Array<{
-    sequence: Triplet[][];
+    sequence: Triplet[];
     timeRange: TimeRange;
     alphaCharCount: number;
     keyword: string;
@@ -649,7 +651,7 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][], keywordFreque
 
   // Run 3 iterations
   const candidateSets: Array<{
-    sequences: Array<{ sequence: Triplet[][]; timeRange: TimeRange; alphaCharCount: number; keyword: string }>;
+    sequences: Array<{ sequence: Triplet[]; timeRange: TimeRange; alphaCharCount: number; keyword: string }>;
     overlapSeconds: number;
     totalAlphaChars: number;
   }> = [];
@@ -664,7 +666,7 @@ function selectSequencesWithMinimalOverlap(sequences: Triplet[][], keywordFreque
     }));
 
     const selected: Array<{
-      sequence: Triplet[][];
+      sequence: Triplet[];
       timeRange: TimeRange;
       alphaCharCount: number;
       keyword: string;

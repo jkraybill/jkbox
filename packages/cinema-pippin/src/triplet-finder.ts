@@ -59,8 +59,8 @@ export function isValidFirstTriplet(
   // Extract keyword (last word of Frame 3)
   const keyword = extractLastWord(frame3.text);
 
-  // Keyword cannot be empty or in the excluded set
-  if (!keyword || isExcludedWord(keyword)) {
+  // Keyword cannot be: empty, too short (<2 chars), or in the excluded set
+  if (!keyword || keyword.length < 2 || isExcludedWord(keyword)) {
     return false;
   }
 
