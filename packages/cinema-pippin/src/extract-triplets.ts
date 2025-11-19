@@ -7,6 +7,7 @@ import {
   replaceKeywordWithBlank,
   replaceKeywordWithBrackets,
 } from './keyword-utils.js';
+import { condenseAndBlank } from './blanking-utils.js';
 
 interface SRTSegment {
   tripletNumber: number;
@@ -108,10 +109,10 @@ function rebaseSrtTimestamps(
     // For triplet 2 and 3, blank out the last frame entirely
     const isLastFrame = idx === entries.length - 1;
     if (tripletNumber >= 2 && isLastFrame) {
-      // Replace all text lines with "_____"
-      for (let i = 0; i < textLines.length; i++) {
-        textLines[i] = '_____';
-      }
+      // Condense multi-line text and blank with max 8 "words"
+      const blankedText = condenseAndBlank(textLines);
+      textLines.length = 0;
+      textLines.push(blankedText);
     } else if (keyword) {
       // Apply keyword replacement to text lines
       for (let i = 0; i < textLines.length; i++) {
