@@ -86,8 +86,8 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
 
       // Extract and validate keyword
       const keyword = extractLastWord(frame3.text);
-      // Filter out: empty, too short (<2 chars), or excluded common words
-      if (!keyword || keyword.length < 2 || isExcludedWord(keyword)) continue;
+      // Filter out: empty, too short (<2 chars), no letters, or excluded common words
+      if (!keyword || keyword.length < 2 || !/[a-z]/i.test(keyword) || isExcludedWord(keyword)) continue;
 
       // Validate duration (4-20 seconds)
       const duration = getDurationSeconds(frame1, frame3);
@@ -114,6 +114,9 @@ function buildKeywordIndex(entries: SRTEntry[], keywords: Set<string>): Map<stri
 
   // Pre-compile all regexes
   for (const keyword of keywords) {
+    // Skip invalid keywords (should already be filtered, but extra safety)
+    if (!keyword || keyword.length < 2 || !/[a-z]/i.test(keyword)) continue;
+
     const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`\\b${escaped}\\b`, 'i');
     index.set(keyword, { keyword, regex, frameIndices: [] });
@@ -231,7 +234,11 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
 
   // Step 2: Extract unique keywords and build keyword index (O(n))
   console.log('  Building keyword index...');
-  const keywords = new Set(validFirstTriplets.map(t => t.keyword));
+  const keywords = new Set(
+    validFirstTriplets
+      .map(t => t.keyword)
+      .filter(k => k && k.length >= 2 && /[a-z]/i.test(k)) // Extra safety filter (should already be validated)
+  );
   const keywordIndex = buildKeywordIndex(entries, keywords);
   console.log(`  Indexed ${keywords.size} unique keywords`);
 
@@ -268,7 +275,10 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
             if (isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, 2)) {
               // Found complete T1→T2→T3 chain!
               foundCompleteSequence = true;
-              qualifiedKeywords.add(t1.keyword);
+              // Extra safety: verify keyword is valid before adding (should already be filtered, but defense-in-depth)
+              if (t1.keyword && t1.keyword.length >= 2 && /[a-z]/i.test(t1.keyword)) {
+                qualifiedKeywords.add(t1.keyword);
+              }
             }
           }
         }
