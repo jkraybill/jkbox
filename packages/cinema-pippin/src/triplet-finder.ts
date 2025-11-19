@@ -125,14 +125,8 @@ export function isValidSubsequentTriplet(
   const frame2 = entries[frame2Idx];
   const frame3 = entries[frame3Idx];
 
-  // Keyword must appear in at least one frame (F1, F2, or F3)
-  const keywordInF1 = containsWordAsStandalone(frame1.text, keyword);
-  const keywordInF2 = containsWordAsStandalone(frame2.text, keyword);
-  const keywordInF3 = containsWordAsStandalone(frame3.text, keyword);
-
-  if (!keywordInF1 && !keywordInF2 && !keywordInF3) {
-    return false;
-  }
+  // Note: Keyword containment is checked at the sequence level (T2+T3 together)
+  // not per-triplet, so we don't check keyword here
 
   // Frame 3 must have word count in range [minWords, maxWords]
   const wordCount = countWords(frame3.text);
@@ -263,14 +257,30 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
                 keyword: firstKeyword,
               };
 
-              // Additional requirement: keyword must appear in at least one of T2 F1, T2 F2, T3 F1, T3 F2
-              const keywordInT2F1 = containsWordAsStandalone(triplet2.frame1.text, firstKeyword);
-              const keywordInT2F2 = containsWordAsStandalone(triplet2.frame2.text, firstKeyword);
-              const keywordInT3F1 = containsWordAsStandalone(triplet3.frame1.text, firstKeyword);
-              const keywordInT3F2 = containsWordAsStandalone(triplet3.frame2.text, firstKeyword);
+              // Keyword must appear at least once in T2 and/or T3, excluding F3 frames
+              // but including all other frames (F1, F2, and filler frames)
+              let keywordFound = false;
 
-              if (!keywordInT2F1 && !keywordInT2F2 && !keywordInT3F1 && !keywordInT3F2) {
-                continue; // Skip this sequence - keyword only in F3 frames
+              // Check all T2 frames except F3 (last frame)
+              for (let i = 0; i < triplet2.allEntries.length - 1; i++) {
+                if (containsWordAsStandalone(triplet2.allEntries[i].text, firstKeyword)) {
+                  keywordFound = true;
+                  break;
+                }
+              }
+
+              // Check all T3 frames except F3 (last frame) if not found in T2
+              if (!keywordFound) {
+                for (let i = 0; i < triplet3.allEntries.length - 1; i++) {
+                  if (containsWordAsStandalone(triplet3.allEntries[i].text, firstKeyword)) {
+                    keywordFound = true;
+                    break;
+                  }
+                }
+              }
+
+              if (!keywordFound) {
+                continue; // Skip this sequence - keyword not found in T2/T3 (excluding F3 frames)
               }
 
               results.push([triplet1, triplet2, triplet3]);

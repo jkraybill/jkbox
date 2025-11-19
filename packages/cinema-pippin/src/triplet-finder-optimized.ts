@@ -464,14 +464,30 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
               keyword: t1.keyword,
             };
 
-            // Additional requirement: keyword must appear in at least one of T2 F1, T2 F2, T3 F1, T3 F2
-            const keywordInT2F1 = containsWordAsStandalone(triplet2.frame1.text, t1.keyword);
-            const keywordInT2F2 = containsWordAsStandalone(triplet2.frame2.text, t1.keyword);
-            const keywordInT3F1 = containsWordAsStandalone(triplet3.frame1.text, t1.keyword);
-            const keywordInT3F2 = containsWordAsStandalone(triplet3.frame2.text, t1.keyword);
+            // Keyword must appear at least once in T2 and/or T3, excluding F3 frames
+            // but including all other frames (F1, F2, and filler frames)
+            let keywordFound = false;
 
-            if (!keywordInT2F1 && !keywordInT2F2 && !keywordInT3F1 && !keywordInT3F2) {
-              continue; // Skip this sequence - keyword only in F3 frames
+            // Check all T2 frames except F3 (last frame)
+            for (let i = 0; i < triplet2.allEntries.length - 1; i++) {
+              if (containsWordAsStandalone(triplet2.allEntries[i].text, t1.keyword)) {
+                keywordFound = true;
+                break;
+              }
+            }
+
+            // Check all T3 frames except F3 (last frame) if not found in T2
+            if (!keywordFound) {
+              for (let i = 0; i < triplet3.allEntries.length - 1; i++) {
+                if (containsWordAsStandalone(triplet3.allEntries[i].text, t1.keyword)) {
+                  keywordFound = true;
+                  break;
+                }
+              }
+            }
+
+            if (!keywordFound) {
+              continue; // Skip this sequence - keyword not found in T2/T3 (excluding F3 frames)
             }
 
             results.push([triplet1, triplet2, triplet3]);
