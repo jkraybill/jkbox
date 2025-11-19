@@ -2,7 +2,7 @@ import type { Socket, Server } from 'socket.io'
 import type {
   JoinMessage,
   JoinSuccessMessage,
-  RoomUpdateMessage,
+  RoomStateMessage,
   WatchMessage,
   Player,
   LobbyVoteGameMessage,
@@ -61,7 +61,7 @@ export class ConnectionHandler {
       socket.emit('error', {
         type: 'error',
         code: 'ROOM_FULL',
-        message: `Can't join - party's full! (Max ${room.config.maxPlayers} players)`
+        message: `Can't join - party's full! (Max 12 players)`
       })
       return
     }
@@ -79,22 +79,22 @@ export class ConnectionHandler {
     const votingHandler = this.getVotingHandler(message.roomId)
     votingHandler.addPlayer(player.id)
 
-    // Send join success with player and room to the joining player
+    // Send join success with player and room state to the joining player
     const updated = this.roomManager.getRoom(message.roomId)
     if (updated) {
       const joinSuccess: JoinSuccessMessage = {
         type: 'join:success',
         player,
-        room: updated
+        state: updated
       }
       socket.emit('join:success', joinSuccess)
 
-      // Broadcast room update to all clients in the room (including jumbotron)
-      const roomUpdate: RoomUpdateMessage = {
-        type: 'room:update',
-        room: updated
+      // Broadcast room state to all clients in the room (including jumbotron)
+      const roomStateMessage: RoomStateMessage = {
+        type: 'room:state',
+        state: updated
       }
-      this.io.to(message.roomId).emit('room:update', roomUpdate)
+      this.io.to(message.roomId).emit('room:state', roomStateMessage)
 
       // Broadcast current voting state to new player
       this.broadcastVotingUpdate(message.roomId)
@@ -122,14 +122,14 @@ export class ConnectionHandler {
 
     this.socketToPlayer.delete(socket.id)
 
-    // Broadcast room update to all clients in the room
+    // Broadcast room state to all clients in the room
     const updated = this.roomManager.getRoom(mapping.roomId)
     if (updated) {
-      const roomUpdate: RoomUpdateMessage = {
-        type: 'room:update',
-        room: updated
+      const roomStateMessage: RoomStateMessage = {
+        type: 'room:state',
+        state: updated
       }
-      this.io.to(mapping.roomId).emit('room:update', roomUpdate)
+      this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
 
       // Broadcast updated voting state (player removed)
       this.broadcastVotingUpdate(mapping.roomId)
@@ -154,12 +154,12 @@ export class ConnectionHandler {
     // Make socket join the Socket.io room to receive broadcasts
     socket.join(message.roomId)
 
-    // Send initial room state
-    const roomUpdate: RoomUpdateMessage = {
-      type: 'room:update',
-      room
+    // Send initial room state (snapshot for jumbotron reload tolerance)
+    const roomStateMessage: RoomStateMessage = {
+      type: 'room:state',
+      state: room
     }
-    socket.emit('room:update', roomUpdate)
+    socket.emit('room:state', roomStateMessage)
   }
 
   /**

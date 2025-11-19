@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import type { Room, Player } from '@jkbox/shared'
+import type { RoomState } from '@jkbox/shared'
 import { readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 /**
- * SQLite-based persistent storage for rooms
- * Survives server restarts
+ * SQLite-based persistent storage for rooms (v2 - RoomState discriminated union)
+ * Stores full RoomState as JSON for simplicity
  */
 export class RoomStorage {
   private db: Database.Database
@@ -35,56 +35,46 @@ export class RoomStorage {
   /**
    * Save room to database (insert or update)
    */
-  saveRoom(room: Room): void {
+  saveRoom(room: RoomState): void {
     const tx = this.db.transaction(() => {
-      // Upsert room
+      // Upsert room (serialize full state as JSON)
       const stmt = this.db.prepare(`
         INSERT INTO rooms (
-          id, host_id, state, current_game, created_at, updated_at,
-          max_players, allow_mid_game_join, auto_advance_timers
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          host_id = excluded.host_id,
-          state = excluded.state,
-          current_game = excluded.current_game,
-          updated_at = excluded.updated_at,
-          max_players = excluded.max_players,
-          allow_mid_game_join = excluded.allow_mid_game_join,
-          auto_advance_timers = excluded.auto_advance_timers
+          room_id, phase, state_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(room_id) DO UPDATE SET
+          phase = excluded.phase,
+          state_json = excluded.state_json,
+          updated_at = excluded.updated_at
       `)
 
+      const now = Date.now()
       stmt.run(
-        room.id,
-        room.hostId,
-        room.state,
-        room.currentGame,
-        room.createdAt.getTime(),
-        Date.now(),
-        room.config.maxPlayers,
-        room.config.allowMidGameJoin ? 1 : 0,
-        room.config.autoAdvanceTimers ? 1 : 0
+        room.roomId,
+        room.phase,
+        JSON.stringify(room),
+        now, // created_at (ignored on update due to ON CONFLICT)
+        now  // updated_at
       )
 
-      // Delete existing players (simpler than diff + update)
-      this.db.prepare('DELETE FROM room_players WHERE room_id = ?').run(room.id)
+      // Delete existing players (simpler than diff)
+      this.db.prepare('DELETE FROM room_players WHERE room_id = ?').run(room.roomId)
 
-      // Insert current players
+      // Insert current players (denormalized for quick lookups)
       if (room.players.length > 0) {
         const playerStmt = this.db.prepare(`
           INSERT INTO room_players (
-            id, room_id, nickname, connected, score, joined_at, is_admin
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            player_id, room_id, nickname, connected, joined_at
+          ) VALUES (?, ?, ?, ?, ?)
         `)
 
         for (const player of room.players) {
           playerStmt.run(
             player.id,
-            room.id,
+            room.roomId,
             player.nickname,
             player.isConnected ? 1 : 0,
-            player.score,
-            player.connectedAt.getTime(),
-            room.adminIds.includes(player.id) ? 1 : 0
+            player.connectedAt.getTime()
           )
         }
       }
@@ -96,57 +86,23 @@ export class RoomStorage {
   /**
    * Get room by ID
    */
-  getRoom(roomId: string): Room | undefined {
+  getRoom(roomId: string): RoomState | undefined {
     const roomRow = this.db
-      .prepare('SELECT * FROM rooms WHERE id = ?')
-      .get(roomId) as any
+      .prepare('SELECT state_json FROM rooms WHERE room_id = ?')
+      .get(roomId) as { state_json: string } | undefined
 
     if (!roomRow) {
       return undefined
     }
 
-    // Get players
-    const playerRows = this.db
-      .prepare('SELECT * FROM room_players WHERE room_id = ? ORDER BY joined_at ASC')
-      .all(roomId) as any[]
+    // Deserialize JSON to RoomState
+    const room = JSON.parse(roomRow.state_json) as RoomState
 
-    const players: Player[] = playerRows.map(row => ({
-      id: row.id,
-      roomId: roomRow.id,
-      nickname: row.nickname,
-      sessionToken: '', // Not persisted, will be regenerated on reconnect
-      isAdmin: row.is_admin === 1,
-      isHost: row.id === roomRow.host_id,
-      score: row.score,
-      connectedAt: new Date(row.joined_at),
-      lastSeenAt: new Date(row.joined_at),
-      isConnected: row.connected === 1
-    }))
-
-    // Extract admin IDs
-    const adminIds = playerRows
-      .filter(row => row.is_admin === 1)
-      .map(row => row.id)
-
-    // Always include host in admin list
-    if (!adminIds.includes(roomRow.host_id)) {
-      adminIds.push(roomRow.host_id)
-    }
-
-    const room: Room = {
-      id: roomRow.id,
-      hostId: roomRow.host_id,
-      adminIds,
-      state: roomRow.state,
-      currentGame: roomRow.current_game,
-      players,
-      createdAt: new Date(roomRow.created_at),
-      config: {
-        maxPlayers: roomRow.max_players,
-        allowMidGameJoin: roomRow.allow_mid_game_join === 1,
-        autoAdvanceTimers: roomRow.auto_advance_timers === 1
-      }
-    }
+    // Restore Date objects (JSON.parse doesn't handle Dates)
+    room.players.forEach(player => {
+      player.connectedAt = new Date(player.connectedAt)
+      player.lastSeenAt = new Date(player.lastSeenAt)
+    })
 
     return room
   }
@@ -154,21 +110,21 @@ export class RoomStorage {
   /**
    * Get all rooms
    */
-  getAllRooms(): Room[] {
+  getAllRooms(): RoomState[] {
     const roomRows = this.db
-      .prepare('SELECT id FROM rooms ORDER BY created_at DESC')
-      .all() as { id: string }[]
+      .prepare('SELECT room_id FROM rooms ORDER BY created_at DESC')
+      .all() as { room_id: string }[]
 
     return roomRows
-      .map(row => this.getRoom(row.id))
-      .filter((room): room is Room => room !== undefined)
+      .map(row => this.getRoom(row.room_id))
+      .filter((room): room is RoomState => room !== undefined)
   }
 
   /**
    * Delete room (cascade deletes players via FK)
    */
   deleteRoom(roomId: string): void {
-    this.db.prepare('DELETE FROM rooms WHERE id = ?').run(roomId)
+    this.db.prepare('DELETE FROM rooms WHERE room_id = ?').run(roomId)
   }
 
   /**

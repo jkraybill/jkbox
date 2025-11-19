@@ -1,6 +1,7 @@
 // WebSocket message types for jkbox client-server communication
 
 import type { Room } from './room'
+import type { RoomState } from './room-state'
 import type { Player } from './player'
 import type { GameConfig, RoundResults, GamePhase } from './game'
 import type { GameId, RoomVotingState } from './voting'
@@ -86,12 +87,18 @@ export type ClientMessage =
 export interface JoinSuccessMessage {
   type: 'join:success'
   player: Player
-  room: Room
+  state: RoomState  // Phase-based state instead of old Room
 }
 
 export interface RoomUpdateMessage {
   type: 'room:update'
   room: Room
+}
+
+// NEW: Phase-based room state (replaces RoomUpdateMessage)
+export interface RoomStateMessage {
+  type: 'room:state'
+  state: RoomState
 }
 
 export interface GameStateMessage {
@@ -152,6 +159,7 @@ export interface LobbyCountdownMessage {
 export type ServerMessage =
   | JoinSuccessMessage
   | RoomUpdateMessage
+  | RoomStateMessage  // NEW: Phase-based state
   | GameStateMessage
   | RoundPhaseChangeMessage
   | TimerTickMessage

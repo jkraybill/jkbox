@@ -41,15 +41,8 @@ app.get('/api/health', (_req, res) => {
 })
 
 // Room creation endpoint
-app.post('/api/rooms', (req, res) => {
-  const { hostId } = req.body as { hostId?: string }
-
-  if (!hostId) {
-    res.status(400).json({ error: 'hostId required' })
-    return
-  }
-
-  const room = roomManager.createRoom(hostId)
+app.post('/api/rooms', (_req, res) => {
+  const room = roomManager.createRoom()
   res.json({ room })
 })
 

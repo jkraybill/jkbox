@@ -1,9 +1,9 @@
-import type { Room, Player } from '@jkbox/shared'
+import type { Player, RoomState, LobbyState } from '@jkbox/shared'
 import { generateRoomCode } from './utils/room-code'
 import type { RoomStorage } from './storage/room-storage'
 
 export class RoomManager {
-  private rooms: Map<string, Room> = new Map()
+  private rooms: Map<string, RoomState> = new Map()
   private storage?: RoomStorage
 
   constructor(storage?: RoomStorage) {
@@ -20,7 +20,7 @@ export class RoomManager {
 
     const rooms = this.storage.getAllRooms()
     for (const room of rooms) {
-      this.rooms.set(room.id, room)
+      this.rooms.set(room.roomId, room)
     }
 
     console.log(`✓ Restored ${rooms.length} room(s) from storage`)
@@ -29,31 +29,25 @@ export class RoomManager {
   /**
    * Persist room to storage (auto-save helper)
    */
-  private persistRoom(room: Room): void {
+  private persistRoom(room: RoomState): void {
     if (this.storage) {
       this.storage.saveRoom(room)
     }
   }
 
   /**
-   * Create a new room with a unique ID
+   * Create a new room with a unique ID (always starts in lobby phase)
    */
-  createRoom(hostId: string): Room {
+  createRoom(): LobbyState {
     const roomId = generateRoomCode()
 
-    const room: Room = {
-      id: roomId,
-      hostId,
-      adminIds: [hostId],
-      state: 'lobby',
-      currentGame: null,
+    const room: LobbyState = {
+      phase: 'lobby',
+      roomId,
       players: [],
-      createdAt: new Date(),
-      config: {
-        maxPlayers: 12,
-        allowMidGameJoin: false,
-        autoAdvanceTimers: true
-      }
+      gameVotes: {},
+      readyStates: {},
+      selectedGame: null
     }
 
     this.rooms.set(roomId, room)
@@ -64,14 +58,14 @@ export class RoomManager {
   /**
    * Get room by ID
    */
-  getRoom(roomId: string): Room | undefined {
+  getRoom(roomId: string): RoomState | undefined {
     return this.rooms.get(roomId)
   }
 
   /**
    * Find room containing a specific player
    */
-  getRoomByPlayerId(playerId: string): Room | undefined {
+  getRoomByPlayerId(playerId: string): RoomState | undefined {
     for (const room of this.rooms.values()) {
       if (room.players.some(p => p.id === playerId)) {
         return room
@@ -90,8 +84,9 @@ export class RoomManager {
       return false
     }
 
-    // Check capacity
-    if (room.players.length >= room.config.maxPlayers) {
+    // Check capacity (hardcoded max 12 for now)
+    const MAX_PLAYERS = 12
+    if (room.players.length >= MAX_PLAYERS) {
       return false
     }
 
@@ -135,6 +130,14 @@ export class RoomManager {
   }
 
   /**
+   * Update entire room state (for phase transitions: lobby → countdown → playing → results)
+   */
+  updateRoomState(roomId: string, newState: RoomState): void {
+    this.rooms.set(roomId, newState)
+    this.persistRoom(newState) // Auto-save
+  }
+
+  /**
    * Delete room
    */
   deleteRoom(roomId: string): void {
@@ -147,7 +150,7 @@ export class RoomManager {
   /**
    * Get all rooms (for debugging/admin)
    */
-  getAllRooms(): Room[] {
+  getAllRooms(): RoomState[] {
     return Array.from(this.rooms.values())
   }
 }

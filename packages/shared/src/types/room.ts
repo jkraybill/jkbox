@@ -9,13 +9,15 @@ export interface RoomConfig {
   autoAdvanceTimers: boolean
 }
 
-export type RoomState = 'lobby' | 'playing' | 'finished'
+// DEPRECATED: Old string-based state (replaced by RoomState discriminated union)
+export type RoomPhase = 'lobby' | 'playing' | 'finished'
 
+// DEPRECATED: Old Room type (replaced by RoomState discriminated union)
 export interface Room {
   id: string
   hostId: string
   adminIds: string[]
-  state: RoomState
+  state: RoomPhase
   currentGame: GameModule | null
   players: Player[]
   createdAt: Date

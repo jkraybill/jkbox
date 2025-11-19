@@ -59,6 +59,8 @@ export type {
   // Server messages
   JoinSuccessMessage,
   RoomUpdateMessage,
+  RoomStateMessage,  // NEW: Phase-based state
+  WatchMessage,
   GameStateMessage,
   RoundPhaseChangeMessage,
   TimerTickMessage,
