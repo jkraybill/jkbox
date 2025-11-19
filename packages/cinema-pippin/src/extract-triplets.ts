@@ -8,7 +8,6 @@ import {
   replaceKeywordWithBrackets,
 } from './keyword-utils.js';
 import { condenseAndBlank } from './blanking-utils.js';
-import { toWindowsPath } from './video-extractor.js';
 
 interface SRTSegment {
   tripletNumber: number;
@@ -149,16 +148,13 @@ function extractVideoSegment(
 
   console.log(`  Extracting video segment: ${startTime} -> ${endTime} (${duration.toFixed(1)}s)`);
 
-  // Use Windows ffmpeg.exe for better stability under WSL2
-  // Convert all paths to Windows format for ffmpeg.exe
+  // Use ffmpeg to extract the segment with frame-accurate cutting
   // Two-pass approach for accurate seeking and timestamp reset:
   // Pass 1: Fast seek to near the start point using input seeking
   // Pass 2: Precise cut with output seeking and timestamp reset
   // -map 0: copy all streams (video, audio, subtitles)
   // -c:v and -c:a: re-encode to ensure accurate cut and timestamp reset
   // If SRT file provided, embed it as a subtitle track
-  const winInputVideo = toWindowsPath(inputVideo);
-  const winOutputVideo = toWindowsPath(outputVideo);
   let ffmpegCmd: string;
 
   if (srtFile) {
@@ -166,19 +162,18 @@ function extractVideoSegment(
     // -c:s srt: subtitle codec (SRT format)
     // -metadata:s:s:0 language=eng: mark subtitle track as English
     // -disposition:s:0 default: make subtitle track default (auto-enabled)
-    const winSrtFile = toWindowsPath(srtFile);
-    ffmpegCmd = `ffmpeg.exe -y -ss ${startSeconds} -i "${winInputVideo}" -i "${winSrtFile}" -t ${duration} -map 0:v -map 0:a -map 1:0 -c:v libx264 -c:a aac -c:s srt -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${winOutputVideo}"`;
+    ffmpegCmd = `ffmpeg -y -ss ${startSeconds} -i "${inputVideo}" -i "${srtFile}" -t ${duration} -map 0:v -map 0:a -map 1:0 -c:v libx264 -c:a aac -c:s srt -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}"`;
   } else {
-    ffmpegCmd = `ffmpeg.exe -y -ss ${startSeconds} -i "${winInputVideo}" -t ${duration} -map 0 -c:v libx264 -c:a aac -avoid_negative_ts make_zero "${winOutputVideo}"`;
+    ffmpegCmd = `ffmpeg -y -ss ${startSeconds} -i "${inputVideo}" -t ${duration} -map 0 -c:v libx264 -c:a aac -avoid_negative_ts make_zero "${outputVideo}"`;
   }
 
   console.log(`  Running: ${ffmpegCmd}`);
 
   try {
-    execSync(ffmpegCmd, { stdio: 'pipe', shell: 'cmd.exe' });
+    execSync(ffmpegCmd, { stdio: 'pipe' });
     console.log(`  ✓ Created ${basename(outputVideo)}`);
   } catch (error) {
-    throw new Error(`ffmpeg.exe failed: ${error}`);
+    throw new Error(`ffmpeg failed: ${error}`);
   }
 }
 

@@ -7,21 +7,6 @@ import { join, basename } from 'path';
 import { execSync } from 'child_process';
 
 /**
- * Convert WSL path to Windows path for use with Windows executables
- * Examples:
- *   /home/jk/video.mp4 -> C:\Users\jk\video.mp4
- *   /mnt/c/videos/test.mp4 -> C:\videos\test.mp4
- */
-export function toWindowsPath(wslPath: string): string {
-  try {
-    const output = execSync(`wslpath -w "${wslPath}"`, { encoding: 'utf-8' });
-    return output.trim();
-  } catch (error: any) {
-    throw new Error(`Failed to convert WSL path to Windows path: ${wslPath}\n${error.message}`);
-  }
-}
-
-/**
  * Convert SRT timestamp (HH:MM:SS,mmm) to seconds
  */
 export function srtTimeToSeconds(timestamp: string): number {
@@ -152,8 +137,7 @@ export function extractVideoSegment(
   const volumeExpr = `if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))`;
   const audioFilter = `-af "volume='${volumeExpr}':eval=frame"`;
 
-  // Use Windows ffmpeg.exe for better stability under WSL2
-  // Convert all paths to Windows format for ffmpeg.exe
+  // Use ffmpeg to extract the segment with embedded subtitles
   // Note: SRT file is already rebased with paddingSeconds delay, so subtitles won't appear during padding
   // -ss: start time (with padding), -t: duration (with padding)
   // -map 0:v ${audioMap} -map 1:0: include video, audio (specific or all), subtitles from input 1
@@ -165,19 +149,14 @@ export function extractVideoSegment(
   // -c:s mov_text: subtitle codec (mov_text is required for MP4 container)
   // -metadata:s:s:0 language=eng: mark subtitle track as English
   // -disposition:s:0 default: make subtitle track default (auto-enabled)
-  const winInputVideo = toWindowsPath(inputVideo);
-  const winSrtFile = toWindowsPath(srtFile);
-  const winOutputVideo = toWindowsPath(outputVideo);
-
-  const ffmpegCmd = `ffmpeg.exe -y -ss ${paddedStart} -i "${winInputVideo}" -i "${winSrtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -vf scale=1280:-2 -c:v libx264 -crf 23 -preset fast -c:a aac -b:a 128k ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${winOutputVideo}" 2>&1`;
+  const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -vf scale=1280:-2 -c:v libx264 -crf 23 -preset fast -c:a aac -b:a 128k ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
-    // Use cmd.exe as shell for Windows executable
-    const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: 'cmd.exe' });
+    const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: '/bin/bash' });
     console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s silent padding)`);
   } catch (error: any) {
     const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
-    throw new Error(`ffmpeg.exe failed for ${basename(outputVideo)}:\n${stderr}`);
+    throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);
   }
 }
 
