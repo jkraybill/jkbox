@@ -4,6 +4,9 @@ import {
   endsWithPunctuation,
   endsWithStrongPunctuation,
   endsWithPunctuationOrBracket,
+  endsWithPunctuationOrNextCapital,
+  endsWithStrongPunctuationOrNextCapital,
+  endsWithPunctuationOrBracketOrNextCapital,
   getDurationSeconds,
   getFrameDuration,
   isValidT1Frame3,
@@ -59,7 +62,8 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
 
   for (let i = 1; i < entries.length; i++) {
     const prevFrame = entries[i - 1];
-    if (!endsWithPunctuationOrBracket(prevFrame.text)) continue;
+    const currentFrame = entries[i];
+    if (!endsWithPunctuationOrBracketOrNextCapital(prevFrame.text, currentFrame)) continue;
 
     // Try 0-6 fillers
     for (let fillers = 0; fillers <= 6; fillers++) {
@@ -75,8 +79,9 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
       // Validate Frame 3
       if (!isValidT1Frame3(frame3.text)) continue;
 
-      // Frame 3 must end with strong punctuation (. ! ?)
-      if (!endsWithStrongPunctuation(frame3.text)) continue;
+      // Frame 3 must end with strong punctuation (. ! ?) OR next frame starts with capital
+      const frameAfterF3 = frame3Idx + 1 < entries.length ? entries[frame3Idx + 1] : undefined;
+      if (!endsWithStrongPunctuationOrNextCapital(frame3.text, frameAfterF3)) continue;
 
       // Extract and validate keyword
       const keyword = extractLastWord(frame3.text);
@@ -207,18 +212,19 @@ function isValidSubsequentTriplet(
     return false;
   }
 
-  // Previous frame must end with . ! ? - ; ) ]
-  if (!endsWithPunctuationOrBracket(prevEntry.text)) {
+  // Previous frame must end with . ! ? - ; ) ] OR F1 starts with capital
+  if (!endsWithPunctuationOrBracketOrNextCapital(prevEntry.text, frame1)) {
     return false;
   }
 
-  // Frame 2 must end with . ! ? - ;
-  if (!endsWithPunctuation(frame2.text)) {
+  // Frame 2 must end with . ! ? - ; OR F3 starts with capital
+  if (!endsWithPunctuationOrNextCapital(frame2.text, frame3)) {
     return false;
   }
 
-  // Frame 3 must end with . ! ? - (strong punctuation - no semicolon, comma, or colon)
-  if (!endsWithStrongPunctuation(frame3.text)) {
+  // Frame 3 must end with . ! ? - (strong punctuation) OR next frame starts with capital
+  const frameAfterF3 = frame3Idx + 1 < entries.length ? entries[frame3Idx + 1] : undefined;
+  if (!endsWithStrongPunctuationOrNextCapital(frame3.text, frameAfterF3)) {
     return false;
   }
 

@@ -3,6 +3,9 @@ import {
   endsWithPunctuation,
   endsWithStrongPunctuation,
   endsWithPunctuationOrBracket,
+  endsWithPunctuationOrNextCapital,
+  endsWithStrongPunctuationOrNextCapital,
+  endsWithPunctuationOrBracketOrNextCapital,
   endsWithQuestionMark,
   getDurationSeconds,
   getFrameDuration,
@@ -47,8 +50,9 @@ export function isValidFirstTriplet(
     return false;
   }
 
-  // Frame 3 must end with strong punctuation (. ! ?)
-  if (!endsWithStrongPunctuation(frame3.text)) {
+  // Frame 3 must end with strong punctuation (. ! ?) OR next frame starts with capital
+  const frameAfterF3 = frame3Idx + 1 < entries.length ? entries[frame3Idx + 1] : undefined;
+  if (!endsWithStrongPunctuationOrNextCapital(frame3.text, frameAfterF3)) {
     return false;
   }
 
@@ -78,8 +82,8 @@ export function isValidFirstTriplet(
     }
   }
 
-  // Previous frame must end with . ! ? - ; ) ]
-  if (!endsWithPunctuationOrBracket(prevEntry.text)) {
+  // Previous frame must end with . ! ? - ; ) ] OR F1 starts with capital
+  if (!endsWithPunctuationOrBracketOrNextCapital(prevEntry.text, frame1)) {
     return false;
   }
 
@@ -136,19 +140,20 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Previous frame must end with . ! ? - ; ) ]
-  if (!endsWithPunctuationOrBracket(prevEntry.text)) {
+  // Previous frame must end with . ! ? - ; ) ] OR F1 starts with capital
+  if (!endsWithPunctuationOrBracketOrNextCapital(prevEntry.text, frame1)) {
     return false;
   }
 
-  // Frame 2 must end with . ! ? - ; , (BUT only if F3 starts with lowercase letter)
+  // Frame 2 must end with . ! ? - ; , (BUT only if F3 starts with lowercase letter) OR F3 starts with capital
   const frame3StartsLowercase = /^[a-z]/.test(frame3.text.trim());
-  if (frame3StartsLowercase && !endsWithPunctuation(frame2.text)) {
+  if (frame3StartsLowercase && !endsWithPunctuationOrNextCapital(frame2.text, frame3)) {
     return false;
   }
 
-  // Frame 3 must end with . ! ? - (strong punctuation - no semicolon, comma, or colon)
-  if (!endsWithStrongPunctuation(frame3.text)) {
+  // Frame 3 must end with . ! ? - (strong punctuation) OR next frame starts with capital
+  const frameAfterF3 = frame3Idx + 1 < entries.length ? entries[frame3Idx + 1] : undefined;
+  if (!endsWithStrongPunctuationOrNextCapital(frame3.text, frameAfterF3)) {
     return false;
   }
 

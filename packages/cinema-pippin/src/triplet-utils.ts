@@ -31,6 +31,49 @@ export function endsWithQuestionMark(text: string): boolean {
   return text.trim().endsWith('?');
 }
 
+/**
+ * Check if text starts with a capital letter
+ */
+export function startsWithCapital(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return false;
+  const firstChar = trimmed[0];
+  return /[A-Z]/.test(firstChar);
+}
+
+/**
+ * Enhanced punctuation check: frame ends with punctuation OR next frame starts with capital
+ * @param text - The text to check
+ * @param nextFrame - Optional next frame to check for capital letter
+ */
+export function endsWithPunctuationOrNextCapital(text: string, nextFrame?: SRTEntry): boolean {
+  if (endsWithPunctuation(text)) return true;
+  if (nextFrame && startsWithCapital(nextFrame.text)) return true;
+  return false;
+}
+
+/**
+ * Enhanced strong punctuation check: frame ends with strong punctuation OR next frame starts with capital
+ * @param text - The text to check
+ * @param nextFrame - Optional next frame to check for capital letter
+ */
+export function endsWithStrongPunctuationOrNextCapital(text: string, nextFrame?: SRTEntry): boolean {
+  if (endsWithStrongPunctuation(text)) return true;
+  if (nextFrame && startsWithCapital(nextFrame.text)) return true;
+  return false;
+}
+
+/**
+ * Enhanced punctuation/bracket check: frame ends with punctuation/bracket OR next frame starts with capital
+ * @param text - The text to check
+ * @param nextFrame - Optional next frame to check for capital letter
+ */
+export function endsWithPunctuationOrBracketOrNextCapital(text: string, nextFrame?: SRTEntry): boolean {
+  if (endsWithPunctuationOrBracket(text)) return true;
+  if (nextFrame && startsWithCapital(nextFrame.text)) return true;
+  return false;
+}
+
 function timeToSeconds(timestamp: string): number {
   // Parse HH:MM:SS,mmm format
   const [time, ms] = timestamp.split(',');
