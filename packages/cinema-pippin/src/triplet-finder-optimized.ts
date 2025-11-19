@@ -427,8 +427,8 @@ async function findTripletsOptimized(entries: SRTEntry[]): Promise<{ results: Tr
 
             if (f3Frame3 >= entries.length) break;
 
-            // T3 F3 must have at least 1 word more than T2 F3
-            const minT3Words = t2F3WordCount + 1;
+            // T3 F3 must have equal or longer word count than T2 F3
+            const minT3Words = t2F3WordCount;
             if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2, f3Frame3, keywordData, minT3Words)) {
               continue;
             }

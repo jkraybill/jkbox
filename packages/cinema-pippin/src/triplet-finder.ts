@@ -226,8 +226,8 @@ function findTripletsInternal(srtContent: string): Triplet[][] {
 
               if (f3Frame3Idx >= entries.length) continue;
 
-              // T3 F3 must have at least 1 word more than T2 F3
-              const minT3Words = t2F3WordCount + 1;
+              // T3 F3 must have equal or longer word count than T2 F3
+              const minT3Words = t2F3WordCount;
               if (!isValidSubsequentTriplet(entries, f3Start, f3Frame2Idx, f3Frame3Idx, firstKeyword, minT3Words)) {
                 continue;
               }
