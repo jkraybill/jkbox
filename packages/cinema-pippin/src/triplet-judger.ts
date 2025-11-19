@@ -333,6 +333,11 @@ async function generateReplacementWordsInternal(
     .map((c, i) => `${i + 1}. ${c}`)
     .join('\n');
 
+  // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
+  const exampleConstraint1 = constraints[0];
+  const exampleConstraint2 = constraints[1];
+  const exampleConstraint3 = constraints[2];
+
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER one-word punchlines that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
   const prompt = `Generate 6 HILARIOUS one-word replacements for a blank in this film scene.
@@ -403,29 +408,29 @@ ${blankedScene}
 
 ❌ WRONG EXAMPLE #1 (reordered constraints):
 Given constraints:
-1. The letter 'S' -- this punchline must begin with the letter 'S'.
-2. Foodie -- this punchline should be food-related.
-3. Geographical -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-BAD Output: [["Foodie -- this punchline should be food-related.", "ravioli"], ["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Geographical -- this punchline should be geography-related.", "France"]]
+BAD Output: [["${exampleConstraint2}", "word2"], ["${exampleConstraint1}", "word1"], ["${exampleConstraint3}", "word3"]]
 ← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
 
 ❌ WRONG EXAMPLE #2 (made up different constraint names):
 Given constraints:
-1. The letter 'S' -- this punchline must begin with the letter 'S'.
-2. Quotes -- this punchline should reference famous quotes.
-3. Geographical -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-BAD Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Foodie -- this punchline should be food-related.", "ravioli"], ["Pop culture -- this punchline should reference movies.", "Yoda"]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "Quotes". Array[2] has "Pop culture" but constraint #3 was "Geographical". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraint1}", "word1"], ["Foodie -- this punchline should be food-related.", "word2"], ["Pop culture -- this punchline should reference movies.", "word3"]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2.split(' -- ')[0]}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
-1. The letter 'S' -- this punchline must begin with the letter 'S'.
-2. Foodie -- this punchline should be food-related.
-3. Geographical -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-GOOD Output: [["The letter 'S' -- this punchline must begin with the letter 'S'.", "sexomophone"], ["Foodie -- this punchline should be food-related.", "ravioli"], ["Geographical -- this punchline should be geography-related.", "France"]]
+GOOD Output: [["${exampleConstraint1}", "word1"], ["${exampleConstraint2}", "word2"], ["${exampleConstraint3}", "word3"]]
 ← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Words are SINGLE WORDS with NO PUNCTUATION!
 
 ⚠️ OUTPUT FORMAT:
@@ -620,6 +625,11 @@ async function generateReplacementPhrasesInternal(
     .map((c, i) => `${i + 1}. ${c}`)
     .join('\n');
 
+  // Use first 3 actual constraints for examples (prevents confusion from hardcoded examples)
+  const exampleConstraint1 = constraintsWithWordCount[0];
+  const exampleConstraint2 = constraintsWithWordCount[1];
+  const exampleConstraint3 = constraintsWithWordCount[2];
+
   const system = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". Your specialty is generating HILARIOUS, ABSURD, and CLEVER multi-word punchlines and phrases that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`;
 
   const prompt = `Generate 6 HILARIOUS phrase/sentence replacements for a blank in this film scene.
@@ -690,29 +700,29 @@ ${blankedScene}
 
 ❌ WRONG EXAMPLE #1 (reordered constraints):
 Given constraints:
-1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
-2. Foodie (5 words) -- this punchline should be food-related.
-3. Geographical (4 words) -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-BAD Output: [["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti."], ["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexual!"], ["Geographical (4 words) -- this punchline should be geography-related.", "in rural France."]]
+BAD Output: [["${exampleConstraint2}", "phrase2."], ["${exampleConstraint1}", "phrase1."], ["${exampleConstraint3}", "phrase3."]]
 ← WRONG! Array[0] has constraint #2 instead of constraint #1. Constraints are SWAPPED!
 
 ❌ WRONG EXAMPLE #2 (made up different constraint names):
 Given constraints:
-1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
-2. Quotes (5 words) -- this punchline should reference famous quotes...
-3. Geographical (4 words) -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-BAD Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexual!"], ["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti."], ["Pop culture (4 words) -- this punchline should reference movies...", "May the Force!"]]
-← WRONG! Array[1] has "Foodie" but constraint #2 was "Quotes". Array[2] has "Pop culture" but constraint #3 was "Geographical". You CANNOT make up your own constraints!
+BAD Output: [["${exampleConstraint1}", "phrase1."], ["Foodie (5 words) -- this punchline should be food-related.", "phrase2."], ["Pop culture (4 words) -- this punchline should reference movies.", "phrase3."]]
+← WRONG! Array[1] has "Foodie" but constraint #2 was "${exampleConstraint2.split(' -- ')[0]}". You CANNOT make up your own constraints!
 
 ✅ CORRECT EXAMPLE:
 Given constraints:
-1. Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...
-2. Foodie (5 words) -- this punchline should be food-related.
-3. Geographical (4 words) -- this punchline should be geography-related.
+1. ${exampleConstraint1}
+2. ${exampleConstraint2}
+3. ${exampleConstraint3}
 
-GOOD Output: [["Suggestive (3 words) -- this punchline should maximize humorous adult innuendo...", "very sexually charged!"], ["Foodie (5 words) -- this punchline should be food-related.", "eating spaghetti with meatballs."], ["Geographical (4 words) -- this punchline should be geography-related.", "somewhere in rural France."]]
+GOOD Output: [["${exampleConstraint1}", "phrase1."], ["${exampleConstraint2}", "phrase2."], ["${exampleConstraint3}", "phrase3."]]
 ← RIGHT! Array[0]=constraint #1, Array[1]=constraint #2, Array[2]=constraint #3. Constraint names copied EXACTLY. Phrases end with punctuation!
 
 ⚠️ OUTPUT FORMAT:
