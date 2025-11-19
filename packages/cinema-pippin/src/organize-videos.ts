@@ -29,16 +29,43 @@ interface VideoInfo {
 }
 
 /**
- * Check if a file has subtitle streams using ffprobe
+ * Check if a file has TEXT-BASED subtitle streams (not bitmap) using ffprobe
+ *
+ * Text-based formats that can be extracted to SRT:
+ * - subrip (SRT)
+ * - ass / ssa (Advanced SubStation Alpha)
+ * - mov_text (MP4 subtitles)
+ * - webvtt (WebVTT)
+ * - text (generic text)
+ *
+ * Bitmap formats that need OCR (REJECTED):
+ * - dvd_subtitle (VobSub)
+ * - hdmv_pgs_subtitle (Blu-ray PGS)
+ * - dvb_subtitle (DVB subtitles)
  */
 async function hasSubtitleStream(filePath: string): Promise<boolean> {
   try {
     const { stdout } = await execAsync(
-      `ffprobe -v error -select_streams s -show_entries stream=codec_type -of csv=p=0 "${filePath}"`
+      `ffprobe -v error -select_streams s -show_entries stream=codec_name -of csv=p=0 "${filePath}"`
     );
 
-    // Check if output contains "subtitle" (indicating at least one subtitle stream)
-    return stdout.trim().length > 0;
+    const codecNames = stdout.trim().split('\n').filter(line => line.length > 0);
+
+    if (codecNames.length === 0) {
+      return false;
+    }
+
+    // Text-based subtitle codecs that can be extracted to SRT
+    const textCodecs = ['subrip', 'ass', 'ssa', 'mov_text', 'webvtt', 'text', 'srt'];
+
+    // Check if any subtitle stream is text-based
+    const hasTextSubtitle = codecNames.some(codec => textCodecs.includes(codec));
+
+    if (!hasTextSubtitle) {
+      console.log(`  ⚠️  Found subtitle streams but they are bitmap-based (${codecNames.join(', ')}) - need OCR`);
+    }
+
+    return hasTextSubtitle;
   } catch (error) {
     console.error(`  ⚠️  Error checking subtitles for ${basename(filePath)}:`, error);
     return false;

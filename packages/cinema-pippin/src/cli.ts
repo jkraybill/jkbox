@@ -93,6 +93,45 @@ function extractSrtFromVideo(videoPath: string, outputSrtPath: string): void {
     throw new Error('Could not identify subtitle stream index');
   }
 
+  // Check subtitle codec type before attempting extraction
+  // Find the line with our selected stream to extract the codec
+  const selectedStreamLine = lines.find(line => line.includes(`Stream #${englishStreamIndex}`));
+  if (selectedStreamLine) {
+    // Extract codec name (e.g., "Subtitle: dvd_subtitle" or "Subtitle: subrip")
+    const codecMatch = selectedStreamLine.match(/Subtitle:\s+(\w+)/);
+    if (codecMatch) {
+      const codec = codecMatch[1];
+      const textCodecs = ['subrip', 'ass', 'ssa', 'mov_text', 'webvtt', 'text', 'srt'];
+      const bitmapCodecs = ['dvd_subtitle', 'hdmv_pgs_subtitle', 'dvb_subtitle', 'dvdsub', 'pgssub'];
+
+      if (bitmapCodecs.includes(codec)) {
+        console.error('\n❌ SRT EXTRACTION FAILED - BITMAP SUBTITLE FORMAT:');
+        console.error('================================================================================');
+        console.error(`Subtitle codec: ${codec}`);
+        console.error('');
+        console.error('This subtitle format is BITMAP-BASED (images of text), not text-based.');
+        console.error('FFmpeg cannot convert bitmap subtitles to SRT text format.');
+        console.error('');
+        console.error('SOLUTIONS:');
+        console.error('1. Find a version of this video with text-based subtitles (SRT, ASS, etc.)');
+        console.error('2. Use OCR tools to convert bitmap subtitles to text:');
+        console.error('   - VobSub2SRT (for DVD subtitles)');
+        console.error('   - SubtitleEdit (Windows, supports OCR)');
+        console.error('   - ccextractor (command-line tool)');
+        console.error('3. Download external SRT subtitles from opensubtitles.org or subscene.com');
+        console.error('');
+        console.error('This file will be moved to the "needs-subtitles" folder.');
+        console.error('================================================================================\n');
+
+        throw new Error(`Cannot extract bitmap subtitle format: ${codec}`);
+      }
+
+      if (!textCodecs.includes(codec)) {
+        console.log(`\n⚠️  Warning: Unknown subtitle codec "${codec}" - attempting extraction anyway...`);
+      }
+    }
+  }
+
   // Extract the subtitle stream
   console.log(`\nExtracting subtitle stream ${englishStreamIndex} to ${basename(outputSrtPath)}...`);
 
