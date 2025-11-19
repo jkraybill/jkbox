@@ -613,13 +613,7 @@ async function generateReplacementPhrasesInternal(
   totalTriplets?: number
 ): Promise<string[]> {
   // Generate random word counts for each constraint (Gaussian: median=6, sdev=2, min=1, max=12)
-  const wordCounts = [
-    generateWordCount(),
-    generateWordCount(),
-    generateWordCount(),
-    generateWordCount(),
-    generateWordCount(),
-  ];
+  const wordCounts = constraints.map(() => generateWordCount());
 
   // Add word counts to constraints
   const constraintsWithWordCount = constraints.map(
