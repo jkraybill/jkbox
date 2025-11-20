@@ -539,4 +539,143 @@ describe('ConnectionHandler', () => {
       vi.useRealTimers()
     })
   })
+
+  describe('Disconnect During Lobby/Countdown', () => {
+    it('should remove player from lobby when they disconnect', () => {
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      expect(room.players).toHaveLength(1)
+
+      // Player disconnects
+      handler.handleDisconnect(socket as Socket)
+
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const player = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      // Player marked as disconnected (not removed - heartbeat system removes after 60s)
+      expect(player?.isConnected).toBe(false)
+    })
+
+    it('should cancel countdown if player disconnects during countdown', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+      const socket2 = createMockSocket('player-2')
+
+      // Two players join and vote
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Vote for game
+      handler.handleLobbyVote(socket1 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyVote(socket2 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      // Mark ready (should trigger countdown)
+      handler.handleLobbyReadyToggle(socket1 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      handler.handleLobbyReadyToggle(socket2 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      // Advance 2 seconds into countdown
+      vi.advanceTimersByTime(2000)
+
+      // Player disconnects during countdown
+      handler.handleDisconnect(socket1 as Socket)
+
+      // Room should return to lobby phase
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      expect(updatedRoom?.phase).toBe('lobby')
+
+      vi.useRealTimers()
+    })
+
+    it('should broadcast countdown cancellation message when player disconnects', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+      const socket2 = createMockSocket('player-2')
+
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Vote and ready
+      handler.handleLobbyVote(socket1 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyVote(socket2 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyReadyToggle(socket1 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      handler.handleLobbyReadyToggle(socket2 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Advance into countdown
+      vi.advanceTimersByTime(1000)
+
+      // Player disconnects
+      handler.handleDisconnect(socket1 as Socket)
+
+      // Check for countdown:cancelled message
+      const broadcasts = io._getBroadcastEvents()
+      const cancelMessage = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'lobby:countdown-cancelled'
+      )
+
+      expect(cancelMessage).toBeDefined()
+
+      vi.useRealTimers()
+    })
+  })
 })

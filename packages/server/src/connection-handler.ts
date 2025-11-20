@@ -9,7 +9,10 @@ import type {
   LobbyReadyToggleMessage,
   LobbyVotingUpdateMessage,
   LobbyCountdownMessage,
-  GameId
+  LobbyCountdownCancelledMessage,
+  GameId,
+  CountdownState,
+  LobbyState
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
@@ -24,6 +27,7 @@ export class ConnectionHandler {
   private votingHandlers: Map<string, VotingHandler> = new Map() // roomId → VotingHandler
   private heartbeatMonitor: NodeJS.Timeout | null = null
   private bootedPlayers: Map<string, { nickname: string; score: number; roomId: string }> = new Map() // Track booted players for rejoin
+  private countdownTimers: Map<string, NodeJS.Timeout> = new Map() // roomId → countdown timer
 
   constructor(
     private roomManager: RoomManager,
@@ -174,6 +178,12 @@ export class ConnectionHandler {
       return
     }
 
+    // Check if room is in countdown phase - cancel if so
+    const room = this.roomManager.getRoom(mapping.roomId)
+    if (room?.phase === 'countdown') {
+      this.cancelCountdown(mapping.roomId, 'player_disconnect')
+    }
+
     // Mark player as disconnected (not removed - allow reconnection)
     this.roomManager.updatePlayer(mapping.roomId, mapping.playerId, {
       isConnected: false,
@@ -316,8 +326,38 @@ export class ConnectionHandler {
   private async startCountdown(roomId: string, selectedGame: GameId): Promise<void> {
     const COUNTDOWN_FROM = 5
 
+    // Transition room to countdown phase
+    const room = this.roomManager.getRoom(roomId)
+    if (!room) {
+      return
+    }
+
+    const countdownState: CountdownState = {
+      phase: 'countdown',
+      roomId,
+      players: room.players,
+      selectedGame,
+      secondsRemaining: COUNTDOWN_FROM
+    }
+
+    this.roomManager.updateRoomState(roomId, countdownState)
+
+    // Broadcast initial countdown state
+    const stateMessage: RoomStateMessage = {
+      type: 'room:state',
+      state: countdownState
+    }
+    this.io.to(roomId).emit('room:state', stateMessage)
+
     // Emit countdown messages (5, 4, 3, 2, 1, 0)
     for (let i = COUNTDOWN_FROM; i >= 0; i--) {
+      // Check if countdown was cancelled
+      const currentRoom = this.roomManager.getRoom(roomId)
+      if (currentRoom?.phase !== 'countdown') {
+        console.log(`Countdown cancelled for room ${roomId}`)
+        return
+      }
+
       const countdownMessage: LobbyCountdownMessage = {
         type: 'lobby:countdown',
         countdown: i,
@@ -326,11 +366,21 @@ export class ConnectionHandler {
 
       this.io.to(roomId).emit('lobby:countdown', countdownMessage)
 
+      // Update countdown state
+      countdownState.secondsRemaining = i
+      this.roomManager.updateRoomState(roomId, countdownState)
+
       // Wait 1 second between counts
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => {
+          const timer = setTimeout(resolve, 1000)
+          this.countdownTimers.set(roomId, timer)
+        })
       }
     }
+
+    // Clean up timer tracking
+    this.countdownTimers.delete(roomId)
 
     // After countdown, start the game
     // TODO: Implement game start logic (this will be part of the actual game modules)
@@ -340,6 +390,55 @@ export class ConnectionHandler {
     const handler = this.getVotingHandler(roomId)
     handler.reset()
     this.broadcastVotingUpdate(roomId)
+  }
+
+  /**
+   * Cancel ongoing countdown and return to lobby
+   */
+  private cancelCountdown(roomId: string, reason: 'player_disconnect' | 'manual_cancel'): void {
+    const room = this.roomManager.getRoom(roomId)
+    if (!room || room.phase !== 'countdown') {
+      return
+    }
+
+    // Clear countdown timer if exists
+    const timer = this.countdownTimers.get(roomId)
+    if (timer) {
+      clearTimeout(timer)
+      this.countdownTimers.delete(roomId)
+    }
+
+    // Get voting state before transitioning
+    const votingHandler = this.getVotingHandler(roomId)
+    const votingState = votingHandler.getVotingState()
+
+    // Transition back to lobby phase
+    const lobbyState: LobbyState = {
+      phase: 'lobby',
+      roomId,
+      players: room.players,
+      gameVotes: {},
+      readyStates: {},
+      selectedGame: votingState.selectedGame
+    }
+
+    this.roomManager.updateRoomState(roomId, lobbyState)
+
+    // Broadcast countdown cancelled message
+    const cancelMessage: LobbyCountdownCancelledMessage = {
+      type: 'lobby:countdown-cancelled',
+      reason
+    }
+    this.io.to(roomId).emit('lobby:countdown-cancelled', cancelMessage)
+
+    // Broadcast updated room state
+    const stateMessage: RoomStateMessage = {
+      type: 'room:state',
+      state: lobbyState
+    }
+    this.io.to(roomId).emit('room:state', stateMessage)
+
+    console.log(`Countdown cancelled for room ${roomId} (reason: ${reason})`)
   }
 
   /**
