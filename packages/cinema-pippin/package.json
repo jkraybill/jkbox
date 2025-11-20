@@ -9,7 +9,6 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsx src/cli.ts",
     "cli": "tsx src/cli.ts",
     "imdb-search": "tsx src/imdb-search.ts",
     "organize-videos": "tsx src/organize-videos.ts"
