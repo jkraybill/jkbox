@@ -538,7 +538,7 @@ No explanations, no other text. Just the JSON array of couplets.`;
 
   // Validate each couplet and extract words
   const words: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < couplets.length; i++) {
     const couplet = couplets[i];
 
     if (!Array.isArray(couplet) || couplet.length !== 2) {
@@ -828,7 +828,7 @@ No explanations, no other text. Just the JSON array of couplets.`;
 
   // Validate each couplet and extract phrases
   const phrases: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < couplets.length; i++) {
     const couplet = couplets[i];
 
     if (!Array.isArray(couplet) || couplet.length !== 2) {
