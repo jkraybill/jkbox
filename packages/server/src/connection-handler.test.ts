@@ -678,4 +678,166 @@ describe('ConnectionHandler', () => {
       vi.useRealTimers()
     })
   })
+
+  describe('Game Start Transition', () => {
+    it('should transition to playing phase after countdown completes', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+      const socket2 = createMockSocket('player-2')
+
+      // Setup: Two players vote and ready
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      handler.handleLobbyVote(socket1 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyVote(socket2 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyReadyToggle(socket1 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      handler.handleLobbyReadyToggle(socket2 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      // Advance past countdown (5 seconds)
+      await vi.advanceTimersByTimeAsync(6000)
+
+      // Room should transition to playing phase
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      expect(updatedRoom?.phase).toBe('playing')
+      if (updatedRoom?.phase === 'playing') {
+        expect(updatedRoom.gameId).toBe('fake-facts')
+      }
+
+      vi.useRealTimers()
+    })
+
+    it('should emit game:start message after countdown', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+      const socket2 = createMockSocket('player-2')
+
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      handler.handleLobbyVote(socket1 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyVote(socket2 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyReadyToggle(socket1 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      handler.handleLobbyReadyToggle(socket2 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Advance past countdown
+      await vi.advanceTimersByTimeAsync(6000)
+
+      // Check for game:start message
+      const broadcasts = io._getBroadcastEvents()
+      const gameStartMessage = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'game:start'
+      )
+
+      expect(gameStartMessage).toBeDefined()
+
+      vi.useRealTimers()
+    })
+
+    it('should preserve players list during lobby→playing transition', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+      const socket2 = createMockSocket('player-2')
+
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      handler.handleLobbyVote(socket1 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyVote(socket2 as Socket, {
+        type: 'lobby:vote-game',
+        gameId: 'fake-facts'
+      })
+
+      handler.handleLobbyReadyToggle(socket1 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      handler.handleLobbyReadyToggle(socket2 as Socket, {
+        type: 'lobby:ready-toggle',
+        isReady: true
+      })
+
+      // Advance past countdown
+      await vi.advanceTimersByTimeAsync(6000)
+
+      // Players should be preserved
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      expect(updatedRoom?.players).toHaveLength(2)
+      expect(updatedRoom?.players.find(p => p.nickname === 'Alice')).toBeDefined()
+      expect(updatedRoom?.players.find(p => p.nickname === 'Bob')).toBeDefined()
+
+      vi.useRealTimers()
+    })
+  })
 })

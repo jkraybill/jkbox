@@ -166,6 +166,12 @@ export interface LobbyCountdownCancelledMessage {
   reason: 'player_disconnect' | 'manual_cancel'
 }
 
+export interface GameStartMessage {
+  type: 'game:start'
+  gameId: GameId
+  gameState: unknown  // Game module owns this
+}
+
 export type ServerMessage =
   | JoinSuccessMessage
   | RoomUpdateMessage
@@ -180,3 +186,4 @@ export type ServerMessage =
   | LobbyVotingUpdateMessage
   | LobbyCountdownMessage
   | LobbyCountdownCancelledMessage
+  | GameStartMessage

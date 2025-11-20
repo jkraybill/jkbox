@@ -10,9 +10,11 @@ import type {
   LobbyVotingUpdateMessage,
   LobbyCountdownMessage,
   LobbyCountdownCancelledMessage,
+  GameStartMessage,
   GameId,
   CountdownState,
-  LobbyState
+  LobbyState,
+  PlayingState
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
@@ -383,13 +385,56 @@ export class ConnectionHandler {
     this.countdownTimers.delete(roomId)
 
     // After countdown, start the game
-    // TODO: Implement game start logic (this will be part of the actual game modules)
-    console.log(`Starting game ${selectedGame} in room ${roomId}`)
+    await this.startGame(roomId, selectedGame)
+  }
+
+  /**
+   * Start game - transition to playing phase
+   */
+  private async startGame(roomId: string, selectedGame: GameId): Promise<void> {
+    const room = this.roomManager.getRoom(roomId)
+    if (!room) {
+      return
+    }
+
+    // Initialize game state (placeholder for now - will be game module's responsibility)
+    const gameState = {
+      initialized: true,
+      selectedGame
+    }
+
+    // Transition to playing phase
+    const playingState: PlayingState = {
+      phase: 'playing',
+      roomId,
+      players: room.players,
+      gameId: selectedGame,
+      gameState
+    }
+
+    this.roomManager.updateRoomState(roomId, playingState)
+
+    // Emit game:start message
+    const gameStartMessage: GameStartMessage = {
+      type: 'game:start',
+      gameId: selectedGame,
+      gameState
+    }
+    this.io.to(roomId).emit('game:start', gameStartMessage)
+
+    // Broadcast updated room state
+    const stateMessage: RoomStateMessage = {
+      type: 'room:state',
+      state: playingState
+    }
+    this.io.to(roomId).emit('room:state', stateMessage)
 
     // Reset voting handler for next round
     const handler = this.getVotingHandler(roomId)
     handler.reset()
     this.broadcastVotingUpdate(roomId)
+
+    console.log(`Game ${selectedGame} started in room ${roomId}`)
   }
 
   /**
