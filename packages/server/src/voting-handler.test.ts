@@ -25,7 +25,7 @@ describe('VotingHandler', () => {
       expect(newVote.gameId).toBe('cinephile')
 
       const state = handler.getVotingState()
-      expect(state.votes.get('player-1')?.gameId).toBe('cinephile')
+      expect(state.votes['player-1']?.gameId).toBe('cinephile')
     })
 
     it('should track multiple player votes', () => {
@@ -34,7 +34,7 @@ describe('VotingHandler', () => {
       handler.submitVote('player-3', 'fake-facts')
 
       const state = handler.getVotingState()
-      expect(state.votes.size).toBe(3)
+      expect(Object.keys(state.votes).length).toBe(3)
     })
   })
 
@@ -66,7 +66,7 @@ describe('VotingHandler', () => {
       handler.toggleReady('player-1', false)
 
       const state = handler.getVotingState()
-      expect(state.votes.get('player-1')?.gameId).toBe('fake-facts')
+      expect(state.votes['player-1']?.gameId).toBe('fake-facts')
     })
   })
 
@@ -135,8 +135,8 @@ describe('VotingHandler', () => {
       handler.removePlayer('player-1')
 
       const state = handler.getVotingState()
-      expect(state.votes.has('player-1')).toBe(false)
-      expect(state.readyStates.has('player-1')).toBe(false)
+      expect(state.votes['player-1']).toBeUndefined()
+      expect(state.readyStates['player-1']).toBeUndefined()
     })
 
     it('should recalculate selected game after removal', () => {
@@ -163,8 +163,8 @@ describe('VotingHandler', () => {
       handler.reset()
 
       const state = handler.getVotingState()
-      expect(state.votes.size).toBe(0)
-      expect(state.readyStates.size).toBe(0)
+      expect(Object.keys(state.votes).length).toBe(0)
+      expect(Object.keys(state.readyStates).length).toBe(0)
       expect(state.allReady).toBe(false)
       expect(state.selectedGame).toBeNull()
     })

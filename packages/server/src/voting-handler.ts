@@ -64,14 +64,15 @@ export class VotingHandler {
 
   /**
    * Get current voting state with computed fields
+   * Converts Maps to Records for JSON serialization over WebSocket
    */
   getVotingState(): RoomVotingState {
     const allReady = this.computeAllReady()
     const selectedGame = this.computeSelectedGame()
 
     return {
-      votes: new Map(this.votes),
-      readyStates: new Map(this.readyStates),
+      votes: Object.fromEntries(this.votes),  // Map → Record for JSON
+      readyStates: Object.fromEntries(this.readyStates),  // Map → Record for JSON
       allReady,
       selectedGame,
     }

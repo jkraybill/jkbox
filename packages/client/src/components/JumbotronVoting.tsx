@@ -33,7 +33,7 @@ export function JumbotronVoting({ players }: JumbotronVotingProps) {
 
   // Calculate vote tallies
   const voteTallies: Record<GameId, number> = votingState
-    ? Array.from(votingState.votes.values()).reduce(
+    ? Object.values(votingState.votes).reduce(
         (acc, vote) => {
           acc[vote.gameId] = (acc[vote.gameId] ?? 0) + 1
           return acc
@@ -47,8 +47,8 @@ export function JumbotronVoting({ players }: JumbotronVotingProps) {
 
   // Get player ready states
   const playerStates = players.map((player) => {
-    const readyState = votingState?.readyStates.get(player.id)
-    const vote = votingState?.votes.get(player.id)
+    const readyState = votingState?.readyStates[player.id]
+    const vote = votingState?.votes[player.id]
     return {
       player,
       hasVoted: readyState?.hasVoted ?? false,

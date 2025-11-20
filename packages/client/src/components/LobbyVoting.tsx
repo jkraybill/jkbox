@@ -89,7 +89,7 @@ export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotin
 
   // Calculate vote tallies
   const voteTallies: Record<GameId, number> = votingState
-    ? Array.from(votingState.votes.values()).reduce(
+    ? Object.values(votingState.votes).reduce(
         (acc, vote) => {
           acc[vote.gameId] = (acc[vote.gameId] ?? 0) + 1
           return acc
@@ -100,10 +100,10 @@ export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotin
 
   // Count ready players
   const readyCount = votingState
-    ? Array.from(votingState.readyStates.values()).filter((state) => state.isReady).length
+    ? Object.values(votingState.readyStates).filter((state) => state.isReady).length
     : 0
 
-  const totalPlayers = votingState ? votingState.readyStates.size : 0
+  const totalPlayers = votingState ? Object.keys(votingState.readyStates).length : 0
 
   return (
     <div style={styles.container}>

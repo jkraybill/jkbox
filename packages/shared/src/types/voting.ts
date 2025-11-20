@@ -17,8 +17,8 @@ export interface PlayerReadyState {
 }
 
 export interface RoomVotingState {
-  votes: Map<string, GameVote>
-  readyStates: Map<string, PlayerReadyState>
+  votes: Record<string, GameVote>  // playerId → GameVote (use Record for JSON serialization)
+  readyStates: Record<string, PlayerReadyState>  // playerId → PlayerReadyState
   allReady: boolean  // Computed: all players voted + ready
   selectedGame: GameId | null  // Most voted game (null if tied)
 }
