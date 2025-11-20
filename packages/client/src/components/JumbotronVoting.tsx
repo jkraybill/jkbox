@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useSocket } from '../lib/use-socket'
 import type { RoomVotingState, GameId, Player } from '@jkbox/shared'
 
 interface JumbotronVotingProps {
   players: Player[]
+  roomId: string
 }
 
 const GAME_NAMES: Record<GameId, string> = {
@@ -12,9 +14,11 @@ const GAME_NAMES: Record<GameId, string> = {
   'joker-poker': 'Joker Poker',
 }
 
-export function JumbotronVoting({ players }: JumbotronVotingProps) {
+export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
   const { socket } = useSocket()
   const [votingState, setVotingState] = useState<RoomVotingState | null>(null)
+
+  const joinUrl = `${window.location.origin}/join/${roomId}`
 
   // Listen for voting updates
   useEffect(() => {
@@ -62,6 +66,19 @@ export function JumbotronVoting({ players }: JumbotronVotingProps) {
 
   return (
     <div style={styles.container}>
+      {/* QR Code - Top Left Corner */}
+      <div style={styles.qrContainer}>
+        <div style={styles.qrCode}>
+          <QRCodeSVG
+            value={joinUrl}
+            size={Math.min(window.innerHeight * 0.15, window.innerWidth * 0.08)}
+            level="M"
+          />
+        </div>
+        <div style={styles.joinUrl}>{joinUrl}</div>
+        <div style={styles.joinLabel}>Scan to Join</div>
+      </div>
+
       <div style={styles.header}>
         <h1 style={styles.title}>Vote for Next Game!</h1>
         <div style={styles.subtitle}>
@@ -142,6 +159,39 @@ const styles = {
     overflow: 'hidden',
     backgroundColor: 'var(--color-bg-darkest)',
     color: 'var(--color-text-primary)',
+    position: 'relative' as const,
+  },
+  qrContainer: {
+    position: 'absolute' as const,
+    top: '2vh',
+    left: '2vw',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '1vh',
+    padding: '1.5vh 1vw',
+    backgroundColor: 'var(--color-bg-dark)',
+    borderRadius: 'var(--radius-lg)',
+    border: '0.2vh solid var(--color-primary-yellow)',
+    zIndex: 10,
+  },
+  qrCode: {
+    padding: '1vh',
+    backgroundColor: '#ffffff',
+    borderRadius: 'var(--radius-md)',
+  },
+  joinUrl: {
+    fontSize: '1.2vh',
+    color: 'var(--color-text-muted)',
+    textAlign: 'center' as const,
+    maxWidth: '15vw',
+    wordBreak: 'break-all' as const,
+  },
+  joinLabel: {
+    fontSize: '1.5vh',
+    color: 'var(--color-primary-yellow)',
+    fontWeight: 'bold',
+    textAlign: 'center' as const,
   },
   header: {
     textAlign: 'center' as const,

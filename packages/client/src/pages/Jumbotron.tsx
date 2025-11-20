@@ -201,7 +201,7 @@ export function Jumbotron() {
         </div>
       ) : room.phase === 'lobby' ? (
         // Show voting UI when players have joined
-        <JumbotronVoting players={room.players} />
+        <JumbotronVoting players={room.players} roomId={room.roomId} />
       ) : (
         // Other phases (countdown, playing, results)
         <div style={styles.content}>
