@@ -234,5 +234,51 @@ describe('RoomStorage', () => {
       expect(() => storage.saveRoom(room)).not.toThrow()
       expect(storage.getRoom('TEST')).toBeDefined()
     })
+
+    it('should have correct schema with phase column', () => {
+      // Verify rooms table has expected columns
+      const tableInfo = storage['db'].prepare("PRAGMA table_info(rooms)").all() as Array<{
+        cid: number
+        name: string
+        type: string
+        notnull: number
+        dflt_value: string | null
+        pk: number
+      }>
+
+      const columnNames = tableInfo.map(col => col.name)
+
+      expect(columnNames).toContain('room_id')
+      expect(columnNames).toContain('phase')
+      expect(columnNames).toContain('state_json')
+      expect(columnNames).toContain('created_at')
+      expect(columnNames).toContain('updated_at')
+
+      // Verify phase column has correct constraint
+      const phaseColumn = tableInfo.find(col => col.name === 'phase')
+      expect(phaseColumn?.notnull).toBe(1) // NOT NULL constraint
+    })
+
+    it('should have correct indexes', () => {
+      const indexes = storage['db'].prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='rooms'").all() as Array<{ name: string }>
+
+      const indexNames = indexes.map(idx => idx.name)
+      expect(indexNames).toContain('idx_rooms_phase')
+      expect(indexNames).toContain('idx_rooms_updated_at')
+    })
+
+    it('should have room_players table with foreign key', () => {
+      const tableInfo = storage['db'].prepare("PRAGMA table_info(room_players)").all() as Array<{
+        name: string
+      }>
+
+      const columnNames = tableInfo.map(col => col.name)
+
+      expect(columnNames).toContain('player_id')
+      expect(columnNames).toContain('room_id')
+      expect(columnNames).toContain('nickname')
+      expect(columnNames).toContain('connected')
+      expect(columnNames).toContain('joined_at')
+    })
   })
 })
