@@ -6,6 +6,16 @@
 import type { Player } from './player';
 
 /**
+ * Title phase - Intro screen with Pippin animation (before lobby)
+ * Non-interactive, shows "Welcome to Pippin's Playhouse"
+ */
+export interface TitleState {
+  phase: 'title';
+  roomId: string;
+  players: Player[];  // Empty during title screen
+}
+
+/**
  * Lobby phase - Players joining, selecting game, marking ready
  */
 export interface LobbyState {
@@ -67,10 +77,18 @@ export interface Achievement {
  * TypeScript will narrow types based on phase property
  */
 export type RoomState =
+  | TitleState
   | LobbyState
   | CountdownState
   | PlayingState
   | ResultsState;
+
+/**
+ * Type guard: Check if state is in title phase
+ */
+export function isTitleState(state: RoomState): state is TitleState {
+  return state.phase === 'title';
+}
 
 /**
  * Type guard: Check if state is in lobby phase

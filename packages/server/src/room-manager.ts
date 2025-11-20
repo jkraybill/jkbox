@@ -1,10 +1,11 @@
-import type { Player, RoomState, LobbyState } from '@jkbox/shared'
+import type { Player, RoomState, LobbyState, TitleState } from '@jkbox/shared'
 import { generateRoomCode } from './utils/room-code'
 import type { RoomStorage } from './storage/room-storage'
 
 export class RoomManager {
   private rooms: Map<string, RoomState> = new Map()
   private storage?: RoomStorage
+  private singletonRoomId: string | null = null  // For single-room mode
 
   constructor(storage?: RoomStorage) {
     this.storage = storage
@@ -152,5 +153,73 @@ export class RoomManager {
    */
   getAllRooms(): RoomState[] {
     return Array.from(this.rooms.values())
+  }
+
+  /**
+   * Get or create singleton room (for single-room Jumbotron mode)
+   * Room starts in 'title' phase for Pippin intro animation
+   */
+  getOrCreateSingletonRoom(): RoomState {
+    // If singleton room exists, return it
+    if (this.singletonRoomId) {
+      const room = this.rooms.get(this.singletonRoomId)
+      if (room) {
+        return room
+      }
+    }
+
+    // Check if any room exists (from storage restore)
+    const existingRooms = Array.from(this.rooms.values())
+    if (existingRooms.length > 0) {
+      const room = existingRooms[0]!
+      this.singletonRoomId = room.roomId
+      return room
+    }
+
+    // Create new room in title phase
+    const roomId = generateRoomCode()
+    const room: TitleState = {
+      phase: 'title',
+      roomId,
+      players: []
+    }
+
+    this.rooms.set(roomId, room)
+    this.singletonRoomId = roomId
+    this.persistRoom(room)
+
+    console.log(`✨ Created singleton room ${roomId} in title phase`)
+    return room
+  }
+
+  /**
+   * Transition singleton room from title → lobby
+   * Called after Pippin intro animation completes
+   */
+  transitionTitleToLobby(): LobbyState | null {
+    if (!this.singletonRoomId) {
+      return null
+    }
+
+    const room = this.rooms.get(this.singletonRoomId)
+    if (!room || room.phase !== 'title') {
+      return null
+    }
+
+    // Transition to lobby phase
+    const lobbyRoom: LobbyState = {
+      phase: 'lobby',
+      roomId: room.roomId,
+      players: room.players,
+      gameVotes: {},
+      readyStates: {},
+      selectedGame: null
+    }
+
+    this.rooms.set(room.roomId, lobbyRoom)
+    this.persistRoom(lobbyRoom)
+
+    console.log(`✅ Transitioned room ${room.roomId} from title → lobby`)
+    return lobbyRoom
   }
 }

@@ -1,37 +1,13 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 
 export function Home() {
-  const [isCreating, setIsCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const { isConnected } = useSocket()
   const navigate = useNavigate()
 
-  const handleCreateRoom = async () => {
-    setIsCreating(true)
-    setError(null)
-
-    try {
-      // Call server to create room
-      const response = await fetch('http://localhost:3001/api/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: 'temp-host-id' }) // Will be replaced with proper ID
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create room')
-      }
-
-      const { room } = await response.json()
-
-      // Navigate to jumbotron view
-      navigate(`/jumbotron/${room.roomId}`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create room')
-      setIsCreating(false)
-    }
+  const handleStartJumbotron = () => {
+    // Navigate directly to jumbotron (will auto-create singleton room)
+    navigate('/jumbotron')
   }
 
   return (
@@ -48,17 +24,15 @@ export function Home() {
       </div>
 
       <button
-        onClick={handleCreateRoom}
-        disabled={!isConnected || isCreating}
+        onClick={handleStartJumbotron}
+        disabled={!isConnected}
         style={{
           ...styles.button,
-          ...((!isConnected || isCreating) && styles.buttonDisabled)
+          ...(!isConnected && styles.buttonDisabled)
         }}
       >
-        {isCreating ? 'Creating Party...' : 'Create Party'}
+        Start Jumbotron
       </button>
-
-      {error && <div style={styles.error}>{error}</div>}
 
       <div style={styles.footer}>
         <p>Session 2 - Lobby MVP</p>

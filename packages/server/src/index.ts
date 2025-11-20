@@ -44,13 +44,29 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'jkbox-server' })
 })
 
-// Room creation endpoint
+// Get/create singleton room (for Jumbotron)
+app.get('/api/room', (_req, res) => {
+  const room = roomManager.getOrCreateSingletonRoom()
+  res.json({ room })
+})
+
+// Transition singleton room from title → lobby
+app.post('/api/room/transition-to-lobby', (_req, res) => {
+  const room = roomManager.transitionTitleToLobby()
+  if (!room) {
+    res.status(400).json({ error: 'Room not in title phase or does not exist' })
+    return
+  }
+  res.json({ room })
+})
+
+// Legacy: Room creation endpoint (kept for backwards compatibility)
 app.post('/api/rooms', (_req, res) => {
   const room = roomManager.createRoom()
   res.json({ room })
 })
 
-// Get room endpoint
+// Legacy: Get room by ID endpoint (kept for backwards compatibility)
 app.get('/api/rooms/:roomId', (req, res) => {
   const { roomId } = req.params
   const room = roomManager.getRoom(roomId)

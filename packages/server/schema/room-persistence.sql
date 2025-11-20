@@ -4,7 +4,7 @@
 -- Rooms table - stores full RoomState as JSON
 CREATE TABLE IF NOT EXISTS rooms (
   room_id TEXT PRIMARY KEY, -- Room code (e.g., "ABCD")
-  phase TEXT NOT NULL CHECK(phase IN ('lobby', 'countdown', 'playing', 'results')),
+  phase TEXT NOT NULL CHECK(phase IN ('title', 'lobby', 'countdown', 'playing', 'results')),
   state_json TEXT NOT NULL, -- Full RoomState serialized as JSON
   created_at INTEGER NOT NULL, -- Unix timestamp
   updated_at INTEGER NOT NULL -- Unix timestamp

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useGameStore } from '../store/game-store'
 import { useSocket } from '../lib/use-socket'
@@ -15,25 +14,52 @@ const GAME_NAMES: Record<string, string> = {
 }
 
 export function Jumbotron() {
-  const { roomId } = useParams<{ roomId: string }>()
-  const { room } = useGameStore()
+  const { room, setRoom } = useGameStore()
   const { socket, isConnected } = useSocket()
-  const [showIntro, setShowIntro] = useState(true)
   const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
+  const [isLoadingRoom, setIsLoadingRoom] = useState(true)
 
-  const joinUrl = `${window.location.origin}/join/${roomId}`
-
+  // Fetch singleton room on mount
   useEffect(() => {
-    if (!socket || !roomId || !isConnected) {
-      console.log('[Jumbotron] Waiting for socket/roomId/connection:', { socket: !!socket, roomId, isConnected })
+    const fetchRoom = async () => {
+      try {
+        console.log('[Jumbotron] Fetching singleton room...')
+        const response = await fetch('http://localhost:3001/api/room')
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch room')
+        }
+
+        const { room: fetchedRoom } = await response.json()
+        console.log('[Jumbotron] Fetched room:', fetchedRoom)
+        setRoom(fetchedRoom)
+      } catch (error) {
+        console.error('[Jumbotron] Failed to fetch room:', error)
+      } finally {
+        setIsLoadingRoom(false)
+      }
+    }
+
+    fetchRoom()
+  }, [setRoom])
+
+  // Join room via WebSocket when connected
+  useEffect(() => {
+    if (!socket || !room || !isConnected) {
+      console.log('[Jumbotron] Waiting for socket/room/connection:', {
+        socket: !!socket,
+        room: !!room,
+        isConnected
+      })
       return
     }
 
-    console.log('[Jumbotron] Sending watch message for room:', roomId)
-    // Send watch message to join the room and receive updates
+    console.log('[Jumbotron] Joining room via WebSocket:', room.roomId)
+
+    // Join the room to receive broadcasts
     socket.emit('watch', {
       type: 'watch',
-      roomId
+      roomId: room.roomId
     })
 
     // Listen for countdown messages
@@ -45,16 +71,57 @@ export function Jumbotron() {
     return () => {
       socket.off('lobby:countdown')
     }
-  }, [socket, roomId, isConnected])
+  }, [socket, room, isConnected])
 
-  if (!room) {
+  // Handle Pippin intro completion (transition title → lobby)
+  const handleIntroComplete = async () => {
+    console.log('[Jumbotron] Pippin intro complete, transitioning to lobby...')
+
+    try {
+      const response = await fetch('http://localhost:3001/api/room/transition-to-lobby', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to transition to lobby')
+      }
+
+      const { room: lobbyRoom } = await response.json()
+      console.log('[Jumbotron] Transitioned to lobby:', lobbyRoom)
+      setRoom(lobbyRoom)
+    } catch (error) {
+      console.error('[Jumbotron] Failed to transition to lobby:', error)
+    }
+  }
+
+  if (isLoadingRoom) {
     return (
       <div style={styles.container}>
-        <div style={styles.loading}>Loading room...</div>
+        <div style={styles.loading}>Initializing Pippin's Playhouse...</div>
       </div>
     )
   }
 
+  if (!room) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.error}>Failed to load room. Please refresh.</div>
+      </div>
+    )
+  }
+
+  const joinUrl = `${window.location.origin}/join/${room.roomId}`
+
+  // Title screen - show Pippin intro animation
+  if (room.phase === 'title') {
+    return (
+      <div style={styles.container}>
+        <Pippin variant="intro" onIntroComplete={handleIntroComplete} />
+      </div>
+    )
+  }
+
+  // Lobby and beyond - show room state
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -64,7 +131,7 @@ export function Jumbotron() {
         </div>
       </div>
 
-      {room.players.length === 0 ? (
+      {room.phase === 'lobby' && room.players.length === 0 ? (
         // Show QR code when no players
         <div style={styles.content}>
           <div style={styles.qrSection}>
@@ -82,9 +149,16 @@ export function Jumbotron() {
             <div style={styles.emptyState}>Waiting for players to join...</div>
           </div>
         </div>
-      ) : (
+      ) : room.phase === 'lobby' ? (
         // Show voting UI when players have joined
         <JumbotronVoting players={room.players} />
+      ) : (
+        // Other phases (countdown, playing, results)
+        <div style={styles.content}>
+          <div style={styles.phaseDisplay}>
+            Phase: {room.phase}
+          </div>
+        </div>
       )}
 
       <div style={styles.footer}>
@@ -92,11 +166,8 @@ export function Jumbotron() {
         <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
       </div>
 
-      {/* Pippin intro animation (plays once on load) */}
-      {showIntro && <Pippin variant="intro" onIntroComplete={() => setShowIntro(false)} />}
-
       {/* Pippin corner mascot (persistent, animated) */}
-      {!showIntro && !countdown && <Pippin variant="corner" />}
+      {!countdown && <Pippin variant="corner" />}
 
       {/* Countdown overlay */}
       {countdown && (
@@ -118,6 +189,12 @@ const styles = {
     fontSize: 'var(--font-size-2xl)',
     textAlign: 'center' as const,
     marginTop: '100px'
+  },
+  error: {
+    fontSize: 'var(--font-size-2xl)',
+    textAlign: 'center' as const,
+    marginTop: '100px',
+    color: 'var(--color-error-text)'
   },
   header: {
     textAlign: 'center' as const,
@@ -172,60 +249,16 @@ const styles = {
     backgroundColor: 'var(--color-bg-medium)',
     borderRadius: 'var(--radius-xl)'
   },
-  playerList: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 'var(--space-md)',
-    marginBottom: 'var(--space-2xl)'
-  },
   emptyState: {
     textAlign: 'center' as const,
     padding: 'var(--space-3xl)',
     color: 'var(--color-text-disabled)',
     fontSize: 'var(--font-size-lg)'
   },
-  playerCard: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 'var(--space-lg) var(--space-xl)',
-    backgroundColor: 'var(--color-bg-dark)',
-    borderRadius: 'var(--radius-md)'
-  },
-  playerNickname: {
-    fontSize: 'var(--font-size-xl)',
-    fontWeight: 'bold'
-  },
-  playerStatus: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 'var(--space-md)'
-  },
-  badge: {
-    fontSize: 'var(--font-size-xs)',
-    padding: 'var(--space-xs) var(--space-sm)',
-    backgroundColor: 'var(--color-accent-blue)',
-    borderRadius: 'var(--radius-sm)',
-    fontWeight: 'bold'
-  },
-  statusConnected: {
-    color: 'var(--color-status-connected)',
-    fontSize: 'var(--font-size-xl)'
-  },
-  statusDisconnected: {
-    color: 'var(--color-status-disconnected)',
-    fontSize: 'var(--font-size-xl)'
-  },
-  startButton: {
-    width: '100%',
-    padding: 'var(--space-lg)',
-    fontSize: 'var(--font-size-xl)',
-    backgroundColor: '#10b981',
-    color: 'var(--color-text-primary)',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    cursor: 'pointer',
-    fontWeight: 'bold'
+  phaseDisplay: {
+    fontSize: 'var(--font-size-3xl)',
+    textAlign: 'center' as const,
+    padding: 'var(--space-3xl)'
   },
   footer: {
     position: 'fixed' as const,
