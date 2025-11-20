@@ -11,6 +11,10 @@ import type {
 import { RoomManager } from './room-manager'
 import { RoomStorage } from './storage/room-storage'
 import { ConnectionHandler } from './connection-handler'
+import { initInspector } from './fsm/inspector'
+
+// Initialize XState inspector (dev only, controlled by XSTATE_INSPECT env var)
+initInspector()
 
 const app = express()
 const httpServer = createServer(app)
