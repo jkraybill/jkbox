@@ -172,9 +172,6 @@ export function Jumbotron() {
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>Pippin's Playhouse</h1>
-        <div style={styles.roomCode}>
-          Room Code: <span style={styles.roomCodeValue}>{room.roomId}</span>
-        </div>
       </div>
 
       {room.phase === 'lobby' && room.players.length === 0 ? (
@@ -268,15 +265,6 @@ const styles = {
   title: {
     fontSize: '6vh',
     margin: '0 0 1vh 0'
-  },
-  roomCode: {
-    fontSize: '2.5vh',
-    color: 'var(--color-text-secondary)'
-  },
-  roomCodeValue: {
-    color: 'var(--color-accent-blue)',
-    fontWeight: 'bold',
-    fontSize: '4vh'
   },
   content: {
     display: 'grid',
