@@ -171,14 +171,15 @@ export function Jumbotron() {
   return (
     <div style={styles.container}>
       {/* Only show header when NOT in voting mode (voting has its own header) */}
-      {!(room.phase === 'lobby' && room.players.length > 0) && (
+      {!(room.phase === 'lobby' && room.players.length > 0) && room.phase !== 'countdown' && (
         <div style={styles.header}>
           <h1 style={styles.title}>Pippin's Playhouse</h1>
         </div>
       )}
 
+      {/* Phase-based rendering */}
       {room.phase === 'lobby' && room.players.length === 0 ? (
-        // Show QR code when no players
+        // Lobby: Show QR code when no players
         <div style={styles.content}>
           <div style={styles.qrSection}>
             <h2 style={styles.sectionTitle}>Scan to Join</h2>
@@ -200,21 +201,61 @@ export function Jumbotron() {
           </div>
         </div>
       ) : room.phase === 'lobby' ? (
-        // Show voting UI when players have joined (includes its own header with QR code)
+        // Lobby: Show voting UI when players have joined
         <JumbotronVoting players={room.players} roomId={room.roomId} />
-      ) : (
-        // Other phases (countdown, playing, results)
-        <div style={styles.content}>
-          <div style={styles.phaseDisplay}>
-            Phase: {room.phase}
+      ) : room.phase === 'countdown' ? (
+        // Countdown: Full-screen countdown display
+        <div style={styles.countdownPhaseContainer}>
+          <div style={styles.countdownNumber}>{room.secondsRemaining}</div>
+          <div style={styles.countdownGame}>
+            {GAME_NAMES[room.selectedGame] || room.selectedGame}
           </div>
         </div>
-      )}
+      ) : room.phase === 'playing' ? (
+        // Playing: Delegate to game module (placeholder for now)
+        <div style={styles.content}>
+          <div style={styles.phaseDisplay}>
+            Playing {GAME_NAMES[room.gameId] || room.gameId}
+          </div>
+        </div>
+      ) : room.phase === 'results' ? (
+        // Results: Show winners and scores
+        <div style={styles.content}>
+          <div style={styles.resultsContainer}>
+            <h2 style={styles.resultsTitle}>Game Over!</h2>
+            <div style={styles.winnersSection}>
+              <h3 style={styles.sectionTitle}>Winners</h3>
+              {room.winners.map((winnerId) => {
+                const winner = room.players.find((p) => p.id === winnerId)
+                return (
+                  <div key={winnerId} style={styles.winnerName}>
+                    {winner?.nickname || 'Unknown'}
+                  </div>
+                )
+              })}
+            </div>
+            <div style={styles.scoresSection}>
+              <h3 style={styles.sectionTitle}>Final Scores</h3>
+              {Object.entries(room.scores)
+                .sort(([, a], [, b]) => b - a)
+                .map(([playerId, score]) => {
+                  const player = room.players.find((p) => p.id === playerId)
+                  return (
+                    <div key={playerId} style={styles.scoreRow}>
+                      <span>{player?.nickname || 'Unknown'}</span>
+                      <span style={styles.scoreValue}>{score}</span>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
-      {/* Pippin corner mascot (persistent, animated) */}
-      {!countdown && <Pippin variant="corner" />}
+      {/* Pippin corner mascot (persistent, animated) - hide during countdown phase */}
+      {!countdown && room.phase !== 'countdown' && <Pippin variant="corner" />}
 
-      {/* Countdown overlay */}
+      {/* Countdown overlay (from lobby:countdown message, different from countdown phase) */}
       {countdown && (
         <Countdown count={countdown.count} gameName={countdown.game} variant="jumbotron" />
       )}
@@ -317,5 +358,67 @@ const styles = {
     fontSize: '4vh',
     textAlign: 'center' as const,
     padding: '5vh 2vw'
+  },
+  countdownPhaseContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4vh'
+  },
+  countdownNumber: {
+    fontSize: '30vh',
+    fontWeight: 'bold' as const,
+    color: 'var(--color-primary)',
+    textAlign: 'center' as const
+  },
+  countdownGame: {
+    fontSize: '6vh',
+    textAlign: 'center' as const,
+    color: 'var(--color-text-secondary)'
+  },
+  resultsContainer: {
+    gridColumn: '1 / -1',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '4vh',
+    padding: '3vh 2vw'
+  },
+  resultsTitle: {
+    fontSize: '8vh',
+    marginBottom: '2vh',
+    textAlign: 'center' as const
+  },
+  winnersSection: {
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)',
+    padding: '3vh 4vw',
+    minWidth: '40vw',
+    textAlign: 'center' as const
+  },
+  winnerName: {
+    fontSize: '5vh',
+    fontWeight: 'bold' as const,
+    color: 'var(--color-primary)',
+    marginTop: '2vh'
+  },
+  scoresSection: {
+    backgroundColor: 'var(--color-bg-medium)',
+    borderRadius: 'var(--radius-xl)',
+    padding: '3vh 4vw',
+    minWidth: '40vw'
+  },
+  scoreRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '3vh',
+    padding: '1.5vh 0',
+    borderBottom: '1px solid var(--color-border)'
+  },
+  scoreValue: {
+    fontWeight: 'bold' as const,
+    color: 'var(--color-primary)'
   }
 }
