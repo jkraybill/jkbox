@@ -477,7 +477,13 @@ export class ConnectionHandler {
 			players: room.players,
 			selectedGame,
 			secondsRemaining: COUNTDOWN_FROM,
-			config: room.config
+			config: room.config,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
 		}
 
 		this.roomManager.updateRoomState(roomId, countdownState)
@@ -569,7 +575,13 @@ export class ConnectionHandler {
 			players: room.players,
 			gameId: selectedGame,
 			gameState, // Opaque to lobby system
-			config: room.config
+			config: room.config,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
 		}
 
 		this.roomManager.updateRoomState(roomId, playingState)
@@ -678,7 +690,13 @@ export class ConnectionHandler {
 			gameVotes: {},
 			readyStates: {},
 			selectedGame: votingState.selectedGame,
-			config: room.config
+			config: room.config,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
 		}
 
 		this.roomManager.updateRoomState(roomId, lobbyState)
@@ -865,7 +883,13 @@ export class ConnectionHandler {
 			gameVotes: {},
 			readyStates: {},
 			selectedGame: null,
-			config: room.config
+			config: room.config,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
 		}
 		this.roomManager.updateRoomState(mapping.roomId, lobbyRoom)
 

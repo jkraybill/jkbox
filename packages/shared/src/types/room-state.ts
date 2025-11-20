@@ -14,6 +14,16 @@ export interface RoomConfig {
 }
 
 /**
+ * Pause state - tracks if game is paused by admin
+ */
+export interface PauseState {
+	isPaused: boolean
+	pausedBy: string | null // Player ID of admin who paused
+	pausedByName: string | null // Nickname of admin who paused
+	pausedAt: Date | null
+}
+
+/**
  * Title phase - Intro screen with Pippin animation (before lobby)
  * Non-interactive, shows "Welcome to Pippin's Playhouse"
  */
@@ -35,6 +45,7 @@ export interface LobbyState {
 	readyStates: Record<string, boolean> // playerId → isReady
 	selectedGame: string | null // Majority-voted game (null if no votes yet)
 	config: RoomConfig
+	pauseState: PauseState
 }
 
 /**
@@ -47,6 +58,7 @@ export interface CountdownState {
 	selectedGame: string // Game that will start
 	secondsRemaining: number // 5→0
 	config: RoomConfig
+	pauseState: PauseState
 }
 
 /**
@@ -59,6 +71,7 @@ export interface PlayingState {
 	gameId: string
 	gameState: unknown // Owned by game module, opaque to lobby
 	config: RoomConfig
+	pauseState: PauseState
 }
 
 /**
@@ -73,6 +86,7 @@ export interface ResultsState {
 	scores: Record<string, number> // playerId → final score
 	achievements?: Achievement[] // Optional achievements/awards
 	config: RoomConfig
+	pauseState: PauseState
 }
 
 /**

@@ -36,12 +36,12 @@ export interface AdminStartGameMessage {
 	config: GameConfig
 }
 
-export interface AdminPauseTimerMessage {
-	type: 'admin:pause-timer'
+export interface AdminPauseMessage {
+	type: 'admin:pause'
 }
 
-export interface AdminResumeTimerMessage {
-	type: 'admin:resume-timer'
+export interface AdminUnpauseMessage {
+	type: 'admin:unpause'
 }
 
 export interface AdminSkipPhaseMessage {
@@ -102,8 +102,8 @@ export type ClientMessage =
 	| SubmitMessage
 	| VoteMessage
 	| AdminStartGameMessage
-	| AdminPauseTimerMessage
-	| AdminResumeTimerMessage
+	| AdminPauseMessage
+	| AdminUnpauseMessage
 	| AdminSkipPhaseMessage
 	| AdminDelegateMessage
 	| AdminBootPlayerMessage

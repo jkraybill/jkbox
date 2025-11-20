@@ -7,6 +7,7 @@ export type { Room, RoomConfig as LegacyRoomConfig } from './room'
 export type {
 	RoomState,
 	RoomConfig,
+	PauseState,
 	TitleState,
 	LobbyState,
 	CountdownState,
@@ -61,8 +62,8 @@ export type {
 	SubmitMessage,
 	VoteMessage,
 	AdminStartGameMessage,
-	AdminPauseTimerMessage,
-	AdminResumeTimerMessage,
+	AdminPauseMessage,
+	AdminUnpauseMessage,
 	AdminSkipPhaseMessage,
 	AdminDelegateMessage,
 	AdminBootPlayerMessage,

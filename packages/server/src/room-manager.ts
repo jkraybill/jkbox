@@ -2,6 +2,7 @@ import type {
 	Player,
 	RoomState,
 	RoomConfig,
+	PauseState,
 	LobbyState,
 	TitleState,
 	ResultsState,
@@ -17,6 +18,18 @@ import type { RoomStorage } from './storage/room-storage'
 function getDefaultConfig(): RoomConfig {
 	return {
 		aiGuesses: 1 // Default: 1 AI-generated fake answer per round
+	}
+}
+
+/**
+ * Default pause state (unpaused)
+ */
+function getDefaultPauseState(): PauseState {
+	return {
+		isPaused: false,
+		pausedBy: null,
+		pausedByName: null,
+		pausedAt: null
 	}
 }
 
@@ -85,7 +98,8 @@ export class RoomManager {
 			gameVotes: {},
 			readyStates: {},
 			selectedGame: null,
-			config: getDefaultConfig()
+			config: getDefaultConfig(),
+			pauseState: getDefaultPauseState()
 		}
 
 		this.rooms.set(roomId, room)
@@ -252,7 +266,8 @@ export class RoomManager {
 			gameVotes: {},
 			readyStates: {},
 			selectedGame: null,
-			config: room.config
+			config: room.config,
+			pauseState: getDefaultPauseState()
 		}
 
 		this.rooms.set(room.roomId, lobbyRoom)
@@ -286,7 +301,7 @@ export class RoomManager {
 
 		console.log(`[RoomManager] Transitioning room ${roomId} from playing → results`)
 
-		// Create results state (preserve config from playing phase)
+		// Create results state (preserve config from playing phase, unpause by default)
 		const resultsState: ResultsState = {
 			phase: 'results',
 			roomId: room.roomId,
@@ -295,7 +310,8 @@ export class RoomManager {
 			winners: config.results.winners,
 			scores: config.results.scores,
 			achievements: config.results.achievements,
-			config: room.config
+			config: room.config,
+			pauseState: getDefaultPauseState()
 		}
 
 		this.rooms.set(roomId, resultsState)
@@ -334,7 +350,8 @@ export class RoomManager {
 			gameVotes: {},
 			readyStates: {},
 			selectedGame: null,
-			config: room.config
+			config: room.config,
+			pauseState: getDefaultPauseState()
 		}
 
 		this.rooms.set(roomId, lobbyState)
