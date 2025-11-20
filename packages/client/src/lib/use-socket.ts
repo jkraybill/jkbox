@@ -31,6 +31,7 @@ export function useSocket() {
 
     // Game event handlers
     socket.on('room:state', (message: RoomStateMessage) => {
+      console.log('[useSocket] Received room:state:', message.state)
       setRoom(message.state)
     })
 

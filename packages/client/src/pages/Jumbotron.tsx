@@ -24,8 +24,12 @@ export function Jumbotron() {
   const joinUrl = `${window.location.origin}/join/${roomId}`
 
   useEffect(() => {
-    if (!socket || !roomId || !isConnected) return
+    if (!socket || !roomId || !isConnected) {
+      console.log('[Jumbotron] Waiting for socket/roomId/connection:', { socket: !!socket, roomId, isConnected })
+      return
+    }
 
+    console.log('[Jumbotron] Sending watch message for room:', roomId)
     // Send watch message to join the room and receive updates
     socket.emit('watch', {
       type: 'watch',
