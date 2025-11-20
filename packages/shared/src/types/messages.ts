@@ -14,6 +14,7 @@ export interface JoinMessage {
   type: 'join'
   roomId: string
   nickname: string
+  deviceId?: string  // Client-generated UUID from localStorage (preferred over IP)
   sessionToken?: string  // For reconnection
 }
 

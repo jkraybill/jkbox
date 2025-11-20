@@ -61,8 +61,8 @@ export class ConnectionHandler {
       return
     }
 
-    // Extract device identifier (IP address)
-    const deviceId = socket.handshake.address || 'unknown'
+    // Extract device identifier (prefer client-provided UUID, fallback to IP address)
+    const deviceId = message.deviceId || socket.handshake.address || 'unknown'
 
     // Remove all existing players from this device before adding new player
     // This prevents duplicate connections from the same device (e.g., refreshing browser)

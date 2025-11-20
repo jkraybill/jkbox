@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { getSavedNickname, saveNickname } from '../utils/cookies'
+import { getDeviceId } from '../lib/device-id'
 import type { JoinSuccessMessage, ErrorMessage } from '@jkbox/shared'
 
 export function Join() {
@@ -65,11 +66,12 @@ export function Join() {
     setIsJoining(true)
     setError(null)
 
-    // Send join message
+    // Send join message with persistent device ID
     socket.emit('join', {
       type: 'join',
       roomId,
-      nickname: nickname.trim()
+      nickname: nickname.trim(),
+      deviceId: getDeviceId()
     })
   }
 

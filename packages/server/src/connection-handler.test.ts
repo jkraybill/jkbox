@@ -284,35 +284,37 @@ describe('ConnectionHandler', () => {
 
     it('should remove all existing players from same device when new player joins', () => {
       const room = roomManager.createRoom()
-      const deviceIp = '192.168.1.50'
+      const deviceUuid = 'device-uuid-123'
 
-      // First player joins from device
-      const socket1 = createMockSocket('socket-1', deviceIp)
+      // First player joins from device (sends deviceId from localStorage)
+      const socket1 = createMockSocket('socket-1', '192.168.1.50')
       handler.handleJoin(socket1 as Socket, {
         type: 'join',
         roomId: room.roomId,
-        nickname: 'Alice'
+        nickname: 'Alice',
+        deviceId: deviceUuid
       })
 
       // Verify first player added
       let updated = roomManager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(1)
       expect(updated?.players[0]?.nickname).toBe('Alice')
-      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
+      expect(updated?.players[0]?.deviceId).toBe(deviceUuid)
 
-      // Second player joins from SAME device (different socket, same IP)
-      const socket2 = createMockSocket('socket-2', deviceIp)
+      // Second player joins from SAME device (different socket, same deviceId)
+      const socket2 = createMockSocket('socket-2', '192.168.1.50')
       handler.handleJoin(socket2 as Socket, {
         type: 'join',
         roomId: room.roomId,
-        nickname: 'Bob'
+        nickname: 'Bob',
+        deviceId: deviceUuid
       })
 
       // Verify Alice was removed, only Bob remains
       updated = roomManager.getRoom(room.roomId)
       expect(updated?.players).toHaveLength(1)
       expect(updated?.players[0]?.nickname).toBe('Bob')
-      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
+      expect(updated?.players[0]?.deviceId).toBe(deviceUuid)
 
       // Verify Alice is NOT in the player list
       const aliceExists = updated?.players.some(p => p.nickname === 'Alice')
@@ -327,7 +329,8 @@ describe('ConnectionHandler', () => {
       handler.handleJoin(socket1 as Socket, {
         type: 'join',
         roomId: room.roomId,
-        nickname: 'Alice'
+        nickname: 'Alice',
+        deviceId: 'device-uuid-aaa'
       })
 
       // Player 2 from device B
@@ -335,7 +338,8 @@ describe('ConnectionHandler', () => {
       handler.handleJoin(socket2 as Socket, {
         type: 'join',
         roomId: room.roomId,
-        nickname: 'Bob'
+        nickname: 'Bob',
+        deviceId: 'device-uuid-bbb'
       })
 
       // Player 3 from device C
@@ -343,7 +347,8 @@ describe('ConnectionHandler', () => {
       handler.handleJoin(socket3 as Socket, {
         type: 'join',
         roomId: room.roomId,
-        nickname: 'Charlie'
+        nickname: 'Charlie',
+        deviceId: 'device-uuid-ccc'
       })
 
       // All three players should be in the room
@@ -352,6 +357,41 @@ describe('ConnectionHandler', () => {
       expect(updated?.players.map(p => p.nickname)).toContain('Alice')
       expect(updated?.players.map(p => p.nickname)).toContain('Bob')
       expect(updated?.players.map(p => p.nickname)).toContain('Charlie')
+    })
+
+    it('should fallback to IP address when deviceId not provided', () => {
+      const room = roomManager.createRoom()
+      const deviceIp = '192.168.1.99'
+
+      // First player joins without deviceId (old client)
+      const socket1 = createMockSocket('socket-1', deviceIp)
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+        // No deviceId provided
+      })
+
+      // Verify player added with IP as deviceId
+      let updated = roomManager.getRoom(room.roomId)
+      expect(updated?.players).toHaveLength(1)
+      expect(updated?.players[0]?.nickname).toBe('Alice')
+      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
+
+      // Second connection from same IP (no deviceId)
+      const socket2 = createMockSocket('socket-2', deviceIp)
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+        // No deviceId provided
+      })
+
+      // Alice should be removed (same IP)
+      updated = roomManager.getRoom(room.roomId)
+      expect(updated?.players).toHaveLength(1)
+      expect(updated?.players[0]?.nickname).toBe('Bob')
+      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
     })
   })
 
