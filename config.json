@@ -81,7 +81,8 @@
     "enabled": true,
     "policy": "Patterns discovered in jkbox can contribute to gordo-framework after validation",
     "pendingContributions": [
-      "AI-driven adaptive health checks (gathering data Sessions 1-10)"
+      "AI-driven adaptive health checks (gathering data Sessions 1-10)",
+      "gordo-memory indexing progress feedback (Session 3: 30+ min reindex with ZERO progress updates - unacceptable UX)"
     ]
   },
   "memory": {
@@ -104,7 +105,7 @@
       "indexCode": false,
       "indexPatterns": {
         "include": ["**/*.md", "**/*.txt", "CONSTITUTION.md", "COLLABORATION.md", "GORDO-WORKFLOW.md", "TRUST_PROTOCOL.md", "HUMOR.md"],
-        "exclude": ["node_modules/**", "dist/**", "build/**", ".git/**"]
+        "exclude": ["node_modules/**", "dist/**", "build/**", ".git/**", "**/wordlist.txt", "assets/**/*.txt"]
       }
     }
   }

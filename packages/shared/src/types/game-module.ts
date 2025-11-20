@@ -1,6 +1,7 @@
 // Game module interface for pluggable jkbox games
 // This defines the contract between lobby system and individual games
 
+import type * as React from 'react'
 import type { Player } from './player'
 
 /**
@@ -18,121 +19,181 @@ export type GameState = unknown
  * Player action within a game
  */
 export interface GameAction {
-  playerId: string
-  type: string  // Game-specific action types (e.g., 'submit-answer', 'vote', 'skip')
-  payload: unknown  // Game-specific payload
+	playerId: string
+	type: string // Game-specific action types (e.g., 'submit-answer', 'vote', 'skip')
+	payload: unknown // Game-specific payload
 }
 
 /**
  * Game results after completion
  */
 export interface GameResults {
-  winners: string[]  // Player IDs (can have multiple for ties)
-  scores: Record<string, number>  // playerId → final score
-  achievements?: Achievement[]  // Optional achievements/awards
-  stats?: Record<string, unknown>  // Game-specific statistics
+	winners: string[] // Player IDs (can have multiple for ties)
+	scores: Record<string, number> // playerId → final score
+	achievements?: Achievement[] // Optional achievements/awards
+	stats?: Record<string, unknown> // Game-specific statistics
 }
 
 /**
  * Achievement/award earned during game
  */
 export interface Achievement {
-  playerId: string
-  achievementId: string
-  label: string  // Display text (e.g., "Perfect Round!", "Comeback King!")
-  description?: string  // Optional detailed description
+	playerId: string
+	achievementId: string
+	label: string // Display text (e.g., "Perfect Round!", "Comeback King!")
+	description?: string // Optional detailed description
 }
 
 /**
  * Props for game's jumbotron component (TV display)
  */
 export interface JumbotronProps {
-  gameState: GameState
-  players: Player[]
-  onAdminAction?: (action: string) => void  // Optional admin controls
+	gameState: GameState
+	players: Player[]
+	onAdminAction?: (action: string) => void // Optional admin controls
 }
 
 /**
  * Props for game's controller component (player phone)
  */
 export interface ControllerProps {
-  gameState: GameState
-  playerId: string
-  onAction: (action: GameAction) => void
+	gameState: GameState
+	playerId: string
+	onAction: (action: GameAction) => void
+}
+
+/**
+ * Callback for game completion
+ * Game module calls this when it wants to exit and return to lobby
+ */
+export type GameCompleteCallback = (results: GameResults) => void
+
+/**
+ * Game module lifecycle context
+ * Passed to game on initialization to control FSM transitions
+ */
+export interface GameModuleContext {
+	/**
+	 * Game calls this to signal completion and return to results/lobby
+	 * FSM transition: playing → results
+	 */
+	complete: GameCompleteCallback
+
+	/**
+	 * Room ID for this game session
+	 */
+	roomId: string
 }
 
 /**
  * Game module interface
  * Each game implements this to plug into jkbox
+ *
+ * FSM Boundary Contract:
+ * ========================
+ * ENTER (lobby → game):
+ *   - Lobby calls initialize(players, context) when countdown hits 0
+ *   - Game returns initial state
+ *   - FSM transitions: countdown → playing
+ *
+ * DURING (game owns FSM):
+ *   - Game receives actions via handleAction()
+ *   - Game updates its internal state (opaque to lobby)
+ *   - Lobby stores & broadcasts state, but doesn't interpret it
+ *
+ * EXIT (game → lobby):
+ *   - Game calls context.complete(results) when ready to exit
+ *   - Lobby validates and transitions: playing → results → lobby
+ *   - Game module is unloaded after results phase
  */
 export interface GameModule {
-  /**
-   * Unique game identifier
-   */
-  id: GameId
+	/**
+	 * Unique game identifier
+	 */
+	id: GameId
 
-  /**
-   * Display name
-   */
-  name: string
+	/**
+	 * Display name shown in lobby
+	 */
+	name: string
 
-  /**
-   * Player count constraints
-   */
-  minPlayers: number
-  maxPlayers: number
+	/**
+	 * Player count constraints
+	 */
+	minPlayers: number
+	maxPlayers: number
 
-  /**
-   * Initialize game with player list
-   * Returns initial game state
-   */
-  initialize(players: Player[]): Promise<GameState>
+	/**
+	 * Initialize game with player list
+	 * Called when: Countdown reaches 0 (lobby → playing transition)
+	 * Returns: Initial game state
+	 *
+	 * @param players - List of players in this game session
+	 * @param context - Lifecycle context (contains complete() callback)
+	 */
+	initialize(players: Player[], context: GameModuleContext): Promise<GameState>
 
-  /**
-   * Handle player action
-   * Returns new game state (functional/immutable pattern)
-   */
-  handleAction(action: GameAction, state: GameState): Promise<GameState>
+	/**
+	 * Handle player action
+	 * Called when: Player submits action from their controller
+	 * Returns: Updated game state (functional/immutable pattern)
+	 *
+	 * Game should call context.complete(results) when ready to exit
+	 */
+	handleAction(action: GameAction, state: GameState): Promise<GameState>
 
-  /**
-   * Check if game is complete
-   */
-  isComplete(state: GameState): boolean
+	/**
+	 * Check if game is complete (for polling/validation)
+	 * Optional fallback - prefer using context.complete() callback
+	 *
+	 * @deprecated Use context.complete() callback in handleAction instead
+	 */
+	isComplete?(state: GameState): boolean
 
-  /**
-   * Get final results (call when isComplete() returns true)
-   */
-  getResults(state: GameState): GameResults
+	/**
+	 * Get final results (for polling/validation)
+	 * Optional fallback - prefer passing results to context.complete()
+	 *
+	 * @deprecated Pass results directly to context.complete() instead
+	 */
+	getResults?(state: GameState): GameResults
 
-  /**
-   * Lazy-load jumbotron component
-   * Allows code-splitting per game
-   */
-  loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>>
+	/**
+	 * Lazy-load jumbotron component (TV display)
+	 * Allows code-splitting per game
+	 */
+	loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>>
 
-  /**
-   * Lazy-load controller component
-   * Allows code-splitting per game
-   */
-  loadControllerComponent(): Promise<React.ComponentType<ControllerProps>>
+	/**
+	 * Lazy-load controller component (player phone)
+	 * Allows code-splitting per game
+	 */
+	loadControllerComponent(): Promise<React.ComponentType<ControllerProps>>
+
+	/**
+	 * Cleanup hook (optional)
+	 * Called when: Game module is being unloaded (after results phase)
+	 * Use for: Clearing timers, closing connections, etc.
+	 */
+	cleanup?(): Promise<void>
 }
 
 /**
  * Game registry for dynamic loading
  */
 export interface GameRegistry {
-  /**
-   * Register a game module
-   */
-  register(module: GameModule): void
+	/**
+	 * Register a game module
+	 */
+	register(module: GameModule): void
 
-  /**
-   * Get game module by ID
-   */
-  get(gameId: GameId): GameModule | undefined
+	/**
+	 * Get game module by ID
+	 */
+	get(gameId: GameId): GameModule | undefined
 
-  /**
-   * List all registered games
-   */
-  list(): GameModule[]
+	/**
+	 * List all registered games
+	 */
+	list(): GameModule[]
 }

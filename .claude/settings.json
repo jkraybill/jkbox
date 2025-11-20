@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
+  "additionalDirectories": [
+    "/home/jk/jkbox",
+    "/mnt/c/Users/jerem"
+  ]
+}

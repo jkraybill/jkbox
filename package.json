@@ -14,7 +14,8 @@
     "test": "npm run test --workspaces --if-present",
     "test:watch": "npm run test:watch --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "clean": "rm -rf packages/*/node_modules packages/*/dist node_modules"
+    "clean": "rm -rf packages/*/node_modules packages/*/dist node_modules",
+    "prepare": "husky"
   },
   "keywords": [
     "party-game",
@@ -27,5 +28,16 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "packages/*/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.6.2"
   }
 }

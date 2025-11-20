@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useMachine } from '@xstate/react'
 import { connectionMachine } from '../fsm/connection-machine'
 import { socketClient } from './socket'
@@ -6,63 +6,80 @@ import { useGameStore } from '../store/game-store'
 import type { RoomStateMessage, ErrorMessage } from '@jkbox/shared'
 
 export function useSocket() {
-  const [state, send] = useMachine(connectionMachine)
-  const { setConnected, setRoom } = useGameStore()
+	const [state, send] = useMachine(connectionMachine)
+	const { setConnected, setRoom } = useGameStore()
+	const listenersRegistered = useRef(false)
 
-  useEffect(() => {
-    // Initialize connection
-    send({ type: 'CONNECT' })
-    const socket = socketClient.connect()
+	// Stable callbacks that won't change on re-render
+	const handleConnect = useCallback(() => {
+		send({ type: 'CONNECTED' })
+		setConnected(true)
+	}, [send, setConnected])
 
-    // Connection event handlers
-    socket.on('connect', () => {
-      send({ type: 'CONNECTED' })
-      setConnected(true)
-    })
+	const handleDisconnect = useCallback(() => {
+		send({ type: 'CONNECTION_LOST' })
+		setConnected(false)
+	}, [send, setConnected])
 
-    socket.on('disconnect', () => {
-      send({ type: 'CONNECTION_LOST' })
-      setConnected(false)
-    })
+	const handleConnectError = useCallback(() => {
+		send({ type: 'CONNECT_ERROR' })
+	}, [send])
 
-    socket.on('connect_error', () => {
-      send({ type: 'CONNECT_ERROR' })
-    })
+	const handleRoomState = useCallback(
+		(message: RoomStateMessage) => {
+			setRoom(message.state)
+		},
+		[setRoom]
+	)
 
-    // Game event handlers
-    socket.on('room:state', (message: RoomStateMessage) => {
-      console.log('[useSocket] Received room:state:', message.state)
-      setRoom(message.state)
-    })
+	const handleError = useCallback((message: ErrorMessage) => {
+		console.error('[useSocket] Server error:', message.message)
+	}, [])
 
-    socket.on('error', (message: ErrorMessage) => {
-      console.error('Server error:', message.message)
-      // Could show toast notification here
-    })
+	// Initialize connection and register listeners once
+	useEffect(() => {
+		if (listenersRegistered.current) {
+			return
+		}
 
-    // Handle reconnection logic
-    if (state.value === 'reconnecting') {
-      const retryTimer = setTimeout(() => {
-        send({ type: 'RETRY' })
-      }, state.context.retryDelay)
+		send({ type: 'CONNECT' })
+		const socket = socketClient.connect()
 
-      return () => clearTimeout(retryTimer)
-    }
+		socket.on('connect', handleConnect)
+		socket.on('disconnect', handleDisconnect)
+		socket.on('connect_error', handleConnectError)
+		socket.on('room:state', handleRoomState)
+		socket.on('error', handleError)
 
-    // Cleanup on unmount
-    return () => {
-      socket.off('connect')
-      socket.off('disconnect')
-      socket.off('connect_error')
-      socket.off('room:state')
-      socket.off('error')
-    }
-  }, [state.value, state.context.retryDelay, send, setConnected, setRoom])
+		listenersRegistered.current = true
 
-  return {
-    connectionState: state.value,
-    isConnected: state.value === 'connected',
-    retryCount: state.context.retryCount,
-    socket: socketClient.getSocket()
-  }
+		// Cleanup on unmount
+		return () => {
+			socket.off('connect', handleConnect)
+			socket.off('disconnect', handleDisconnect)
+			socket.off('connect_error', handleConnectError)
+			socket.off('room:state', handleRoomState)
+			socket.off('error', handleError)
+			listenersRegistered.current = false
+		}
+	}, [send, handleConnect, handleDisconnect, handleConnectError, handleRoomState, handleError])
+
+	// Handle reconnection timer separately
+	useEffect(() => {
+		if (state.value === 'reconnecting') {
+			const retryTimer = setTimeout(() => {
+				send({ type: 'RETRY' })
+			}, state.context.retryDelay)
+
+			return () => clearTimeout(retryTimer)
+		}
+		return undefined
+	}, [state.value, state.context.retryDelay, send])
+
+	return {
+		connectionState: state.value,
+		isConnected: state.value === 'connected',
+		retryCount: state.context.retryCount,
+		socket: socketClient.getSocket()
+	}
 }

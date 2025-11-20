@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
@@ -7,209 +7,302 @@ import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import { AdminToggleTab } from '../components/AdminToggleTab'
 import { AdminTools } from '../components/AdminTools'
-import type { LobbyCountdownMessage } from '@jkbox/shared'
+import type {
+	LobbyCountdownMessage,
+	RestoreSessionMessage,
+	JoinSuccessMessage
+} from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
-  'cinephile': 'Cinema Pippin',
-  'fake-facts': 'Fake Facts',
-  'joker-poker': 'Joker Poker',
+	cinephile: 'Cinema Pippin',
+	'fake-facts': 'Fake Facts',
+	'cinema-pippin': 'Cinema Pippin'
 }
 
 export function Player() {
-  const { roomId } = useParams<{ roomId: string }>()
-  const { socket, isConnected } = useSocket()
-  const { currentPlayer, room } = useGameStore()
-  const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
-  const [showAdminTools, setShowAdminTools] = useState(false)
+	const { roomId } = useParams<{ roomId: string }>()
+	const navigate = useNavigate()
+	const { socket, isConnected } = useSocket()
+	const { currentPlayer, room, setCurrentPlayer, setRoom } = useGameStore()
+	const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
+	const [showAdminTools, setShowAdminTools] = useState(false)
+	const [restoring, setRestoring] = useState(true)
+	const restorationAttempted = useRef(false)
 
-  useEffect(() => {
-    if (!socket) return
+	// Attempt session restoration on mount
+	useEffect(() => {
+		if (!socket || !roomId || restorationAttempted.current) {
+			return undefined
+		}
 
-    // Listen for countdown messages
-    const handleCountdown = (message: LobbyCountdownMessage) => {
-      const gameName = GAME_NAMES[message.selectedGame] || message.selectedGame
-      setCountdown({ count: message.countdown, game: gameName })
-    }
+		// If we already have currentPlayer, no need to restore
+		if (currentPlayer) {
+			setRestoring(false)
+			return undefined
+		}
 
-    socket.on('lobby:countdown', handleCountdown)
+		// Try to restore from localStorage
+		const storedPlayerId = localStorage.getItem('jkbox-player-id')
+		const storedRoomId = localStorage.getItem('jkbox-room-id')
+		const storedSessionToken = localStorage.getItem('jkbox-session-token')
 
-    return () => {
-      socket.off('lobby:countdown', handleCountdown)
-    }
-  }, [socket])
+		if (!storedPlayerId || storedRoomId !== roomId || !storedSessionToken) {
+			// No stored session, redirect to join immediately
+			console.log('[Player] No stored session, redirecting to join...')
+			navigate(`/join/${roomId}`)
+			return undefined
+		}
 
-  if (!currentPlayer) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.error}>Not joined to a room</div>
-      </div>
-    )
-  }
+		// Attempt restoration
+		console.log('[Player] Attempting session restoration...')
+		restorationAttempted.current = true
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.nickname}>{currentPlayer.nickname}</div>
-        <div style={styles.roomCode}>Room: {roomId}</div>
-      </div>
+		const restoreMessage: RestoreSessionMessage = {
+			type: 'restore-session',
+			roomId,
+			playerId: storedPlayerId,
+			sessionToken: storedSessionToken
+		}
 
-      <div style={styles.content}>
-        {room?.phase === 'lobby' && roomId && currentPlayer && (
-          <LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
-        )}
+		// Set timeout to redirect if restoration fails
+		const redirectTimer = setTimeout(() => {
+			console.log('[Player] Session restoration timed out, redirecting to join...')
+			navigate(`/join/${roomId}`)
+		}, 3000)
 
-        {room?.phase === 'playing' && (
-          <div style={styles.gameCard}>
-            <div style={styles.gameText}>Game in progress!</div>
-          </div>
-        )}
+		// Listen for successful restoration
+		const handleJoinSuccess = (message: JoinSuccessMessage) => {
+			console.log('[Player] Session restored successfully!')
+			clearTimeout(redirectTimer)
+			setCurrentPlayer(message.player)
+			setRoom(message.state)
+			setRestoring(false)
+		}
 
-        {room?.phase === 'results' && (
-          <div style={styles.gameCard}>
-            <div style={styles.gameText}>Game finished!</div>
-          </div>
-        )}
+		// Listen for errors
+		const handleError = () => {
+			clearTimeout(redirectTimer)
+			console.log('[Player] Session restoration failed, redirecting to join...')
+			navigate(`/join/${roomId}`)
+		}
 
-        <div style={styles.scoreCard}>
-          <div style={styles.scoreLabel}>Your Score</div>
-          <div style={styles.scoreValue}>{currentPlayer.score}</div>
-        </div>
-      </div>
+		socket.once('join:success', handleJoinSuccess)
+		socket.once('error', handleError)
 
-      <div style={styles.footer}>
-        <div style={styles.statusRow}>
-          <span>Connection:</span>
-          {isConnected ? (
-            <span style={styles.statusConnected}>● Connected</span>
-          ) : (
-            <span style={styles.statusDisconnected}>● Reconnecting...</span>
-          )}
-        </div>
-      </div>
+		// Emit restore request
+		socket.emit('restore-session', restoreMessage)
 
-      {/* Pippin corner mascot (smaller for mobile) */}
-      {!countdown && <Pippin variant="corner" />}
+		// Clean up on unmount
+		return () => {
+			clearTimeout(redirectTimer)
+			socket.off('join:success', handleJoinSuccess)
+			socket.off('error', handleError)
+		}
+	}, [socket, roomId, currentPlayer, navigate, setCurrentPlayer, setRoom])
 
-      {/* Countdown overlay */}
-      {countdown && (
-        <Countdown count={countdown.count} gameName={countdown.game} variant="player" />
-      )}
+	// Listen for countdown messages
+	useEffect(() => {
+		if (!socket) return
 
-      {/* Admin UI (only for admin players) */}
-      {currentPlayer.isAdmin && (
-        <>
-          <AdminToggleTab
-            isOpen={showAdminTools}
-            onClick={() => setShowAdminTools(!showAdminTools)}
-          />
-          {showAdminTools && <AdminTools />}
-        </>
-      )}
-    </div>
-  )
+		const handleCountdown = (message: LobbyCountdownMessage) => {
+			const gameName = GAME_NAMES[message.selectedGame] || message.selectedGame
+			setCountdown({ count: message.countdown, game: gameName })
+		}
+
+		socket.on('lobby:countdown', handleCountdown)
+
+		return () => {
+			socket.off('lobby:countdown', handleCountdown)
+		}
+	}, [socket])
+
+	if (restoring) {
+		return (
+			<div style={styles.container}>
+				<div style={styles.loading}>Restoring session...</div>
+			</div>
+		)
+	}
+
+	if (!currentPlayer) {
+		return (
+			<div style={styles.container}>
+				<div style={styles.error}>Not joined to a room</div>
+			</div>
+		)
+	}
+
+	return (
+		<div style={styles.container}>
+			<div style={styles.header}>
+				<div style={styles.nickname}>{currentPlayer.nickname}</div>
+			</div>
+
+			<div style={styles.content}>
+				{room?.phase === 'lobby' && roomId && currentPlayer && (
+					<LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
+				)}
+
+				{room?.phase === 'playing' && (
+					<div style={styles.gameCard}>
+						<div style={styles.gameText}>Game in progress!</div>
+					</div>
+				)}
+
+				{room?.phase === 'results' && (
+					<div style={styles.gameCard}>
+						<div style={styles.gameText}>Game finished!</div>
+					</div>
+				)}
+
+				<div style={styles.scoreCard}>
+					<div style={styles.scoreLabel}>Your Score</div>
+					<div style={styles.scoreValue}>{currentPlayer.score}</div>
+				</div>
+			</div>
+
+			<div style={styles.footer}>
+				<div style={styles.statusRow}>
+					<span>Connection:</span>
+					{isConnected ? (
+						<span style={styles.statusConnected}>● Connected</span>
+					) : (
+						<span style={styles.statusDisconnected}>● Reconnecting...</span>
+					)}
+				</div>
+			</div>
+
+			{/* Pippin corner mascot (smaller for mobile) */}
+			{!countdown && <Pippin variant="corner" />}
+
+			{/* Countdown overlay */}
+			{countdown && (
+				<Countdown count={countdown.count} gameName={countdown.game} variant="player" />
+			)}
+
+			{/* Admin UI (only for admin players) */}
+			{currentPlayer.isAdmin && (
+				<>
+					<AdminToggleTab
+						isOpen={showAdminTools}
+						onClick={() => setShowAdminTools(!showAdminTools)}
+					/>
+					{showAdminTools && <AdminTools />}
+				</>
+			)}
+		</div>
+	)
 }
 
 const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    minHeight: '100vh',
-    padding: 'var(--space-xl)',
-    fontFamily: 'var(--font-family)',
-    backgroundColor: 'var(--color-bg-dark)',
-    color: 'var(--color-text-primary)'
-  },
-  header: {
-    textAlign: 'center' as const,
-    marginBottom: 'var(--space-3xl)'
-  },
-  nickname: {
-    fontSize: 'var(--font-size-4xl)',
-    fontWeight: 'bold',
-    marginBottom: 'var(--space-sm)'
-  },
-  roomCode: {
-    fontSize: 'var(--font-size-sm)',
-    color: 'var(--color-text-muted)'
-  },
-  content: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 'var(--space-xl)',
-    maxWidth: '500px',
-    width: '100%',
-    margin: '0 auto'
-  },
-  waitingCard: {
-    padding: 'var(--space-3xl) var(--space-xl)',
-    backgroundColor: 'var(--color-bg-medium)',
-    borderRadius: 'var(--radius-xl)',
-    textAlign: 'center' as const
-  },
-  waitingIcon: {
-    fontSize: 'var(--font-size-jumbo-4xl)',
-    marginBottom: 'var(--space-xl)'
-  },
-  waitingText: {
-    fontSize: 'var(--font-size-2xl)',
-    marginBottom: 'var(--space-md)',
-    fontWeight: 'bold'
-  },
-  waitingSubtext: {
-    fontSize: 'var(--font-size-base)',
-    color: 'var(--color-text-secondary)'
-  },
-  gameCard: {
-    padding: 'var(--space-3xl) var(--space-xl)',
-    backgroundColor: 'var(--color-bg-medium)',
-    borderRadius: 'var(--radius-xl)',
-    textAlign: 'center' as const
-  },
-  gameText: {
-    fontSize: 'var(--font-size-2xl)',
-    fontWeight: 'bold'
-  },
-  scoreCard: {
-    padding: 'var(--space-2xl)',
-    backgroundColor: 'var(--color-bg-medium)',
-    borderRadius: 'var(--radius-xl)',
-    textAlign: 'center' as const
-  },
-  scoreLabel: {
-    fontSize: 'var(--font-size-base)',
-    color: 'var(--color-text-secondary)',
-    marginBottom: 'var(--space-md)'
-  },
-  scoreValue: {
-    fontSize: 'var(--font-size-5xl)',
-    fontWeight: 'bold',
-    color: 'var(--color-accent-blue)'
-  },
-  footer: {
-    marginTop: 'var(--space-3xl)',
-    paddingTop: 'var(--space-xl)',
-    borderTop: '1px solid var(--color-bg-light)'
-  },
-  statusRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: 'var(--font-size-sm)',
-    color: 'var(--color-text-muted)'
-  },
-  statusConnected: {
-    color: 'var(--color-status-connected)'
-  },
-  statusDisconnected: {
-    color: 'var(--color-status-disconnected)'
-  },
-  error: {
-    padding: 'var(--space-xl)',
-    backgroundColor: 'var(--color-error-bg)',
-    color: 'var(--color-error-text)',
-    borderRadius: 'var(--radius-md)',
-    textAlign: 'center' as const,
-    fontSize: 'var(--font-size-lg)'
-  }
+	container: {
+		display: 'flex',
+		flexDirection: 'column' as const,
+		minHeight: '100vh',
+		padding: 'var(--space-xl)',
+		fontFamily: 'var(--font-family)',
+		backgroundColor: 'var(--color-bg-dark)',
+		color: 'var(--color-text-primary)'
+	},
+	header: {
+		textAlign: 'center' as const,
+		marginBottom: 'var(--space-3xl)'
+	},
+	nickname: {
+		fontSize: 'var(--font-size-4xl)',
+		fontWeight: 'bold',
+		marginBottom: 'var(--space-sm)'
+	},
+	roomCode: {
+		fontSize: 'var(--font-size-sm)',
+		color: 'var(--color-text-muted)'
+	},
+	content: {
+		flex: 1,
+		display: 'flex',
+		flexDirection: 'column' as const,
+		gap: 'var(--space-xl)',
+		maxWidth: '500px',
+		width: '100%',
+		margin: '0 auto'
+	},
+	waitingCard: {
+		padding: 'var(--space-3xl) var(--space-xl)',
+		backgroundColor: 'var(--color-bg-medium)',
+		borderRadius: 'var(--radius-xl)',
+		textAlign: 'center' as const
+	},
+	waitingIcon: {
+		fontSize: 'var(--font-size-jumbo-4xl)',
+		marginBottom: 'var(--space-xl)'
+	},
+	waitingText: {
+		fontSize: 'var(--font-size-2xl)',
+		marginBottom: 'var(--space-md)',
+		fontWeight: 'bold'
+	},
+	waitingSubtext: {
+		fontSize: 'var(--font-size-base)',
+		color: 'var(--color-text-secondary)'
+	},
+	gameCard: {
+		padding: 'var(--space-3xl) var(--space-xl)',
+		backgroundColor: 'var(--color-bg-medium)',
+		borderRadius: 'var(--radius-xl)',
+		textAlign: 'center' as const
+	},
+	gameText: {
+		fontSize: 'var(--font-size-2xl)',
+		fontWeight: 'bold'
+	},
+	scoreCard: {
+		padding: 'var(--space-2xl)',
+		backgroundColor: 'var(--color-bg-medium)',
+		borderRadius: 'var(--radius-xl)',
+		textAlign: 'center' as const
+	},
+	scoreLabel: {
+		fontSize: 'var(--font-size-base)',
+		color: 'var(--color-text-secondary)',
+		marginBottom: 'var(--space-md)'
+	},
+	scoreValue: {
+		fontSize: 'var(--font-size-5xl)',
+		fontWeight: 'bold',
+		color: 'var(--color-accent-blue)'
+	},
+	footer: {
+		marginTop: 'var(--space-3xl)',
+		paddingTop: 'var(--space-xl)',
+		borderTop: '1px solid var(--color-bg-light)'
+	},
+	statusRow: {
+		display: 'flex',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		fontSize: 'var(--font-size-sm)',
+		color: 'var(--color-text-muted)'
+	},
+	statusConnected: {
+		color: 'var(--color-status-connected)'
+	},
+	statusDisconnected: {
+		color: 'var(--color-status-disconnected)'
+	},
+	error: {
+		padding: 'var(--space-xl)',
+		backgroundColor: 'var(--color-error-bg)',
+		color: 'var(--color-error-text)',
+		borderRadius: 'var(--radius-md)',
+		textAlign: 'center' as const,
+		fontSize: 'var(--font-size-lg)'
+	},
+	loading: {
+		padding: 'var(--space-xl)',
+		backgroundColor: 'var(--color-bg-medium)',
+		color: 'var(--color-text-secondary)',
+		borderRadius: 'var(--radius-md)',
+		textAlign: 'center' as const,
+		fontSize: 'var(--font-size-lg)'
+	}
 }
