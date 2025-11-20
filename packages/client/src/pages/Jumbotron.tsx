@@ -6,6 +6,7 @@ import { JumbotronVoting } from '../components/JumbotronVoting'
 import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import { getJoinUrl } from '../lib/network-url'
+import { UnimplementedGameJumbotron } from '../games/UnimplementedGameJumbotron'
 import type { LobbyCountdownMessage, RoomState } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
@@ -287,10 +288,8 @@ export function Jumbotron() {
 					</div>
 				</div>
 			) : room.phase === 'playing' ? (
-				// Playing: Delegate to game module (placeholder for now)
-				<div style={styles.content}>
-					<div style={styles.phaseDisplay}>Playing {GAME_NAMES[room.gameId] || room.gameId}</div>
-				</div>
+				// Playing: Render game module's Jumbotron component
+				<UnimplementedGameJumbotron gameState={room.gameState} players={room.players} />
 			) : room.phase === 'results' ? (
 				// Results: Show winners and scores
 				<div style={styles.content}>
