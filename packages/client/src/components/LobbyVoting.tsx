@@ -9,14 +9,14 @@ interface LobbyVotingProps {
 
 const GAME_OPTIONS: Array<{ id: GameId; name: string; description: string }> = [
   {
+    id: 'cinephile',
+    name: 'Cinema Pippin',
+    description: 'Subtitle insanity',
+  },
+  {
     id: 'fake-facts',
     name: 'Fake Facts',
     description: 'Fool your friends with fake trivia answers!',
-  },
-  {
-    id: 'cinephile',
-    name: 'Cinephile',
-    description: 'Coming soon!',
   },
   {
     id: 'joker-poker',

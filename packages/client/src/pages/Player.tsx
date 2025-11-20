@@ -8,8 +8,8 @@ import { Countdown } from '../components/Countdown'
 import type { LobbyCountdownMessage } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
+  'cinephile': 'Cinema Pippin',
   'fake-facts': 'Fake Facts',
-  'cinephile': 'Cinephile',
   'joker-poker': 'Joker Poker',
 }
 

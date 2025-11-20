@@ -9,8 +9,8 @@ interface JumbotronVotingProps {
 }
 
 const GAME_NAMES: Record<GameId, string> = {
+  'cinephile': 'Cinema Pippin',
   'fake-facts': 'Fake Facts',
-  'cinephile': 'Cinephile',
   'joker-poker': 'Joker Poker',
 }
 
@@ -66,21 +66,22 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 
   return (
     <div style={styles.container}>
-      {/* QR Code - Top Left Corner */}
+      {/* QR Code - Floating on left */}
       <div style={styles.qrContainer}>
         <div style={styles.qrCode}>
           <QRCodeSVG
             value={joinUrl}
-            size={Math.min(window.innerHeight * 0.12, window.innerWidth * 0.065)}
+            size={Math.min(window.innerHeight * 0.15, window.innerWidth * 0.08)}
             level="M"
           />
         </div>
         <div style={styles.joinUrl}>{joinUrl}</div>
-        <div style={styles.joinLabel}>Scan to Join</div>
       </div>
 
-      <div style={styles.header}>
-        <h1 style={styles.title}>Vote for Next Game!</h1>
+      {/* Titles - Absolutely centered */}
+      <div style={styles.headerArea}>
+        <h1 style={styles.mainTitle}>Pippin's Playhouse</h1>
+        <h2 style={styles.title}>Vote for Next Game!</h2>
         <div style={styles.subtitle}>
           {readyCount}/{players.length} players ready
           {allReady && ' - Starting soon! 🎉'}
@@ -163,16 +164,14 @@ const styles = {
   },
   qrContainer: {
     position: 'absolute' as const,
-    top: '1vh',
-    left: '1vw',
+    top: 0,
+    left: 0,
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '0.5vh',
-    padding: '1vh 0.8vw',
-    backgroundColor: 'var(--color-bg-dark)',
-    borderRadius: 'var(--radius-lg)',
-    border: '0.2vh solid var(--color-primary-yellow)',
+    padding: '1.5vh 1vw',
     zIndex: 10,
   },
   qrCode: {
@@ -187,23 +186,24 @@ const styles = {
     maxWidth: '15vw',
     wordBreak: 'break-all' as const,
   },
-  joinLabel: {
-    fontSize: '1.5vh',
-    color: 'var(--color-primary-yellow)',
-    fontWeight: 'bold',
-    textAlign: 'center' as const,
-  },
-  header: {
+  headerArea: {
     textAlign: 'center' as const,
     marginBottom: '2vh',
     flexShrink: 0,
   },
-  title: {
+  mainTitle: {
     fontSize: '6vh',
     fontWeight: 'bold',
-    color: 'var(--color-primary-yellow)',
-    marginBottom: '1vh',
+    color: 'var(--color-text-primary)',
     margin: 0,
+    marginBottom: '1vh',
+  },
+  title: {
+    fontSize: '5vh',
+    fontWeight: 'bold',
+    color: 'var(--color-primary-yellow)',
+    margin: 0,
+    marginBottom: '1vh',
   },
   subtitle: {
     fontSize: '2.5vh',

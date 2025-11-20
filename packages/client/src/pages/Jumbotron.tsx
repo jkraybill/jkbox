@@ -8,8 +8,8 @@ import { Countdown } from '../components/Countdown'
 import type { LobbyCountdownMessage } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
+  'cinephile': 'Cinema Pippin',
   'fake-facts': 'Fake Facts',
-  'cinephile': 'Cinephile',
   'joker-poker': 'Joker Poker',
 }
 
@@ -170,9 +170,12 @@ export function Jumbotron() {
   // Lobby and beyond - show room state
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Pippin's Playhouse</h1>
-      </div>
+      {/* Only show header when NOT in voting mode (voting has its own header) */}
+      {!(room.phase === 'lobby' && room.players.length > 0) && (
+        <div style={styles.header}>
+          <h1 style={styles.title}>Pippin's Playhouse</h1>
+        </div>
+      )}
 
       {room.phase === 'lobby' && room.players.length === 0 ? (
         // Show QR code when no players
@@ -197,7 +200,7 @@ export function Jumbotron() {
           </div>
         </div>
       ) : room.phase === 'lobby' ? (
-        // Show voting UI when players have joined
+        // Show voting UI when players have joined (includes its own header with QR code)
         <JumbotronVoting players={room.players} roomId={room.roomId} />
       ) : (
         // Other phases (countdown, playing, results)
@@ -207,11 +210,6 @@ export function Jumbotron() {
           </div>
         </div>
       )}
-
-      <div style={styles.footer}>
-        <div>Phase: {room.phase}</div>
-        <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
-      </div>
 
       {/* Pippin corner mascot (persistent, animated) */}
       {!countdown && <Pippin variant="corner" />}
@@ -319,13 +317,5 @@ const styles = {
     fontSize: '4vh',
     textAlign: 'center' as const,
     padding: '5vh 2vw'
-  },
-  footer: {
-    position: 'absolute' as const,
-    bottom: '1vh',
-    left: '1vw',
-    fontSize: '1.5vh',
-    color: 'var(--color-text-disabled)',
-    flexShrink: 0
   }
 }
