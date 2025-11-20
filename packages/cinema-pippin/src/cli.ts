@@ -235,7 +235,20 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
     return streams[0].index;
   }
 
-  // Multiple streams - check for exactly 1 "original" track first
+  // Multiple streams - auto-select in priority order:
+  // 1. Exactly 1 "criterion" track (highest priority for Criterion Collection releases)
+  const criterionStreams = streams.filter(s =>
+    s.title?.toLowerCase().includes('criterion')
+  );
+
+  if (criterionStreams.length === 1) {
+    const selected = criterionStreams[0];
+    console.log(`✓ Auto-selected stream ${selected.fullIndex} [${selected.language || '?'}] - ${selected.codec}, ${selected.channels}`);
+    console.log(`  Title: "${selected.title}" (contains "criterion")\n`);
+    return selected.index;
+  }
+
+  // 2. Exactly 1 "original" track
   const originalStreams = streams.filter(s =>
     s.title?.toLowerCase().includes('original')
   );
@@ -244,6 +257,17 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
     const selected = originalStreams[0];
     console.log(`✓ Auto-selected stream ${selected.fullIndex} [${selected.language || '?'}] - ${selected.codec}, ${selected.channels}`);
     console.log(`  Title: "${selected.title}" (contains "original")\n`);
+    return selected.index;
+  }
+
+  // 3. One English stream + exactly one non-English stream = prefer non-English
+  const englishStreams = streams.filter(s => s.language === 'eng');
+  const nonEnglishStreams = streams.filter(s => s.language && s.language !== 'eng');
+
+  if (englishStreams.length === 1 && nonEnglishStreams.length === 1) {
+    const selected = nonEnglishStreams[0];
+    console.log(`✓ Auto-selected stream ${selected.fullIndex} [${selected.language}] - ${selected.codec}, ${selected.channels}`);
+    console.log(`  (Original language track preferred over English dub)\n`);
     return selected.index;
   }
 
@@ -263,9 +287,18 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
     output: process.stdout
   });
 
-  // Heuristic auto-selection after 60 seconds
+  // Heuristic auto-selection after 60 seconds (matches immediate auto-select priority)
   const autoSelectHeuristic = (): number => {
-    // 1. Prefer stream with "original" in title (case-insensitive)
+    // 1. Prefer stream with "criterion" in title (case-insensitive)
+    const criterionStream = streams.find(s =>
+      s.title?.toLowerCase().includes('criterion')
+    );
+    if (criterionStream) {
+      console.log(`\n⏱ Timeout: Auto-selected stream ${criterionStream.fullIndex} (contains "criterion")`);
+      return criterionStream.index;
+    }
+
+    // 2. Prefer stream with "original" in title (case-insensitive)
     const originalStream = streams.find(s =>
       s.title?.toLowerCase().includes('original')
     );
@@ -274,7 +307,16 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
       return originalStream.index;
     }
 
-    // 2. AVOID streams with "dub", "dubbed", "commentary", "description" in title
+    // 3. One English + exactly one non-English = prefer non-English
+    const englishStreams = streams.filter(s => s.language === 'eng');
+    const nonEnglishStreams = streams.filter(s => s.language && s.language !== 'eng');
+
+    if (englishStreams.length === 1 && nonEnglishStreams.length === 1) {
+      console.log(`\n⏱ Timeout: Auto-selected stream ${nonEnglishStreams[0].fullIndex} [${nonEnglishStreams[0].language}] (original language preferred)`);
+      return nonEnglishStreams[0].index;
+    }
+
+    // 4. AVOID streams with "dub", "dubbed", "commentary", "description" in title
     const nonDubbedStreams = streams.filter(s => {
       const title = s.title?.toLowerCase() || '';
       return !title.includes('dub') &&
@@ -284,12 +326,12 @@ async function selectAudioStream(videoPath: string): Promise<number | null> {
     });
 
     if (nonDubbedStreams.length > 0) {
-      // 3. From non-dubbed streams, prefer first one (usually original)
+      // 5. From non-dubbed streams, prefer first one (usually original)
       console.log(`\n⏱ Timeout: Auto-selected stream ${nonDubbedStreams[0].fullIndex} (avoiding dubs/commentary)`);
       return nonDubbedStreams[0].index;
     }
 
-    // 4. Last resort: pick first stream
+    // 6. Last resort: pick first stream
     console.log(`\n⏱ Timeout: Auto-selected first stream ${streams[0].fullIndex}`);
     return streams[0].index;
   };

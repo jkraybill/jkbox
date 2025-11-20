@@ -307,11 +307,11 @@ Fruit is amazing!`;
       // T1 (word) assertions
       expect(result.keyword).toBe('fruit'); // Last word of last frame
       expect(result.blankedScene).toContain('_____');
-      expect(result.generatedWords).toHaveLength(5);
-      expect(result.shuffledWords).toHaveLength(5);
+      expect(result.generatedWords).toHaveLength(6);
+      expect(result.shuffledWords).toHaveLength(6);
       expect(result.bestWord).toBeDefined();
       expect(result.bestWordIndex).toBeGreaterThanOrEqual(0);
-      expect(result.bestWordIndex).toBeLessThan(5);
+      expect(result.bestWordIndex).toBeLessThan(6);
 
       // T2 (phrase) assertions
       expect(result.secondScene).toBeDefined();
@@ -320,11 +320,11 @@ Fruit is amazing!`;
       expect(result.secondSceneWithWord).toContain(result.bestWord); // After replacement with best word
       expect(result.secondSceneWithWord).not.toContain('[keyword]'); // [keyword] should be replaced
       expect(result.secondSceneWithWord).not.toContain('_____'); // Original text preserved (no blank yet)
-      expect(result.generatedPhrases).toHaveLength(5);
-      expect(result.shuffledPhrases).toHaveLength(5);
+      expect(result.generatedPhrases).toHaveLength(6);
+      expect(result.shuffledPhrases).toHaveLength(6);
       expect(result.bestPhrase).toBeDefined();
       expect(result.bestPhraseIndex).toBeGreaterThanOrEqual(0);
-      expect(result.bestPhraseIndex).toBeLessThan(5);
+      expect(result.bestPhraseIndex).toBeLessThan(6);
 
       // T3 (third scene) assertions
       expect(result.thirdScene).toBeDefined();
@@ -332,11 +332,11 @@ Fruit is amazing!`;
       expect(result.thirdSceneWithWord).toBeDefined();
       expect(result.thirdSceneWithWord).toContain(result.bestWord); // Best word replaced
       expect(result.thirdSceneWithWord.toLowerCase()).not.toContain('fruit'); // Original keyword replaced (case-insensitive)
-      expect(result.generatedPhrasesT3).toHaveLength(5);
-      expect(result.shuffledPhrasesT3).toHaveLength(5);
+      expect(result.generatedPhrasesT3).toHaveLength(6);
+      expect(result.shuffledPhrasesT3).toHaveLength(6);
       expect(result.bestPhraseT3).toBeDefined();
       expect(result.bestPhraseIndexT3).toBeGreaterThanOrEqual(0);
-      expect(result.bestPhraseIndexT3).toBeLessThan(5);
+      expect(result.bestPhraseIndexT3).toBeLessThan(6);
 
       // Quality judging assertions
       expect(result.qualityAnswers).toHaveLength(10);
