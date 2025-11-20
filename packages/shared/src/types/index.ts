@@ -24,7 +24,7 @@ export {
 // Player types
 export type { Player } from './player'
 
-// Game module types
+// Game module types (legacy - being refactored)
 export type {
   GamePhase,
   RoundTimers,
@@ -33,8 +33,20 @@ export type {
   RoundState,
   RoundResults,
   GameResults,
-  GameModule
+  GameModule as LegacyGameModule
 } from './game'
+
+// New game module interface (pluggable pattern)
+export type {
+  GameAction,
+  GameState,
+  GameResults as ModuleGameResults,
+  Achievement as GameAchievement,
+  JumbotronProps,
+  ControllerProps,
+  GameModule as PluggableGameModule,
+  GameRegistry
+} from './game-module'
 
 // Voting types
 export type {
