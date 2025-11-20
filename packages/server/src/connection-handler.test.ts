@@ -177,6 +177,62 @@ describe('ConnectionHandler', () => {
       expect(errorEvent).toBeDefined()
       expect((errorEvent?.data as { code: string }).code).toBe('ROOM_FULL')
     })
+
+    it('should reject join if game is in progress (playing phase)', () => {
+      // Create room and transition to playing phase
+      const lobbyRoom = roomManager.createRoom()
+      const playingRoom: import('@jkbox/shared').PlayingState = {
+        phase: 'playing',
+        roomId: lobbyRoom.roomId,
+        players: [],
+        gameId: 'fake-facts',
+        roundNumber: 1,
+        currentRound: null
+      }
+      roomManager.updateRoomState(lobbyRoom.roomId, playingRoom)
+
+      const socket = createMockSocket('socket-1') as Socket & {
+        _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+      }
+
+      handler.handleJoin(socket, {
+        type: 'join',
+        roomId: lobbyRoom.roomId,
+        nickname: 'Latecomer'
+      })
+
+      const events = socket._getEmittedEvents()
+      const errorEvent = events.find(e => e.event === 'error')
+
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent?.data as { code: string }).code).toBe('GAME_IN_PROGRESS')
+      expect((errorEvent?.data as { message: string }).message).toContain('game is in progress')
+    })
+
+    it('should allow join if game is in results phase (between rounds)', () => {
+      // Create room and transition to results phase
+      const lobbyRoom = roomManager.createRoom()
+      const resultsRoom: import('@jkbox/shared').ResultsState = {
+        phase: 'results',
+        roomId: lobbyRoom.roomId,
+        players: [],
+        roundResults: [],
+        finalStandings: []
+      }
+      roomManager.updateRoomState(lobbyRoom.roomId, resultsRoom)
+
+      const socket = createMockSocket('socket-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: lobbyRoom.roomId,
+        nickname: 'NewPlayer'
+      })
+
+      const updated = roomManager.getRoom(lobbyRoom.roomId)
+      expect(updated?.players).toHaveLength(1)
+      expect(updated?.players[0]?.nickname).toBe('NewPlayer')
+    })
   })
 
   describe('handleDisconnect', () => {

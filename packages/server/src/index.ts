@@ -22,7 +22,15 @@ const io = new Server(httpServer, {
   cors: {
     origin: process.env['CLIENT_URL'] || ['http://localhost:3000', 'http://localhost:3002'],
     methods: ['GET', 'POST']
-  }
+  },
+  // Connection State Recovery: automatically restore sessions after brief disconnects
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes - balance between party tolerance and memory
+    skipMiddlewares: true, // Don't re-run middlewares on recovery (session already validated)
+  },
+  // Heartbeat tuning for local network party games
+  pingInterval: 10000, // Send PING every 10 seconds (default: 25s) - faster disconnect detection
+  pingTimeout: 5000,   // Wait 5 seconds for PONG (default: 60s) - quick dead connection cleanup
 })
 
 // Initialize persistence layer
@@ -81,7 +89,18 @@ app.get('/api/rooms/:roomId', (req, res) => {
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`)
+  if (socket.recovered) {
+    // Session recovered after brief disconnect - Socket.io automatically restored:
+    // - socket.id
+    // - socket.rooms (player still in their game room)
+    // - socket.data (custom data attached to socket)
+    // - Buffered packets (sent while disconnected)
+    console.log(`Session recovered: ${socket.id}`)
+    connectionHandler.handleReconnect(socket)
+  } else {
+    // New connection or recovery failed (disconnected > 2 minutes)
+    console.log(`New connection: ${socket.id}`)
+  }
 
   // Handle join messages (players joining)
   socket.on('join', (message: JoinMessage) => {

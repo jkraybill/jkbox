@@ -39,6 +39,16 @@ export class ConnectionHandler {
       return
     }
 
+    // Block joins if game is in progress (playing phase)
+    if (room.phase === 'playing') {
+      socket.emit('error', {
+        type: 'error',
+        code: 'GAME_IN_PROGRESS',
+        message: `Can't join - game is in progress. Wait until the next round!`
+      })
+      return
+    }
+
     // Note: Reconnection with session tokens tracked in issue #4
     // For now, always create new player
 
@@ -102,6 +112,44 @@ export class ConnectionHandler {
   }
 
   /**
+   * Handle session recovery (Socket.io Connection State Recovery)
+   * Called when a player reconnects after brief disconnect (<2 min)
+   */
+  handleReconnect(socket: Socket): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      // Socket recovered but we don't have player mapping (shouldn't happen)
+      console.warn(`Session recovered for ${socket.id} but no player mapping found`)
+      return
+    }
+
+    // Mark player as reconnected
+    this.roomManager.updatePlayer(mapping.roomId, mapping.playerId, {
+      isConnected: true,
+      lastSeenAt: new Date()
+    })
+
+    // Re-add player to voting handler (they may have been removed on disconnect)
+    const votingHandler = this.getVotingHandler(mapping.roomId)
+    votingHandler.addPlayer(mapping.playerId)
+
+    // Broadcast room state to all clients in the room
+    const updated = this.roomManager.getRoom(mapping.roomId)
+    if (updated) {
+      const roomStateMessage: RoomStateMessage = {
+        type: 'room:state',
+        state: updated
+      }
+      this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+
+      // Broadcast updated voting state
+      this.broadcastVotingUpdate(mapping.roomId)
+    }
+
+    console.log(`Player ${mapping.playerId} reconnected in room ${mapping.roomId}`)
+  }
+
+  /**
    * Handle player disconnect
    */
   handleDisconnect(socket: Socket): void {
@@ -120,7 +168,8 @@ export class ConnectionHandler {
     const votingHandler = this.getVotingHandler(mapping.roomId)
     votingHandler.removePlayer(mapping.playerId)
 
-    this.socketToPlayer.delete(socket.id)
+    // DON'T delete socket mapping yet - Socket.io may recover the session
+    // We'll clean up stale mappings after maxDisconnectionDuration (2 min)
 
     // Broadcast room state to all clients in the room
     const updated = this.roomManager.getRoom(mapping.roomId)
