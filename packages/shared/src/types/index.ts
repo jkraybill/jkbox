@@ -6,6 +6,7 @@ export type { Room, RoomConfig } from './room'
 // Phase-based room state (new discriminated union pattern)
 export type {
   RoomState,
+  TitleState,
   LobbyState,
   CountdownState,
   PlayingState,
@@ -13,6 +14,7 @@ export type {
   Achievement
 } from './room-state'
 export {
+  isTitleState,
   isLobbyState,
   isCountdownState,
   isPlayingState,

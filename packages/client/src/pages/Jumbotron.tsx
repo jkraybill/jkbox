@@ -19,6 +19,52 @@ export function Jumbotron() {
   const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
   const [isLoadingRoom, setIsLoadingRoom] = useState(true)
 
+  // Enter fullscreen mode and hide scrollbars on mount
+  useEffect(() => {
+    const enterFullscreen = async () => {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen()
+          console.log('[Jumbotron] Entered fullscreen mode')
+        }
+      } catch (error) {
+        console.warn('[Jumbotron] Failed to enter fullscreen:', error)
+      }
+    }
+
+    // Hide scrollbars globally
+    const style = document.createElement('style')
+    style.id = 'jumbotron-no-scroll'
+    style.textContent = `
+      html, body {
+        overflow: hidden !important;
+        height: 100vh !important;
+        width: 100vw !important;
+      }
+      * {
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* IE and Edge */
+      }
+      *::-webkit-scrollbar {
+        display: none !important; /* Chrome, Safari, Opera */
+      }
+    `
+    document.head.appendChild(style)
+
+    enterFullscreen()
+
+    return () => {
+      // Cleanup: remove style and exit fullscreen
+      const styleEl = document.getElementById('jumbotron-no-scroll')
+      if (styleEl) {
+        styleEl.remove()
+      }
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+    }
+  }, [])
+
   // Fetch singleton room on mount
   useEffect(() => {
     const fetchRoom = async () => {
@@ -137,7 +183,11 @@ export function Jumbotron() {
           <div style={styles.qrSection}>
             <h2 style={styles.sectionTitle}>Scan to Join</h2>
             <div style={styles.qrCode}>
-              <QRCodeSVG value={joinUrl} size={256} level="M" />
+              <QRCodeSVG
+                value={joinUrl}
+                size={Math.min(window.innerHeight * 0.25, window.innerWidth * 0.15)}
+                level="M"
+              />
             </div>
             <div style={styles.joinUrl}>{joinUrl}</div>
           </div>
@@ -179,92 +229,115 @@ export function Jumbotron() {
 
 const styles = {
   container: {
-    minHeight: '100vh',
-    padding: 'var(--space-3xl)',
+    width: '100vw',
+    height: '100vh',
+    padding: '2vh 2vw',
     fontFamily: 'var(--font-family)',
     backgroundColor: 'var(--color-bg-dark)',
-    color: 'var(--color-text-primary)'
+    color: 'var(--color-text-primary)',
+    overflow: 'hidden',
+    position: 'relative' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    boxSizing: 'border-box' as const
   },
   loading: {
-    fontSize: 'var(--font-size-2xl)',
+    fontSize: '3vh',
     textAlign: 'center' as const,
-    marginTop: '100px'
+    marginTop: '10vh',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   error: {
-    fontSize: 'var(--font-size-2xl)',
+    fontSize: '3vh',
     textAlign: 'center' as const,
-    marginTop: '100px',
-    color: 'var(--color-error-text)'
+    marginTop: '10vh',
+    color: 'var(--color-error-text)',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   header: {
     textAlign: 'center' as const,
-    marginBottom: 'var(--space-3xl)'
+    marginBottom: '2vh',
+    flexShrink: 0
   },
   title: {
-    fontSize: 'var(--font-size-5xl)',
-    margin: '0 0 var(--space-xl) 0'
+    fontSize: '6vh',
+    margin: '0 0 1vh 0'
   },
   roomCode: {
-    fontSize: 'var(--font-size-2xl)',
+    fontSize: '2.5vh',
     color: 'var(--color-text-secondary)'
   },
   roomCodeValue: {
     color: 'var(--color-accent-blue)',
     fontWeight: 'bold',
-    fontSize: 'var(--font-size-jumbo-2xl)'
+    fontSize: '4vh'
   },
   content: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: 'var(--space-3xl)',
-    maxWidth: '1400px',
-    margin: '0 auto'
+    gap: '3vw',
+    flex: 1,
+    maxHeight: '100%',
+    overflow: 'hidden'
   },
   qrSection: {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    padding: 'var(--space-3xl)',
+    justifyContent: 'center',
+    padding: '3vh 2vw',
     backgroundColor: 'var(--color-bg-medium)',
-    borderRadius: 'var(--radius-xl)'
+    borderRadius: 'var(--radius-xl)',
+    overflow: 'hidden'
   },
   sectionTitle: {
-    fontSize: 'var(--font-size-3xl)',
-    marginBottom: 'var(--space-2xl)'
+    fontSize: '4vh',
+    marginBottom: '2vh'
   },
   qrCode: {
-    padding: 'var(--space-xl)',
+    padding: '2vh',
     backgroundColor: '#ffffff',
     borderRadius: 'var(--radius-lg)',
-    marginBottom: 'var(--space-xl)'
+    marginBottom: '2vh',
+    maxWidth: '30vh',
+    maxHeight: '30vh'
   },
   joinUrl: {
-    fontSize: 'var(--font-size-sm)',
+    fontSize: '1.5vh',
     color: 'var(--color-text-muted)',
     wordBreak: 'break-all' as const,
-    textAlign: 'center' as const
+    textAlign: 'center' as const,
+    maxWidth: '100%'
   },
   playerSection: {
-    padding: 'var(--space-3xl)',
+    padding: '3vh 2vw',
     backgroundColor: 'var(--color-bg-medium)',
-    borderRadius: 'var(--radius-xl)'
+    borderRadius: 'var(--radius-xl)',
+    overflow: 'hidden'
   },
   emptyState: {
     textAlign: 'center' as const,
-    padding: 'var(--space-3xl)',
+    padding: '5vh 2vw',
     color: 'var(--color-text-disabled)',
-    fontSize: 'var(--font-size-lg)'
+    fontSize: '2.5vh'
   },
   phaseDisplay: {
-    fontSize: 'var(--font-size-3xl)',
+    fontSize: '4vh',
     textAlign: 'center' as const,
-    padding: 'var(--space-3xl)'
+    padding: '5vh 2vw'
   },
   footer: {
-    position: 'fixed' as const,
-    bottom: 'var(--space-xl)',
-    left: 'var(--space-xl)',
-    fontSize: 'var(--font-size-xs)',
-    color: 'var(--color-text-disabled)'
+    position: 'absolute' as const,
+    bottom: '1vh',
+    left: '1vw',
+    fontSize: '1.5vh',
+    color: 'var(--color-text-disabled)',
+    flexShrink: 0
   }
 }

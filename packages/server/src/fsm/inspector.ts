@@ -16,7 +16,7 @@ let inspector: ReturnType<typeof createBrowserInspector> | null = null
  * Call this once at server startup
  */
 export function initInspector(): void {
-  const isEnabled = process.env.XSTATE_INSPECT === 'true'
+  const isEnabled = process.env['XSTATE_INSPECT'] === 'true'
 
   if (!isEnabled) {
     console.log('[Inspector] XState inspector disabled. Set XSTATE_INSPECT=true to enable.')
