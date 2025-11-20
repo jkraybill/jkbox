@@ -61,6 +61,29 @@ export class ConnectionHandler {
       return
     }
 
+    // Extract device identifier (IP address)
+    const deviceId = socket.handshake.address || 'unknown'
+
+    // Remove all existing players from this device before adding new player
+    // This prevents duplicate connections from the same device (e.g., refreshing browser)
+    const existingPlayers = room.players.filter(p => p.deviceId === deviceId)
+    for (const existingPlayer of existingPlayers) {
+      console.log(`Removing existing player ${existingPlayer.nickname} (${existingPlayer.id}) from device ${deviceId}`)
+      this.roomManager.removePlayer(message.roomId, existingPlayer.id)
+
+      // Remove from voting handler
+      const votingHandler = this.getVotingHandler(message.roomId)
+      votingHandler.removePlayer(existingPlayer.id)
+
+      // Clean up socket mapping
+      for (const [socketId, mapping] of this.socketToPlayer.entries()) {
+        if (mapping.playerId === existingPlayer.id) {
+          this.socketToPlayer.delete(socketId)
+          break
+        }
+      }
+    }
+
     // Note: Reconnection with session tokens tracked in issue #4
     // For now, always create new player
 
@@ -73,6 +96,7 @@ export class ConnectionHandler {
       roomId: message.roomId,
       nickname: message.nickname,
       sessionToken: generateSessionToken(),
+      deviceId,
       isAdmin: false,
       isHost: false,
       score: bootedPlayer?.score ?? 0, // Preserve score if rejoining

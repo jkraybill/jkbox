@@ -5,6 +5,7 @@ export interface Player {
   roomId: string
   nickname: string
   sessionToken: string
+  deviceId: string  // IP address or other device identifier (prevents duplicate connections from same device)
   isAdmin: boolean
   isHost: boolean
   score: number

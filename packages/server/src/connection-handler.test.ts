@@ -4,12 +4,15 @@ import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
 
 // Mock Socket.io socket
-function createMockSocket(id: string): Partial<Socket> {
+function createMockSocket(id: string, ipAddress: string = '192.168.1.100'): Partial<Socket> {
   const emittedEvents: Array<{ event: string; data: unknown }> = []
   const joinedRooms: string[] = []
 
   return {
     id,
+    handshake: {
+      address: ipAddress
+    } as any,
     emit: (event: string, data: unknown) => {
       emittedEvents.push({ event, data })
     },
@@ -157,6 +160,7 @@ describe('ConnectionHandler', () => {
           roomId: room.roomId,
           nickname: `Player${i}`,
           sessionToken: `token-${i}`,
+          deviceId: `192.168.1.${i}`,
           isAdmin: false,
           isHost: false,
           score: 0,
@@ -276,6 +280,78 @@ describe('ConnectionHandler', () => {
       const player = updated?.players[0]
 
       expect(player?.lastSeenAt.getTime()).toBeGreaterThanOrEqual(beforeDisconnect.getTime())
+    })
+
+    it('should remove all existing players from same device when new player joins', () => {
+      const room = roomManager.createRoom()
+      const deviceIp = '192.168.1.50'
+
+      // First player joins from device
+      const socket1 = createMockSocket('socket-1', deviceIp)
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Verify first player added
+      let updated = roomManager.getRoom(room.roomId)
+      expect(updated?.players).toHaveLength(1)
+      expect(updated?.players[0]?.nickname).toBe('Alice')
+      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
+
+      // Second player joins from SAME device (different socket, same IP)
+      const socket2 = createMockSocket('socket-2', deviceIp)
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Verify Alice was removed, only Bob remains
+      updated = roomManager.getRoom(room.roomId)
+      expect(updated?.players).toHaveLength(1)
+      expect(updated?.players[0]?.nickname).toBe('Bob')
+      expect(updated?.players[0]?.deviceId).toBe(deviceIp)
+
+      // Verify Alice is NOT in the player list
+      const aliceExists = updated?.players.some(p => p.nickname === 'Alice')
+      expect(aliceExists).toBe(false)
+    })
+
+    it('should allow multiple players from different devices', () => {
+      const room = roomManager.createRoom()
+
+      // Player 1 from device A
+      const socket1 = createMockSocket('socket-1', '192.168.1.10')
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Player 2 from device B
+      const socket2 = createMockSocket('socket-2', '192.168.1.20')
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Player 3 from device C
+      const socket3 = createMockSocket('socket-3', '192.168.1.30')
+      handler.handleJoin(socket3 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Charlie'
+      })
+
+      // All three players should be in the room
+      const updated = roomManager.getRoom(room.roomId)
+      expect(updated?.players).toHaveLength(3)
+      expect(updated?.players.map(p => p.nickname)).toContain('Alice')
+      expect(updated?.players.map(p => p.nickname)).toContain('Bob')
+      expect(updated?.players.map(p => p.nickname)).toContain('Charlie')
     })
   })
 
@@ -567,8 +643,8 @@ describe('ConnectionHandler', () => {
       vi.useFakeTimers()
 
       const room = roomManager.createRoom()
-      const socket1 = createMockSocket('player-1')
-      const socket2 = createMockSocket('player-2')
+      const socket1 = createMockSocket('player-1', '192.168.1.10')
+      const socket2 = createMockSocket('player-2', '192.168.1.20')
 
       // Two players join and vote
       handler.handleJoin(socket1 as Socket, {
@@ -622,8 +698,8 @@ describe('ConnectionHandler', () => {
       vi.useFakeTimers()
 
       const room = roomManager.createRoom()
-      const socket1 = createMockSocket('player-1')
-      const socket2 = createMockSocket('player-2')
+      const socket1 = createMockSocket('player-1', '192.168.1.10')
+      const socket2 = createMockSocket('player-2', '192.168.1.20')
 
       handler.handleJoin(socket1 as Socket, {
         type: 'join',
@@ -793,8 +869,8 @@ describe('ConnectionHandler', () => {
       vi.useFakeTimers()
 
       const room = roomManager.createRoom()
-      const socket1 = createMockSocket('player-1')
-      const socket2 = createMockSocket('player-2')
+      const socket1 = createMockSocket('player-1', '192.168.1.10')
+      const socket2 = createMockSocket('player-2', '192.168.1.20')
 
       handler.handleJoin(socket1 as Socket, {
         type: 'join',

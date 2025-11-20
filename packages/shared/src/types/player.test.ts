@@ -9,6 +9,7 @@ describe('Player types', () => {
         roomId: 'WXYZ',
         nickname: 'Alice',
         sessionToken: 'token-abc-123',
+        deviceId: '192.168.1.100',
         isAdmin: false,
         isHost: false,
         score: 0,
@@ -21,6 +22,7 @@ describe('Player types', () => {
       expect(player.roomId).toBe('WXYZ')
       expect(player.nickname).toBe('Alice')
       expect(player.sessionToken).toBe('token-abc-123')
+      expect(player.deviceId).toBe('192.168.1.100')
       expect(player.isAdmin).toBe(false)
       expect(player.isHost).toBe(false)
       expect(player.score).toBe(0)
@@ -35,6 +37,7 @@ describe('Player types', () => {
         roomId: 'ROOM1',
         nickname: 'JK',
         sessionToken: 'token-host',
+        deviceId: '192.168.1.1',
         isAdmin: true,
         isHost: true,
         score: 0,
@@ -53,6 +56,7 @@ describe('Player types', () => {
         roomId: 'ROOM1',
         nickname: 'Bob',
         sessionToken: 'token-bob',
+        deviceId: '192.168.1.101',
         isAdmin: true,
         isHost: false,
         score: 100,
@@ -71,6 +75,7 @@ describe('Player types', () => {
         roomId: 'ROOM1',
         nickname: 'Charlie',
         sessionToken: 'token-charlie',
+        deviceId: '192.168.1.102',
         isAdmin: false,
         isHost: false,
         score: 50,
@@ -89,6 +94,7 @@ describe('Player types', () => {
         roomId: 'ROOM1',
         nickname: 'Diana',
         sessionToken: 'token-diana',
+        deviceId: '192.168.1.103',
         isAdmin: false,
         isHost: false,
         score: 1337,
