@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { Socket, Server } from 'socket.io'
 import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
@@ -51,6 +51,11 @@ describe('ConnectionHandler', () => {
     roomManager = new RoomManager()
     io = createMockServer() as any
     handler = new ConnectionHandler(roomManager, io as Server)
+  })
+
+  afterEach(() => {
+    // Clean up heartbeat monitor
+    handler.stopHeartbeatMonitor()
   })
 
   describe('handleJoin', () => {
@@ -348,6 +353,190 @@ describe('ConnectionHandler', () => {
       const data = stateEvent?.data as { state: { players: Array<{ nickname: string }> } }
       expect(data.state.players).toHaveLength(1)
       expect(data.state.players[0]?.nickname).toBe('Alice')
+    })
+  })
+
+  describe('Heartbeat System', () => {
+    it('should update lastSeenAt when receiving heartbeat ping', () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      const player = room.players.find(p => p.nickname === 'Alice')
+      expect(player).toBeDefined()
+
+      const beforePing = player!.lastSeenAt
+
+      // Simulate 1 second passing
+      vi.advanceTimersByTime(1000)
+
+      // Send heartbeat ping
+      handler.handleHeartbeat(socket as Socket)
+
+      // Get updated player
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const updatedPlayer = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      expect(updatedPlayer?.lastSeenAt.getTime()).toBeGreaterThan(beforePing.getTime())
+
+      vi.useRealTimers()
+    })
+
+    it('should mark player as disconnected after 5 seconds without heartbeat', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Start heartbeat monitor
+      handler.startHeartbeatMonitor()
+
+      // Advance 6 seconds (past 5s threshold)
+      vi.advanceTimersByTime(6000)
+
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const player = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      expect(player?.isConnected).toBe(false)
+
+      vi.useRealTimers()
+    })
+
+    it('should boot player after 60 seconds without heartbeat', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Start heartbeat monitor
+      handler.startHeartbeatMonitor()
+
+      // Advance 61 seconds (past 60s threshold)
+      vi.advanceTimersByTime(61000)
+
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const player = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      expect(player).toBeUndefined() // Player removed from room
+
+      vi.useRealTimers()
+    })
+
+    it('should preserve score when booted player rejoins with same name', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket1 = createMockSocket('player-1')
+
+      handler.handleJoin(socket1 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Give player a score
+      const player = room.players.find(p => p.nickname === 'Alice')
+      roomManager.updatePlayer(room.roomId, player!.id, { score: 100 })
+
+      // Start heartbeat monitor
+      handler.startHeartbeatMonitor()
+
+      // Advance 61 seconds (player gets booted)
+      vi.advanceTimersByTime(61000)
+
+      // Player rejoins with same name
+      const socket2 = createMockSocket('player-2')
+      handler.handleJoin(socket2 as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const rejoinedPlayer = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      expect(rejoinedPlayer?.score).toBe(100) // Score preserved
+
+      vi.useRealTimers()
+    })
+
+    it('should not mark player disconnected if heartbeat received within 5s', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Start heartbeat monitor
+      handler.startHeartbeatMonitor()
+
+      // Send heartbeats every 2 seconds for 10 seconds
+      for (let i = 0; i < 5; i++) {
+        vi.advanceTimersByTime(2000)
+        handler.handleHeartbeat(socket as Socket)
+      }
+
+      const updatedRoom = roomManager.getRoom(room.roomId)
+      const player = updatedRoom?.players.find(p => p.nickname === 'Alice')
+
+      expect(player?.isConnected).toBe(true) // Still connected
+
+      vi.useRealTimers()
+    })
+
+    it('should broadcast room state when player marked disconnected', async () => {
+      vi.useFakeTimers()
+
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('player-1')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Start heartbeat monitor
+      handler.startHeartbeatMonitor()
+
+      // Advance 6 seconds (past 5s threshold)
+      vi.advanceTimersByTime(6000)
+
+      const broadcasts = io._getBroadcastEvents()
+      const stateUpdate = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'room:state'
+      )
+
+      expect(stateUpdate).toBeDefined()
+
+      vi.useRealTimers()
     })
   })
 })

@@ -67,6 +67,10 @@ export interface LobbyReadyToggleMessage {
   isReady: boolean
 }
 
+export interface HeartbeatMessage {
+  type: 'heartbeat'
+}
+
 export type ClientMessage =
   | JoinMessage
   | SubmitMessage
@@ -79,6 +83,7 @@ export type ClientMessage =
   | WatchMessage
   | LobbyVoteGameMessage
   | LobbyReadyToggleMessage
+  | HeartbeatMessage
 
 // ============================================================================
 // Server → Client Messages

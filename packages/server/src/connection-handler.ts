@@ -15,9 +15,15 @@ import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
 import { generatePlayerId, generateSessionToken } from './utils/session-token'
 
+const HEARTBEAT_INTERVAL = 2000 // Client sends ping every 2s
+const DISCONNECT_THRESHOLD = 5000 // Mark disconnected after 5s
+const BOOT_THRESHOLD = 60000 // Boot player after 60s
+
 export class ConnectionHandler {
   private socketToPlayer: Map<string, { playerId: string; roomId: string }> = new Map()
   private votingHandlers: Map<string, VotingHandler> = new Map() // roomId → VotingHandler
+  private heartbeatMonitor: NodeJS.Timeout | null = null
+  private bootedPlayers: Map<string, { nickname: string; score: number; roomId: string }> = new Map() // Track booted players for rejoin
 
   constructor(
     private roomManager: RoomManager,
@@ -52,6 +58,10 @@ export class ConnectionHandler {
     // Note: Reconnection with session tokens tracked in issue #4
     // For now, always create new player
 
+    // Check if this is a booted player rejoining with same nickname
+    const bootedPlayerKey = `${message.roomId}:${message.nickname}`
+    const bootedPlayer = this.bootedPlayers.get(bootedPlayerKey)
+
     const player: Player = {
       id: generatePlayerId(),
       roomId: message.roomId,
@@ -59,10 +69,16 @@ export class ConnectionHandler {
       sessionToken: generateSessionToken(),
       isAdmin: false,
       isHost: false,
-      score: 0,
+      score: bootedPlayer?.score ?? 0, // Preserve score if rejoining
       connectedAt: new Date(),
       lastSeenAt: new Date(),
       isConnected: true
+    }
+
+    // Clear booted player data after restoring
+    if (bootedPlayer) {
+      this.bootedPlayers.delete(bootedPlayerKey)
+      console.log(`Restored score ${bootedPlayer.score} for rejoining player ${message.nickname}`)
     }
 
     const added = this.roomManager.addPlayer(message.roomId, player)
@@ -339,5 +355,99 @@ export class ConnectionHandler {
     }
 
     this.io.to(roomId).emit('lobby:voting-update', update)
+  }
+
+  /**
+   * Handle heartbeat ping from client
+   */
+  handleHeartbeat(socket: Socket): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      return
+    }
+
+    // Update lastSeenAt timestamp
+    this.roomManager.updatePlayer(mapping.roomId, mapping.playerId, {
+      lastSeenAt: new Date(),
+      isConnected: true
+    })
+  }
+
+  /**
+   * Start monitoring player heartbeats
+   */
+  startHeartbeatMonitor(): void {
+    // Clear existing monitor if running
+    if (this.heartbeatMonitor) {
+      clearInterval(this.heartbeatMonitor)
+    }
+
+    // Check all players every second
+    this.heartbeatMonitor = setInterval(() => {
+      const now = Date.now()
+      const rooms = this.roomManager.getAllRooms()
+
+      for (const room of rooms) {
+        let stateChanged = false
+
+        for (const player of room.players) {
+          const timeSinceLastSeen = now - player.lastSeenAt.getTime()
+
+          // Boot after 60s without heartbeat
+          if (timeSinceLastSeen >= BOOT_THRESHOLD) {
+            // Save player data for rejoin
+            this.bootedPlayers.set(`${room.roomId}:${player.nickname}`, {
+              nickname: player.nickname,
+              score: player.score,
+              roomId: room.roomId
+            })
+
+            // Remove player from room
+            this.roomManager.removePlayer(room.roomId, player.id)
+
+            // Remove from voting
+            const votingHandler = this.getVotingHandler(room.roomId)
+            votingHandler.removePlayer(player.id)
+
+            stateChanged = true
+            console.log(`Booted player ${player.nickname} from room ${room.roomId} (60s inactive)`)
+          }
+          // Mark disconnected after 5s without heartbeat
+          else if (timeSinceLastSeen >= DISCONNECT_THRESHOLD && player.isConnected) {
+            this.roomManager.updatePlayer(room.roomId, player.id, {
+              isConnected: false
+            })
+
+            stateChanged = true
+            console.log(`Marked player ${player.nickname} as disconnected in room ${room.roomId}`)
+          }
+        }
+
+        // Broadcast room state if anything changed
+        if (stateChanged) {
+          const updated = this.roomManager.getRoom(room.roomId)
+          if (updated) {
+            const roomStateMessage: RoomStateMessage = {
+              type: 'room:state',
+              state: updated
+            }
+            this.io.to(room.roomId).emit('room:state', roomStateMessage)
+
+            // Also broadcast voting update in case player was removed
+            this.broadcastVotingUpdate(room.roomId)
+          }
+        }
+      }
+    }, 1000) // Check every second
+  }
+
+  /**
+   * Stop monitoring heartbeats
+   */
+  stopHeartbeatMonitor(): void {
+    if (this.heartbeatMonitor) {
+      clearInterval(this.heartbeatMonitor)
+      this.heartbeatMonitor = null
+    }
   }
 }
