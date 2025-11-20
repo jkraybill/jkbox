@@ -27,7 +27,7 @@ export function Home() {
       const { room } = await response.json()
 
       // Navigate to jumbotron view
-      navigate(`/jumbotron/${room.id}`)
+      navigate(`/jumbotron/${room.roomId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create room')
       setIsCreating(false)
