@@ -273,4 +273,81 @@ describe('ConnectionHandler', () => {
       expect(player?.lastSeenAt.getTime()).toBeGreaterThanOrEqual(beforeDisconnect.getTime())
     })
   })
+
+  describe('handleWatch', () => {
+    it('should send full room state snapshot to watcher', () => {
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('socket-jumbotron') as Socket & {
+        _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+        _getJoinedRooms: () => string[]
+      }
+
+      handler.handleWatch(socket, {
+        type: 'watch',
+        roomId: room.roomId
+      })
+
+      // Check socket joined the room
+      const joinedRooms = socket._getJoinedRooms()
+      expect(joinedRooms).toContain(room.roomId)
+
+      // Check initial room:state snapshot sent
+      const events = socket._getEmittedEvents()
+      const stateEvent = events.find(e => e.event === 'room:state')
+
+      expect(stateEvent).toBeDefined()
+      const data = stateEvent?.data as { type: string; state: { roomId: string; phase: string } }
+      expect(data.type).toBe('room:state')
+      expect(data.state.roomId).toBe(room.roomId)
+      expect(data.state.phase).toBe('lobby')
+    })
+
+    it('should emit error if room does not exist', () => {
+      const socket = createMockSocket('socket-jumbotron') as Socket & {
+        _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+      }
+
+      handler.handleWatch(socket, {
+        type: 'watch',
+        roomId: 'INVALID'
+      })
+
+      const events = socket._getEmittedEvents()
+      const errorEvent = events.find(e => e.event === 'error')
+
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent?.data as { code: string }).code).toBe('ROOM_NOT_FOUND')
+    })
+
+    it('should send state snapshot with players after joins', () => {
+      const room = roomManager.createRoom()
+
+      // Add a player first
+      const playerSocket = createMockSocket('player-1')
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      // Now jumbotron watches
+      const jumboSocket = createMockSocket('socket-jumbotron') as Socket & {
+        _getEmittedEvents: () => Array<{ event: string; data: unknown }>
+      }
+
+      handler.handleWatch(jumboSocket, {
+        type: 'watch',
+        roomId: room.roomId
+      })
+
+      // Verify snapshot includes the player
+      const events = jumboSocket._getEmittedEvents()
+      const stateEvent = events.find(e => e.event === 'room:state')
+
+      expect(stateEvent).toBeDefined()
+      const data = stateEvent?.data as { state: { players: Array<{ nickname: string }> } }
+      expect(data.state.players).toHaveLength(1)
+      expect(data.state.players[0]?.nickname).toBe('Alice')
+    })
+  })
 })
