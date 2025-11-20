@@ -71,7 +71,7 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
         <div style={styles.qrCode}>
           <QRCodeSVG
             value={joinUrl}
-            size={Math.min(window.innerHeight * 0.15, window.innerWidth * 0.08)}
+            size={Math.min(window.innerHeight * 0.12, window.innerWidth * 0.065)}
             level="M"
           />
         </div>
@@ -163,13 +163,13 @@ const styles = {
   },
   qrContainer: {
     position: 'absolute' as const,
-    top: '2vh',
-    left: '2vw',
+    top: '1vh',
+    left: '1vw',
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    gap: '1vh',
-    padding: '1.5vh 1vw',
+    gap: '0.5vh',
+    padding: '1vh 0.8vw',
     backgroundColor: 'var(--color-bg-dark)',
     borderRadius: 'var(--radius-lg)',
     border: '0.2vh solid var(--color-primary-yellow)',
