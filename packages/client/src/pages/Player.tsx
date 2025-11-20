@@ -5,6 +5,8 @@ import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
 import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
+import { AdminToggleTab } from '../components/AdminToggleTab'
+import { AdminTools } from '../components/AdminTools'
 import type { LobbyCountdownMessage } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
@@ -18,6 +20,7 @@ export function Player() {
   const { socket, isConnected } = useSocket()
   const { currentPlayer, room } = useGameStore()
   const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
+  const [showAdminTools, setShowAdminTools] = useState(false)
 
   useEffect(() => {
     if (!socket) return
@@ -90,6 +93,17 @@ export function Player() {
       {/* Countdown overlay */}
       {countdown && (
         <Countdown count={countdown.count} gameName={countdown.game} variant="player" />
+      )}
+
+      {/* Admin UI (only for admin players) */}
+      {currentPlayer.isAdmin && (
+        <>
+          <AdminToggleTab
+            isOpen={showAdminTools}
+            onClick={() => setShowAdminTools(!showAdminTools)}
+          />
+          {showAdminTools && <AdminTools />}
+        </>
       )}
     </div>
   )

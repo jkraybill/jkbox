@@ -67,11 +67,14 @@ export function Join() {
     setError(null)
 
     // Send join message with persistent device ID
+    const deviceId = getDeviceId()
+    console.log('[JOIN] Emitting join message:', { nickname: nickname.trim(), deviceId, roomId })
+
     socket.emit('join', {
       type: 'join',
       roomId,
       nickname: nickname.trim(),
-      deviceId: getDeviceId()
+      deviceId
     })
   }
 

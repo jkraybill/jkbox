@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "gordo-memory": {
-      "command": "/home/jkraybill/.nvm/versions/node/v22.17.0/bin/node",
+      "command": "/usr/bin/node",
       "args": [
-        "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/dist/index.js"
+        "/home/jk/gordo-framework/mcp-servers/gordo-memory/dist/index.js"
       ],
       "env": {
-        "NODE_PATH": "/home/jkraybill/gordo-framework/mcp-servers/gordo-memory/node_modules",
-        "REPO_PATH": "/home/jkraybill/jkbox",
+        "NODE_PATH": "/home/jk/gordo-framework/mcp-servers/gordo-memory/node_modules",
+        "REPO_PATH": "/home/jk/jkbox",
         "OLLAMA_URL": "http://localhost:11434",
         "EMBEDDING_MODEL": "mxbai-embed-large:latest"
       }
@@ -18,7 +18,7 @@
         "-y",
         "@modelcontextprotocol/server-git",
         "--repository",
-        "/home/jkraybill/jkbox"
+        "/home/jk/jkbox"
       ]
     },
     "github": {

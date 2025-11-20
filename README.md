@@ -190,7 +190,7 @@ Complete these steps before ending:
 **Backend:**
 - Node.js + TypeScript
 - Socket.io (real-time, auto-reconnection)
-- SQLite (party sessions, scores)
+- SQLite (server state crash recovery + future persistent data)
 - Express (HTTP endpoints)
 
 **Frontend:**

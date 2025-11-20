@@ -8,8 +8,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 /**
- * SQLite-based persistent storage for rooms (v2 - RoomState discriminated union)
- * Stores full RoomState as JSON for simplicity
+ * SQLite-based temporary persistence for server state (rooms, players)
+ *
+ * This is NOT long-term "persistent data" - it's a crash-recovery mechanism
+ * for server state. If server restarts after >5min, this gets wiped.
+ *
+ * Stores full RoomState as JSON for simplicity.
  */
 export class RoomStorage {
   private db: Database.Database
@@ -118,6 +122,33 @@ export class RoomStorage {
     return roomRows
       .map(row => this.getRoom(row.room_id))
       .filter((room): room is RoomState => room !== undefined)
+  }
+
+  /**
+   * Get most recent update timestamp across all server state
+   * Returns timestamp in milliseconds, or null if no server state exists
+   */
+  getLastUpdateTimestamp(): number | null {
+    const result = this.db
+      .prepare('SELECT MAX(updated_at) as max_updated FROM rooms')
+      .get() as { max_updated: number | null }
+
+    return result.max_updated
+  }
+
+  /**
+   * Clear all server state (rooms and players)
+   * Used when server state is stale (>5min old) on server startup
+   * This fully resets server state like a fresh boot
+   */
+  clearAllServerState(): void {
+    const tx = this.db.transaction(() => {
+      this.db.prepare('DELETE FROM room_players').run()
+      this.db.prepare('DELETE FROM rooms').run()
+    })
+
+    tx()
+    console.log('✓ Cleared all server state (stale data)')
   }
 
   /**

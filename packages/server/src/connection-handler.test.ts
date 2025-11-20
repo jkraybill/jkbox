@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { Socket, Server } from 'socket.io'
+import type { PlayingState } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { ConnectionHandler } from './connection-handler'
 
@@ -954,6 +955,398 @@ describe('ConnectionHandler', () => {
       expect(updatedRoom?.players.find(p => p.nickname === 'Bob')).toBeDefined()
 
       vi.useRealTimers()
+    })
+  })
+
+  describe('Admin Functionality', () => {
+    it('should grant admin access when player joins with ~ suffix', () => {
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('admin-player')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'AdminUser~'
+      })
+
+      const updated = roomManager.getRoom(room.roomId)
+      const player = updated?.players[0]
+
+      expect(player?.isAdmin).toBe(true)
+      expect(player?.nickname).toBe('AdminUser') // ~ should be stripped
+    })
+
+    it('should not grant admin access when player joins without ~ suffix', () => {
+      const room = roomManager.createRoom()
+      const socket = createMockSocket('regular-player')
+
+      handler.handleJoin(socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'RegularUser'
+      })
+
+      const updated = roomManager.getRoom(room.roomId)
+      const player = updated?.players[0]
+
+      expect(player?.isAdmin).toBe(false)
+      expect(player?.nickname).toBe('RegularUser')
+    })
+
+    it('should allow admin to boot another player', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+      const playerSocket = createMockSocket('player-socket', '192.168.1.20')
+
+      // Admin joins
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      // Regular player joins
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      const beforeBoot = roomManager.getRoom(room.roomId)
+      expect(beforeBoot?.players).toHaveLength(2)
+
+      const targetPlayer = beforeBoot?.players.find(p => p.nickname === 'Bob')
+      expect(targetPlayer).toBeDefined()
+
+      // Admin boots Bob
+      handler.handleBootPlayer(adminSocket as Socket, {
+        type: 'admin:boot-player',
+        playerId: targetPlayer!.id
+      })
+
+      const afterBoot = roomManager.getRoom(room.roomId)
+      expect(afterBoot?.players).toHaveLength(1)
+      expect(afterBoot?.players.find(p => p.nickname === 'Bob')).toBeUndefined()
+      expect(afterBoot?.players.find(p => p.nickname === 'Admin')).toBeDefined()
+    })
+
+    it('should prevent non-admin from booting players', () => {
+      const room = roomManager.createRoom()
+      const player1Socket = createMockSocket('player1-socket', '192.168.1.10')
+      const player2Socket = createMockSocket('player2-socket', '192.168.1.20')
+
+      // Two regular players join
+      handler.handleJoin(player1Socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(player2Socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      const beforeBoot = roomManager.getRoom(room.roomId)
+      const targetPlayer = beforeBoot?.players.find(p => p.nickname === 'Bob')
+
+      // Alice tries to boot Bob (should fail - not admin)
+      handler.handleBootPlayer(player1Socket as Socket, {
+        type: 'admin:boot-player',
+        playerId: targetPlayer!.id
+      })
+
+      // Bob should still be in the room
+      const afterBoot = roomManager.getRoom(room.roomId)
+      expect(afterBoot?.players).toHaveLength(2)
+      expect(afterBoot?.players.find(p => p.nickname === 'Bob')).toBeDefined()
+
+      // Check error was emitted
+      const events = (player1Socket as any)._getEmittedEvents()
+      const errorEvent = events.find((e: any) => e.event === 'error')
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent as any).data.code).toBe('UNAUTHORIZED')
+    })
+
+    it('should prevent admin from booting themselves', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      const beforeBoot = roomManager.getRoom(room.roomId)
+      const adminPlayer = beforeBoot?.players[0]
+
+      // Admin tries to boot themselves (should fail)
+      handler.handleBootPlayer(adminSocket as Socket, {
+        type: 'admin:boot-player',
+        playerId: adminPlayer!.id
+      })
+
+      // Admin should still be in the room
+      const afterBoot = roomManager.getRoom(room.roomId)
+      expect(afterBoot?.players).toHaveLength(1)
+
+      // Check error was emitted
+      const events = (adminSocket as any)._getEmittedEvents()
+      const errorEvent = events.find((e: any) => e.event === 'error')
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent as any).data.code).toBe('CANNOT_BOOT_SELF')
+    })
+
+    it('should broadcast room state after player is booted', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+      const playerSocket = createMockSocket('player-socket', '192.168.1.20')
+
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      const targetPlayer = roomManager.getRoom(room.roomId)?.players.find(p => p.nickname === 'Bob')
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Admin boots Bob
+      handler.handleBootPlayer(adminSocket as Socket, {
+        type: 'admin:boot-player',
+        playerId: targetPlayer!.id
+      })
+
+      // Check room state was broadcast
+      const broadcasts = io._getBroadcastEvents()
+      const stateMessage = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'room:state'
+      )
+
+      expect(stateMessage).toBeDefined()
+      expect((stateMessage as any).data.state.players).toHaveLength(1)
+    })
+
+    it('should allow admin to force room back to lobby', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+      const playerSocket = createMockSocket('player-socket', '192.168.1.20')
+
+      // Admin joins
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      // Regular player joins
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Transition to playing phase to simulate in-progress game
+      const beforeReset = roomManager.getRoom(room.roomId)!
+      const playingRoom: PlayingState = {
+        phase: 'playing',
+        roomId: room.roomId,
+        players: beforeReset.players,
+        gameId: 'fake-facts'
+      }
+      roomManager.updateRoomState(room.roomId, playingRoom)
+
+      const checkPlaying = roomManager.getRoom(room.roomId)
+      expect(checkPlaying?.phase).toBe('playing')
+
+      // Admin forces back to lobby
+      handler.handleBackToLobby(adminSocket as Socket, {
+        type: 'admin:back-to-lobby'
+      })
+
+      const afterReset = roomManager.getRoom(room.roomId)
+      expect(afterReset?.phase).toBe('lobby')
+      expect(afterReset?.players).toHaveLength(2) // Players should remain
+    })
+
+    it('should prevent non-admin from forcing back to lobby', () => {
+      const room = roomManager.createRoom()
+      const playerSocket = createMockSocket('player-socket')
+
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Transition to playing
+      const currentRoom = roomManager.getRoom(room.roomId)!
+      const playingRoom: PlayingState = {
+        phase: 'playing',
+        roomId: room.roomId,
+        players: currentRoom.players,
+        gameId: 'fake-facts'
+      }
+      roomManager.updateRoomState(room.roomId, playingRoom)
+
+      // Bob tries to force back to lobby (should fail)
+      handler.handleBackToLobby(playerSocket as Socket, {
+        type: 'admin:back-to-lobby'
+      })
+
+      // Should still be in playing phase
+      const room2 = roomManager.getRoom(room.roomId)
+      expect(room2?.phase).toBe('playing')
+
+      // Check error was emitted
+      const events = (playerSocket as any)._getEmittedEvents()
+      const errorEvent = events.find((e: any) => e.event === 'error')
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent as any).data.code).toBe('UNAUTHORIZED')
+    })
+
+    it('should allow admin to hard reset room', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+      const player1Socket = createMockSocket('player1-socket', '192.168.1.20')
+      const player2Socket = createMockSocket('player2-socket', '192.168.1.30')
+
+      // Admin joins
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      // Two players join
+      handler.handleJoin(player1Socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Alice'
+      })
+
+      handler.handleJoin(player2Socket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      const beforeReset = roomManager.getRoom(room.roomId)
+      expect(beforeReset?.players).toHaveLength(3)
+
+      // Admin performs hard reset
+      handler.handleHardReset(adminSocket as Socket, {
+        type: 'admin:hard-reset'
+      })
+
+      // Room should be reset to title phase (same roomId preserved)
+      const afterReset = roomManager.getRoom(room.roomId)
+      expect(afterReset?.phase).toBe('title')
+      expect(afterReset?.players).toHaveLength(0)
+      expect(afterReset?.roomId).toBe(room.roomId) // Same roomId preserved
+    })
+
+    it('should prevent non-admin from hard reset', () => {
+      const room = roomManager.createRoom()
+      const playerSocket = createMockSocket('player-socket')
+
+      handler.handleJoin(playerSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Bob'
+      })
+
+      // Bob tries hard reset (should fail)
+      handler.handleHardReset(playerSocket as Socket, {
+        type: 'admin:hard-reset'
+      })
+
+      // Player should still be in room
+      const room2 = roomManager.getRoom(room.roomId)
+      expect(room2?.players).toHaveLength(1)
+
+      // Check error was emitted
+      const events = (playerSocket as any)._getEmittedEvents()
+      const errorEvent = events.find((e: any) => e.event === 'error')
+      expect(errorEvent).toBeDefined()
+      expect((errorEvent as any).data.code).toBe('UNAUTHORIZED')
+    })
+
+    it('should broadcast room state after back to lobby', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      // Transition to playing
+      const currentRoom = roomManager.getRoom(room.roomId)!
+      const playingRoom: PlayingState = {
+        phase: 'playing',
+        roomId: room.roomId,
+        players: currentRoom.players,
+        gameId: 'fake-facts'
+      }
+      roomManager.updateRoomState(room.roomId, playingRoom)
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Admin forces back to lobby
+      handler.handleBackToLobby(adminSocket as Socket, {
+        type: 'admin:back-to-lobby'
+      })
+
+      // Check room state was broadcast
+      const broadcasts = io._getBroadcastEvents()
+      const stateMessage = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'room:state'
+      )
+
+      expect(stateMessage).toBeDefined()
+      expect((stateMessage as any).data.state.phase).toBe('lobby')
+    })
+
+    it('should broadcast room state after hard reset', () => {
+      const room = roomManager.createRoom()
+      const adminSocket = createMockSocket('admin-socket')
+
+      handler.handleJoin(adminSocket as Socket, {
+        type: 'join',
+        roomId: room.roomId,
+        nickname: 'Admin~'
+      })
+
+      // Clear previous broadcasts
+      io._getBroadcastEvents().length = 0
+
+      // Admin performs hard reset
+      handler.handleHardReset(adminSocket as Socket, {
+        type: 'admin:hard-reset'
+      })
+
+      // Check room state was broadcast with title phase
+      const broadcasts = io._getBroadcastEvents()
+      const stateMessage = broadcasts.find(
+        b => b.room === room.roomId && b.event === 'room:state'
+      )
+
+      expect(stateMessage).toBeDefined()
+      expect((stateMessage as any).data.state.phase).toBe('title')
+      expect((stateMessage as any).data.state.players).toHaveLength(0)
     })
   })
 })

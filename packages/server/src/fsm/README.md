@@ -180,12 +180,14 @@ lobby
 
 This enables proper voting UI, ready states, and countdown transitions.
 
-### Persistent Machine States (#29)
+### Server State Crash Recovery (#29)
 
-Room machines will be serialized to SQLite for crash recovery:
+Room machines are serialized to SQLite for crash recovery:
 - Serialize machine snapshot on every transition
-- Restore from storage on server restart
-- Players can reconnect to in-progress games
+- Restore from storage on server restart (if <5min old)
+- Stale server state (>5min old) gets cleared on startup
+- This is NOT long-term persistent data - it's crash recovery for active games
+- Players can reconnect to in-progress games (within staleness window)
 
 ### Admin Controls
 

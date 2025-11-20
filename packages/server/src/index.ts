@@ -6,7 +6,10 @@ import type {
   JoinMessage,
   WatchMessage,
   LobbyVoteGameMessage,
-  LobbyReadyToggleMessage
+  LobbyReadyToggleMessage,
+  AdminBootPlayerMessage,
+  AdminBackToLobbyMessage,
+  AdminHardResetMessage
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { RoomStorage } from './storage/room-storage'
@@ -120,6 +123,21 @@ io.on('connection', (socket) => {
   // Handle lobby ready toggle
   socket.on('lobby:ready-toggle', (message: LobbyReadyToggleMessage) => {
     connectionHandler.handleLobbyReadyToggle(socket, message)
+  })
+
+  // Handle admin boot player
+  socket.on('admin:boot-player', (message: AdminBootPlayerMessage) => {
+    connectionHandler.handleBootPlayer(socket, message)
+  })
+
+  // Handle admin back to lobby
+  socket.on('admin:back-to-lobby', (message: AdminBackToLobbyMessage) => {
+    connectionHandler.handleBackToLobby(socket, message)
+  })
+
+  // Handle admin hard reset
+  socket.on('admin:hard-reset', (message: AdminHardResetMessage) => {
+    connectionHandler.handleHardReset(socket, message)
   })
 
   // Handle disconnect

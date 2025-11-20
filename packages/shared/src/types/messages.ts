@@ -72,6 +72,19 @@ export interface HeartbeatMessage {
   type: 'heartbeat'
 }
 
+export interface AdminBootPlayerMessage {
+  type: 'admin:boot-player'
+  playerId: string
+}
+
+export interface AdminBackToLobbyMessage {
+  type: 'admin:back-to-lobby'
+}
+
+export interface AdminHardResetMessage {
+  type: 'admin:hard-reset'
+}
+
 export type ClientMessage =
   | JoinMessage
   | SubmitMessage
@@ -81,6 +94,9 @@ export type ClientMessage =
   | AdminResumeTimerMessage
   | AdminSkipPhaseMessage
   | AdminDelegateMessage
+  | AdminBootPlayerMessage
+  | AdminBackToLobbyMessage
+  | AdminHardResetMessage
   | WatchMessage
   | LobbyVoteGameMessage
   | LobbyReadyToggleMessage

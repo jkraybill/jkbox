@@ -11,10 +11,14 @@ import type {
   LobbyCountdownMessage,
   LobbyCountdownCancelledMessage,
   GameStartMessage,
+  AdminBootPlayerMessage,
+  AdminBackToLobbyMessage,
+  AdminHardResetMessage,
   GameId,
   CountdownState,
   LobbyState,
-  PlayingState
+  PlayingState,
+  TitleState
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
@@ -63,6 +67,7 @@ export class ConnectionHandler {
 
     // Extract device identifier (prefer client-provided UUID, fallback to IP address)
     const deviceId = message.deviceId || socket.handshake.address || 'unknown'
+    console.log(`[JOIN] Player joining: ${message.nickname}, deviceId: ${deviceId}, hasClientDeviceId: ${!!message.deviceId}`)
 
     // Remove all existing players from this device before adding new player
     // This prevents duplicate connections from the same device (e.g., refreshing browser)
@@ -87,17 +92,26 @@ export class ConnectionHandler {
     // Note: Reconnection with session tokens tracked in issue #4
     // For now, always create new player
 
+    // Check for admin suffix (~) in nickname
+    let nickname = message.nickname
+    let isAdmin = false
+    if (nickname.endsWith('~')) {
+      nickname = nickname.slice(0, -1) // Strip the ~
+      isAdmin = true
+      console.log(`Granting admin access to player: ${nickname}`)
+    }
+
     // Check if this is a booted player rejoining with same nickname
-    const bootedPlayerKey = `${message.roomId}:${message.nickname}`
+    const bootedPlayerKey = `${message.roomId}:${nickname}`
     const bootedPlayer = this.bootedPlayers.get(bootedPlayerKey)
 
     const player: Player = {
       id: generatePlayerId(),
       roomId: message.roomId,
-      nickname: message.nickname,
+      nickname,
       sessionToken: generateSessionToken(),
       deviceId,
-      isAdmin: false,
+      isAdmin,
       isHost: false,
       score: bootedPlayer?.score ?? 0, // Preserve score if rejoining
       connectedAt: new Date(),
@@ -539,6 +553,212 @@ export class ConnectionHandler {
       lastSeenAt: new Date(),
       isConnected: true
     })
+  }
+
+  /**
+   * Handle admin boot player request
+   */
+  handleBootPlayer(socket: Socket, message: AdminBootPlayerMessage): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'NOT_IN_ROOM',
+        message: 'You must join a room first'
+      })
+      return
+    }
+
+    // Verify admin permission
+    const room = this.roomManager.getRoom(mapping.roomId)
+    const adminPlayer = room?.players.find(p => p.id === mapping.playerId)
+    if (!adminPlayer?.isAdmin) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'UNAUTHORIZED',
+        message: 'Admin access required'
+      })
+      return
+    }
+
+    // Prevent self-boot
+    if (message.playerId === mapping.playerId) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'CANNOT_BOOT_SELF',
+        message: 'Cannot boot yourself'
+      })
+      return
+    }
+
+    // Boot the player
+    const targetPlayer = room?.players.find(p => p.id === message.playerId)
+    if (!targetPlayer) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'PLAYER_NOT_FOUND',
+        message: 'Player not found'
+      })
+      return
+    }
+
+    console.log(`Admin ${adminPlayer.nickname} booting player ${targetPlayer.nickname} from room ${mapping.roomId}`)
+
+    // Remove player from room
+    this.roomManager.removePlayer(mapping.roomId, message.playerId)
+
+    // Remove from voting handler
+    const votingHandler = this.getVotingHandler(mapping.roomId)
+    votingHandler.removePlayer(message.playerId)
+
+    // Clean up socket mapping
+    for (const [socketId, socketMapping] of this.socketToPlayer.entries()) {
+      if (socketMapping.playerId === message.playerId) {
+        this.socketToPlayer.delete(socketId)
+        break
+      }
+    }
+
+    // Broadcast room state to all clients in the room
+    const updated = this.roomManager.getRoom(mapping.roomId)
+    if (updated) {
+      const roomStateMessage: RoomStateMessage = {
+        type: 'room:state',
+        state: updated
+      }
+      this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+
+      // Broadcast updated voting state
+      this.broadcastVotingUpdate(mapping.roomId)
+    }
+  }
+
+  /**
+   * Admin: Force room back to lobby (kill any in-progress game)
+   */
+  handleBackToLobby(socket: Socket, message: AdminBackToLobbyMessage): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'NOT_IN_ROOM',
+        message: 'You must join a room first'
+      })
+      return
+    }
+
+    // Verify admin permission
+    const room = this.roomManager.getRoom(mapping.roomId)
+    const adminPlayer = room?.players.find(p => p.id === mapping.playerId)
+    if (!adminPlayer?.isAdmin) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'UNAUTHORIZED',
+        message: 'Admin access required'
+      })
+      return
+    }
+
+    console.log(`Admin ${adminPlayer.nickname} forcing room ${mapping.roomId} back to lobby`)
+
+    // Transition room back to lobby phase
+    const lobbyRoom: LobbyState = {
+      phase: 'lobby',
+      roomId: mapping.roomId,
+      players: room.players,
+      gameVotes: {},
+      readyStates: {},
+      selectedGame: null
+    }
+    this.roomManager.updateRoomState(mapping.roomId, lobbyRoom)
+
+    // Reset voting state
+    const votingHandler = this.getVotingHandler(mapping.roomId)
+    votingHandler.reset()
+
+    // Broadcast updated room state
+    const updated = this.roomManager.getRoom(mapping.roomId)
+    if (updated) {
+      const roomStateMessage: RoomStateMessage = {
+        type: 'room:state',
+        state: updated
+      }
+      this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+      this.broadcastVotingUpdate(mapping.roomId)
+    }
+  }
+
+  /**
+   * Admin: Hard reset - clear all ephemeral server state
+   */
+  handleHardReset(socket: Socket, message: AdminHardResetMessage): void {
+    const mapping = this.socketToPlayer.get(socket.id)
+    if (!mapping) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'NOT_IN_ROOM',
+        message: 'You must join a room first'
+      })
+      return
+    }
+
+    // Verify admin permission
+    const room = this.roomManager.getRoom(mapping.roomId)
+    const adminPlayer = room?.players.find(p => p.id === mapping.playerId)
+    if (!adminPlayer?.isAdmin) {
+      socket.emit('error', {
+        type: 'error',
+        code: 'UNAUTHORIZED',
+        message: 'Admin access required'
+      })
+      return
+    }
+
+    console.log(`Admin ${adminPlayer.nickname} performing hard reset on room ${mapping.roomId}`)
+
+    const roomId = mapping.roomId
+
+    // Clear all players from room
+    const currentRoom = this.roomManager.getRoom(roomId)
+    if (currentRoom) {
+      // Remove all players
+      for (const player of currentRoom.players) {
+        this.roomManager.removePlayer(roomId, player.id)
+      }
+    }
+
+    // Clear voting handler
+    const votingHandler = this.getVotingHandler(roomId)
+    votingHandler.reset()
+
+    // Clear socket mappings for this room
+    for (const [socketId, socketMapping] of this.socketToPlayer.entries()) {
+      if (socketMapping.roomId === roomId) {
+        this.socketToPlayer.delete(socketId)
+      }
+    }
+
+    // Clear booted players for this room
+    for (const [key] of this.bootedPlayers.entries()) {
+      if (key.startsWith(`${roomId}:`)) {
+        this.bootedPlayers.delete(key)
+      }
+    }
+
+    // Fully reset server state: back to title phase (intro/lobby mode)
+    const titleRoom: TitleState = {
+      phase: 'title',
+      roomId,
+      players: []
+    }
+    this.roomManager.updateRoomState(roomId, titleRoom)
+
+    // Broadcast reset to all clients in room (they'll see title/intro state)
+    const roomStateMessage: RoomStateMessage = {
+      type: 'room:state',
+      state: titleRoom
+    }
+    this.io.to(roomId).emit('room:state', roomStateMessage)
   }
 
   /**

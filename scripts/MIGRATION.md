@@ -7,9 +7,13 @@ Scripts to migrate your local jkbox data from one laptop to another.
 ✅ **Environment files** (.env with API keys & credentials)
 ✅ **PostgreSQL database** (articles, questions, feed sources)
 ✅ **Gordo memory** (vector database for session search)
-✅ **Redis cache** (session data, game state)
+✅ **Persistent data** (future: high scores, clips, device IDs, game logs)
 
-❌ **NOT migrated:** Node modules (reinstall), Ollama models (re-pull), build artifacts
+❌ **NOT migrated:**
+- Node modules (reinstall)
+- Ollama models (re-pull)
+- Build artifacts
+- **Server state** (active rooms/players - ephemeral by design, cleared after 5min idle)
 
 ---
 
@@ -147,14 +151,11 @@ The import script will prompt you to drop and recreate. Choose:
 - **Yes (y):** Replace with imported data
 - **No (n):** Keep existing database (skip import)
 
-### Redis import fails
-Non-critical. Game will work without Redis cache (will just rebuild state).
+### Server state showing stale data
+By design! Server state (active rooms/players) is intentionally cleared if >5min old on startup.
+This ensures fresh start after laptop migration - no orphaned game sessions.
 
-To fix:
-```bash
-sudo systemctl status redis-server
-sudo systemctl start redis-server
-```
+Long-term persistent data (high scores, clips, etc.) will be in separate storage (future).
 
 ### Gordo memory missing after import
 Non-critical. Will rebuild on next MCP query.

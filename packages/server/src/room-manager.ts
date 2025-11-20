@@ -12,23 +12,41 @@ export class RoomManager {
   }
 
   /**
-   * Restore rooms from persistent storage (call on server startup)
+   * Restore server state from crash-recovery storage (call on server startup)
+   * Clears server state if stale (>5 minutes old) - like a fresh boot
    */
   restoreFromStorage(): void {
     if (!this.storage) {
       return
     }
 
+    // Check if server state is stale (>5 minutes old)
+    const SERVER_STATE_STALENESS_THRESHOLD = 5 * 60 * 1000 // 5 minutes in milliseconds
+    const lastUpdate = this.storage.getLastUpdateTimestamp()
+
+    if (lastUpdate !== null) {
+      const age = Date.now() - lastUpdate
+      const ageMinutes = Math.floor(age / 60000)
+
+      if (age > SERVER_STATE_STALENESS_THRESHOLD) {
+        console.log(`⚠️  Server state is stale (${ageMinutes} minutes old) - resetting`)
+        this.storage.clearAllServerState()
+        return // Don't restore stale data
+      }
+    }
+
+    // Server state is fresh - restore it (crash recovery)
     const rooms = this.storage.getAllRooms()
     for (const room of rooms) {
       this.rooms.set(room.roomId, room)
     }
 
-    console.log(`✓ Restored ${rooms.length} room(s) from storage`)
+    console.log(`✓ Restored ${rooms.length} room(s) from server state (crash recovery)`)
   }
 
   /**
-   * Persist room to storage (auto-save helper)
+   * Save room to crash-recovery storage (auto-save helper)
+   * This is server state persistence, not long-term persistent data
    */
   private persistRoom(room: RoomState): void {
     if (this.storage) {
