@@ -311,3 +311,7 @@ Journal entries reference HC outcomes:
 ### Session 14 (2025-11-19)
 
 [2025-11-19 02:07 UTC] Session 14✓. Crash recovery→8 failing tests. Root cause: Uncommitted frame duration validation (F1<F2<F3) + return type mismatch in findTripletsOptimized. Fixes: 1) Return type consistency (line 254 returned array, should return object), 2) Updated function signature, 3) Fixed 5 tests with equal/uniform frame durations→strictly increasing (3s<5s<7s). T:480/480✓ (cinema-pippin 199/199✓). C:07d6760. Pattern: New validations require corresponding test updates. Non-determinism suspicion→actually deterministic test data issue. JKLES: ∅ (recovery session).
+
+### Session 2 (2025-11-20) - jkbox
+
+[2025-11-20 07:59 UTC] Session 2✓. ARCHITECTURE.md created→comprehensive storage architecture doc (server state vs persistent data, discriminated unions, Socket.io channels, XState future). Terminology standardized: "server state" (ephemeral, 5min crash recovery) vs "persistent data" (long-term). Updated README, MIGRATION, fsm/README→consistent terms✓. Fixed .mcp.json: /home/jkraybill→/home/jk (username mismatch)→gordo-memory MCP ready✓. T:111/111✓. C:e9dac95. Pattern: Documentation sweep prevents future confusion. JKLES: 8/10.
