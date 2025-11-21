@@ -17,6 +17,9 @@ import { CinemaPippinGame } from '../../game-modules/cinema-pippin/cinema-pippin
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
 	name = 'Cinema Pippin'
+	description = 'Subtitle insanity - write hilarious dialogue for classic films!'
+	sortOrder = 100
+	visible = true
 	minPlayers = 1
 	maxPlayers = 20
 

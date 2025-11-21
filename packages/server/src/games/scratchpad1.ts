@@ -17,12 +17,15 @@
  * 6. Complete and return to lobby
  */
 
+import type * as React from 'react'
 import type {
 	PluggableGameModule,
 	GameModuleContext,
 	Player,
 	GameState,
-	GameAction
+	GameAction,
+	JumbotronProps,
+	ControllerProps
 } from '@jkbox/shared'
 
 export interface Scratchpad1State {
@@ -49,10 +52,13 @@ export interface Scratchpad1State {
 export const Scratchpad1Game: PluggableGameModule = {
 	id: 'scratchpad1',
 	name: 'Scratchpad1',
+	description: 'Video playback test module',
+	sortOrder: 900,
+	visible: false,
 	minPlayers: 1,
 	maxPlayers: 12,
 
-	async initialize(_players: Player[], _context: GameModuleContext): Promise<GameState> {
+	initialize(_players: Player[], _context: GameModuleContext): Promise<GameState> {
 		console.log('[Scratchpad1] Initializing Machine Girl clip playback')
 
 		const movieDir = 'the-machine-girl-2008-remastered-1080p-bluray-x264-watchable'
@@ -65,10 +71,10 @@ export const Scratchpad1Game: PluggableGameModule = {
 			phaseStartedAt: Date.now()
 		}
 
-		return state
+		return Promise.resolve(state)
 	},
 
-	async handleAction(action: GameAction, state: GameState): Promise<GameState> {
+	handleAction(action: GameAction, state: GameState): Promise<GameState> {
 		const currentState = state as Scratchpad1State
 
 		console.log('[Scratchpad1] Handling action:', action.type)
@@ -79,7 +85,7 @@ export const Scratchpad1Game: PluggableGameModule = {
 
 				if (nextPhase === 'complete') {
 					console.log('[Scratchpad1] All clips complete, ending game')
-					return currentState
+					return Promise.resolve(currentState)
 				}
 
 				// Determine which clip and subtitle type based on next phase
@@ -96,26 +102,27 @@ export const Scratchpad1Game: PluggableGameModule = {
 				}
 
 				console.log('[Scratchpad1] Advanced to phase:', nextPhase)
-				return nextState
+				return Promise.resolve(nextState)
 			}
 
 			default:
 				console.warn('[Scratchpad1] Unknown action type:', action.type)
-				return currentState
+				return Promise.resolve(currentState)
 		}
 	},
 
-	async loadJumbotronComponent() {
+	loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {
 		throw new Error('loadJumbotronComponent should only be called on client')
 	},
 
-	async loadControllerComponent() {
+	loadControllerComponent(): Promise<React.ComponentType<ControllerProps>> {
 		throw new Error('loadControllerComponent should only be called on client')
 	},
 
-	async cleanup() {
+	cleanup(): Promise<void> {
 		console.log('[Scratchpad1] Cleaning up')
 		// No timers or resources to clean up - everything is client-driven
+		return Promise.resolve()
 	}
 }
 

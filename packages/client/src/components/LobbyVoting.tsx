@@ -7,29 +7,38 @@ interface LobbyVotingProps {
 	playerId: string
 }
 
-const GAME_OPTIONS: Array<{ id: GameId; name: string; description: string }> = [
-	{
-		id: 'cinephile',
-		name: 'Cinema Pippin',
-		description: 'Subtitle insanity'
-	},
-	{
-		id: 'fake-facts',
-		name: 'Fake Facts',
-		description: 'Fool your friends with fake trivia answers!'
-	},
-	{
-		id: 'test',
-		name: 'Test',
-		description: 'Currently under testing'
-	}
-]
+interface GameOption {
+	id: GameId
+	name: string
+	description: string
+	minPlayers: number
+	maxPlayers: number
+}
 
 export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotingProps) {
 	const { socket } = useSocket()
 	const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
 	const [isReady, setIsReady] = useState(false)
 	const [votingState, setVotingState] = useState<RoomVotingState | null>(null)
+	const [gameOptions, setGameOptions] = useState<GameOption[]>([])
+	const [isLoadingGames, setIsLoadingGames] = useState(true)
+
+	// Fetch available games from server
+	useEffect(() => {
+		const fetchGames = async () => {
+			try {
+				const response = await fetch('/api/games')
+				const data = (await response.json()) as { games: GameOption[] }
+				setGameOptions(data.games)
+			} catch (error) {
+				console.error('[LobbyVoting] Failed to fetch games:', error)
+			} finally {
+				setIsLoadingGames(false)
+			}
+		}
+
+		void fetchGames()
+	}, [])
 
 	// Listen for voting updates from server
 	useEffect(() => {
@@ -105,6 +114,27 @@ export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotin
 
 	const totalPlayers = votingState ? Object.keys(votingState.readyStates).length : 0
 
+	if (isLoadingGames) {
+		return (
+			<div style={styles.container}>
+				<div style={styles.header}>
+					<h2 style={styles.title}>Loading games...</h2>
+				</div>
+			</div>
+		)
+	}
+
+	if (gameOptions.length === 0) {
+		return (
+			<div style={styles.container}>
+				<div style={styles.header}>
+					<h2 style={styles.title}>No games available</h2>
+					<div style={styles.subtitle}>Contact the administrator</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div style={styles.container}>
 			<div style={styles.header}>
@@ -115,7 +145,7 @@ export function LobbyVoting({ roomId: _roomId, playerId: _playerId }: LobbyVotin
 			</div>
 
 			<div style={styles.gameList}>
-				{GAME_OPTIONS.map((game) => (
+				{gameOptions.map((game) => (
 					<label
 						key={game.id}
 						style={{

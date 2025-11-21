@@ -13,13 +13,22 @@ class GameRegistryImpl {
 
 	constructor() {
 		// Register all games
-		this.register(createUnimplementedGame('fake-facts', 'Fake Facts'))
-		this.register(createUnimplementedGame('cinephile', 'Cinephile'))
+		this.register(
+			createUnimplementedGame('fake-facts', 'Fake Facts', 'Fool your friends!', 200, false)
+		)
+		this.register(createUnimplementedGame('cinephile', 'Cinephile', 'Legacy game', 999, false))
 		this.register(CinemaPippinGameModule)
 		this.register(Scratchpad1Game)
 
 		// 'test' game - maps to currently-under-testing module (Scratchpad1)
-		this.register({ ...Scratchpad1Game, id: 'test', name: 'Test' })
+		this.register({
+			...Scratchpad1Game,
+			id: 'test',
+			name: 'Test',
+			description: 'Testing module',
+			sortOrder: 999,
+			visible: false
+		})
 	}
 
 	register(module: PluggableGameModule): void {

@@ -27,13 +27,22 @@ interface UnimplementedGameState {
 /**
  * Create unimplemented game module for a specific game ID
  */
-export function createUnimplementedGame(gameId: GameId, gameName: string): PluggableGameModule {
+export function createUnimplementedGame(
+	gameId: GameId,
+	gameName: string,
+	description: string = 'Coming soon!',
+	sortOrder: number = 999,
+	visible: boolean = false
+): PluggableGameModule {
 	let completeCallback: ((results: ModuleGameResults) => void) | null = null
 	let countdownTimer: NodeJS.Timeout | null = null
 
 	return {
 		id: gameId,
 		name: gameName,
+		description,
+		sortOrder,
+		visible,
 		minPlayers: 1,
 		maxPlayers: 12,
 

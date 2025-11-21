@@ -15,12 +15,14 @@ import type {
 	AdminUpdateConfigMessage,
 	AdminPauseMessage,
 	AdminUnpauseMessage,
-	RestoreSessionMessage
+	RestoreSessionMessage,
+	GameAction
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { RoomStorage } from './storage/room-storage'
 import { ConnectionHandler } from './connection-handler'
 import { initInspector } from './fsm/inspector'
+import { gameRegistry } from './games/game-registry'
 
 // Initialize XState inspector (dev only, controlled by XSTATE_INSPECT env var)
 initInspector()
@@ -58,14 +60,18 @@ app.use(cors())
 app.use(express.json())
 
 // Serve video clips and subtitles with explicit CORS headers
-app.use('/clips', (req, res, next) => {
-	// Set CORS headers explicitly for video and subtitle files
-	res.setHeader('Access-Control-Allow-Origin', '*')
-	res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-	res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type')
-	res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range')
-	next()
-}, express.static('/home/jk/jkbox/generated/clips'))
+app.use(
+	'/clips',
+	(req, res, next) => {
+		// Set CORS headers explicitly for video and subtitle files
+		res.setHeader('Access-Control-Allow-Origin', '*')
+		res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+		res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type')
+		res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range')
+		next()
+	},
+	express.static('/home/jk/jkbox/generated/clips')
+)
 
 // Helper function to get the Windows host's LAN IP (for WSL2)
 function getLocalNetworkIP(): string | null {
@@ -114,6 +120,22 @@ app.get('/api/network-ip', (_req, res) => {
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
 	res.json({ status: 'ok', service: 'jkbox-server' })
+})
+
+// Get available games (for lobby voting)
+app.get('/api/games', (_req, res) => {
+	const allGames = gameRegistry.list()
+	const visibleGames = allGames
+		.filter((game) => game.visible)
+		.sort((a, b) => a.sortOrder - b.sortOrder)
+		.map((game) => ({
+			id: game.id,
+			name: game.name,
+			description: game.description,
+			minPlayers: game.minPlayers,
+			maxPlayers: game.maxPlayers
+		}))
+	res.json({ games: visibleGames })
 })
 
 // Get/create singleton room (for Jumbotron)
@@ -240,8 +262,8 @@ io.on('connection', (socket) => {
 	})
 
 	// Handle game actions (player/jumbotron interactions during gameplay)
-	socket.on('game:action', (action: any) => {
-		connectionHandler.handleGameAction(socket, action)
+	socket.on('game:action', (action: GameAction) => {
+		void connectionHandler.handleGameAction(socket, action)
 	})
 
 	// Handle disconnect
@@ -267,7 +289,7 @@ function gracefulShutdown(signal: string) {
 		console.log('✓ HTTP server closed')
 
 		// Close all Socket.IO connections
-		io.close(() => {
+		void io.close(() => {
 			console.log('✓ Socket.IO connections closed')
 
 			// Stop heartbeat monitor

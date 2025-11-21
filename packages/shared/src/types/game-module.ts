@@ -124,6 +124,21 @@ export interface GameModule {
 	name: string
 
 	/**
+	 * Short description shown in lobby voting
+	 */
+	description: string
+
+	/**
+	 * Sort order for lobby display (lower = higher priority)
+	 */
+	sortOrder: number
+
+	/**
+	 * Whether game is visible/selectable in lobby
+	 */
+	visible: boolean
+
+	/**
 	 * Player count constraints
 	 */
 	minPlayers: number
