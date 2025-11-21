@@ -17,7 +17,7 @@ import { CinemaPippinGame } from '../../game-modules/cinema-pippin/cinema-pippin
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
 	name = 'Cinema Pippin'
-	minPlayers = 2
+	minPlayers = 1
 	maxPlayers = 20
 
 	private game: CinemaPippinGame
