@@ -3,7 +3,7 @@
  * Displays video playback, voting screens, and results
  */
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import type { JumbotronProps, GameState } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
@@ -11,17 +11,18 @@ import type { Subtitle } from './VideoPlayer'
 interface CinemaPippinGameState extends GameState {
 	phase: string
 	currentClipIndex?: number
+	currentClip?: {
+		clipNumber: 1 | 2 | 3
+		videoUrl: string
+		subtitles: Subtitle[]
+	}
 }
 
 export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
-	const [isPlayingVideo, setIsPlayingVideo] = useState(false)
-	const [videoUrl, setVideoUrl] = useState<string>('')
-	const [subtitles, setSubtitles] = useState<Subtitle[]>([])
 
 	// Handle video completion
 	const handleVideoComplete = () => {
-		setIsPlayingVideo(false)
 		// Notify server that video has completed
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		sendToServer({
@@ -29,17 +30,6 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 			payload: {}
 		})
 	}
-
-	// Load video and subtitles when phase changes to clip_playback
-	useEffect(() => {
-		if (gameState.phase === 'clip_playback') {
-			// For now, use placeholder data
-			// In full implementation, this will come from server state
-			setVideoUrl('/placeholder-video.mp4')
-			setSubtitles([])
-			setIsPlayingVideo(true)
-		}
-	}, [gameState.phase])
 
 	// Render different views based on game phase
 	const renderPhaseContent = () => {
@@ -61,15 +51,15 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 				)
 
 			case 'clip_playback':
-				if (isPlayingVideo && videoUrl) {
+				if (gameState.currentClip) {
 					return (
 						<VideoPlayer
-							videoUrl={videoUrl}
-							subtitles={subtitles}
+							videoUrl={gameState.currentClip.videoUrl}
+							subtitles={gameState.currentClip.subtitles}
 							onComplete={handleVideoComplete}
 							fadeInDuration={1000}
 							fadeOutDuration={1000}
-							preRollText={`Act ${(gameState.currentClipIndex ?? 0) + 1}`}
+							preRollText={`Act ${gameState.currentClip.clipNumber}`}
 							preRollDuration={2000}
 						/>
 					)
@@ -89,11 +79,11 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 				)
 
 			case 'voting_playback':
-				if (isPlayingVideo && videoUrl) {
+				if (gameState.currentClip) {
 					return (
 						<VideoPlayer
-							videoUrl={videoUrl}
-							subtitles={subtitles}
+							videoUrl={gameState.currentClip.videoUrl}
+							subtitles={gameState.currentClip.subtitles}
 							onComplete={handleVideoComplete}
 							fadeInDuration={1000}
 							fadeOutDuration={1000}
