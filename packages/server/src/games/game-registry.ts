@@ -16,7 +16,6 @@ class GameRegistryImpl {
 		this.register(
 			createUnimplementedGame('fake-facts', 'Fake Facts', 'Fool your friends!', 200, false)
 		)
-		this.register(createUnimplementedGame('cinephile', 'Cinephile', 'Legacy game', 999, false))
 		this.register(CinemaPippinGameModule)
 		this.register(Scratchpad1Game)
 

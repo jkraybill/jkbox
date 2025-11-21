@@ -19,7 +19,6 @@ import type {
 } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
-	cinephile: 'Cinema Pippin',
 	'fake-facts': 'Fake Facts',
 	'cinema-pippin': 'Cinema Pippin',
 	scratchpad1: 'Scratchpad1',
@@ -29,7 +28,6 @@ const GAME_NAMES: Record<string, string> = {
 // Map game IDs to their Controller components
 const GAME_CONTROLLERS: Record<GameId, React.ComponentType<ControllerProps>> = {
 	'fake-facts': UnimplementedGameController,
-	cinephile: UnimplementedGameController,
 	'cinema-pippin': CinemaPippinController,
 	scratchpad1: Scratchpad1Controller,
 	test: Scratchpad1Controller

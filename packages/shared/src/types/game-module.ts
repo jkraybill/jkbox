@@ -7,7 +7,7 @@ import type { Player } from './player'
 /**
  * Game identifier (e.g., 'fake-facts', 'drawful', 'trivia-murder')
  */
-export type GameId = 'fake-facts' | 'cinephile' | 'cinema-pippin' | 'scratchpad1' | 'test'
+export type GameId = 'fake-facts' | 'cinema-pippin' | 'scratchpad1' | 'test'
 
 /**
  * Game-specific state (opaque to lobby system)

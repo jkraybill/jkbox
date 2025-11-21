@@ -12,7 +12,6 @@ import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbot
 import type { LobbyCountdownMessage, RoomState, GameId, JumbotronProps } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
-	cinephile: 'Cinema Pippin',
 	'fake-facts': 'Fake Facts',
 	'cinema-pippin': 'Cinema Pippin',
 	scratchpad1: 'Scratchpad1',
@@ -22,7 +21,6 @@ const GAME_NAMES: Record<string, string> = {
 // Map game IDs to their Jumbotron components
 const GAME_COMPONENTS: Record<GameId, React.ComponentType<JumbotronProps>> = {
 	'fake-facts': UnimplementedGameJumbotron,
-	cinephile: UnimplementedGameJumbotron,
 	'cinema-pippin': CinemaPippinJumbotron,
 	scratchpad1: Scratchpad1Jumbotron,
 	test: Scratchpad1Jumbotron
