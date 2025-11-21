@@ -3,6 +3,8 @@
  * Parse, merge, and manipulate SRT subtitle files
  */
 
+import { readFileSync } from 'fs'
+
 export interface Subtitle {
 	index: number
 	startTime: string // "00:00:01,000"
@@ -74,9 +76,6 @@ export function formatSRT(subtitles: Subtitle[]): string {
  * Read and parse SRT file
  */
 export function loadSRT(srtPath: string): Subtitle[] {
-	// Dynamic import to avoid bundling fs in client
-	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-	const fs = require('fs') as typeof import('fs')
-	const content = fs.readFileSync(srtPath, 'utf-8')
+	const content = readFileSync(srtPath, 'utf-8')
 	return parseSRT(content)
 }
