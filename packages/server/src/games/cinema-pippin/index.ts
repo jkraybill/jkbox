@@ -41,8 +41,8 @@ class CinemaPippinModule implements PluggableGameModule {
 
 	handleAction(action: GameAction, _state: GameState): Promise<GameState> {
 		// Handle player actions
-		const { playerId } = action.payload as { playerId: string }
-		this.game.handlePlayerAction(playerId, action)
+		console.log('[CinemaPippinModule] Received action:', action)
+		this.game.handlePlayerAction(action.playerId, action)
 
 		return Promise.resolve(this.game.getState() as GameState)
 	}
