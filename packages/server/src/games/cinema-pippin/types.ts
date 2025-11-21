@@ -20,7 +20,7 @@ export interface FilmData {
 export interface Answer {
 	id: string
 	text: string
-	authorId: 'house' | string
+	authorId: string // 'house' or player ID
 	votedBy: string[]
 }
 
@@ -56,4 +56,6 @@ export interface CinemaPippinState {
 	endGameVotes: Map<string, 'lobby' | 'again'>
 	answerTimeout: number
 	houseAnswerCount: number
+	answerCollectionStartTime?: number // Timestamp when answer_collection started
+	totalPlayers?: number // Total number of players (for auto-advance check)
 }

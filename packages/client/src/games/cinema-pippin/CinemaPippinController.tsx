@@ -11,6 +11,7 @@ interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
 	answerTimeout?: number
+	answerCollectionStartTime?: number
 	playerAnswers?: Map<string, string> | Record<string, string>
 }
 
@@ -31,28 +32,35 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 		}
 	}, [gameState.playerAnswers, playerId])
 
-	// Countdown timer
+	// Countdown timer - sync with server timestamp
 	useEffect(() => {
 		if (gameState.phase !== 'answer_collection') {
 			return
 		}
 
-		// Reset timer when entering answer collection phase
-		setTimeRemaining(gameState.answerTimeout ?? 60)
+		// Reset submitted state when entering answer collection phase
 		setHasSubmitted(false)
 
-		const interval = setInterval(() => {
-			setTimeRemaining((prev) => {
-				if (prev <= 0) {
-					clearInterval(interval)
-					return 0
-				}
-				return prev - 1
-			})
-		}, 1000)
+		// Calculate time remaining based on server timestamp
+		const updateTimer = () => {
+			if (gameState.answerCollectionStartTime) {
+				const elapsed = Math.floor((Date.now() - gameState.answerCollectionStartTime) / 1000)
+				const remaining = Math.max(0, (gameState.answerTimeout ?? 60) - elapsed)
+				setTimeRemaining(remaining)
+			} else {
+				// Fallback if no timestamp
+				setTimeRemaining(gameState.answerTimeout ?? 60)
+			}
+		}
+
+		// Update immediately
+		updateTimer()
+
+		// Then update every second
+		const interval = setInterval(updateTimer, 1000)
 
 		return () => clearInterval(interval)
-	}, [gameState.phase, gameState.answerTimeout])
+	}, [gameState.phase, gameState.answerTimeout, gameState.answerCollectionStartTime])
 
 	const handleSubmitAnswer = (answer: string) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call

@@ -43,7 +43,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			filmTitle: '',
 			endGameVotes: new Map(),
 			answerTimeout: 60,
-			houseAnswerCount: 1
+			houseAnswerCount: 1,
+			totalPlayers: playerIds.length
 		}
 	}
 
@@ -150,6 +151,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			case 'VIDEO_COMPLETE':
 				if (this.state.phase === 'clip_playback') {
 					this.state.phase = 'answer_collection'
+					this.state.answerCollectionStartTime = Date.now()
 					console.log('[CinemaPippinGame] Advanced to answer_collection')
 				}
 				break
@@ -158,7 +160,21 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				// Handle answer submission
 				const { answer } = gameAction.payload as { answer: string }
 				this.state.playerAnswers.set(_playerId, answer)
-				console.log('[CinemaPippinGame] Player', _playerId, 'submitted answer')
+				console.log(
+					'[CinemaPippinGame] Player',
+					_playerId,
+					'submitted answer (',
+					this.state.playerAnswers.size,
+					'/',
+					this.state.totalPlayers,
+					')'
+				)
+
+				// Auto-advance if all players have submitted
+				if (this.state.totalPlayers && this.state.playerAnswers.size >= this.state.totalPlayers) {
+					console.log('[CinemaPippinGame] All players submitted, advancing to voting_playback')
+					this.state.phase = 'voting_playback'
+				}
 				break
 			}
 

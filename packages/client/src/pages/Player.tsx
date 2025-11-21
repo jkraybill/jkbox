@@ -130,6 +130,13 @@ export function Player() {
 		}
 	}, [socket])
 
+	// Clear countdown when game starts
+	useEffect(() => {
+		if (room?.phase === 'playing') {
+			setCountdown(null)
+		}
+	}, [room?.phase])
+
 	if (restoring) {
 		return (
 			<div style={styles.container}>
