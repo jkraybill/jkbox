@@ -19,9 +19,9 @@ const GAME_OPTIONS: Array<{ id: GameId; name: string; description: string }> = [
 		description: 'Fool your friends with fake trivia answers!'
 	},
 	{
-		id: 'cinema-pippin',
-		name: 'Cinema Pippin',
-		description: 'Coming soon!'
+		id: 'test',
+		name: 'Test',
+		description: 'Currently under testing'
 	}
 ]
 

@@ -5,24 +5,30 @@
 
 import type { PluggableGameModule, GameId } from '@jkbox/shared'
 import { createUnimplementedGame } from './unimplemented-game'
+import { Scratchpad1Game } from './scratchpad1'
+import { CinemaPippinGameModule } from './cinema-pippin'
 
 class GameRegistryImpl {
 	private games: Map<GameId, PluggableGameModule> = new Map()
 
 	constructor() {
-		// Register all games (currently all use placeholder)
+		// Register all games
 		this.register(createUnimplementedGame('fake-facts', 'Fake Facts'))
 		this.register(createUnimplementedGame('cinephile', 'Cinephile'))
-		this.register(createUnimplementedGame('cinema-pippin', 'Cinema Pippin'))
+		this.register(CinemaPippinGameModule)
+		this.register(Scratchpad1Game)
+
+		// 'test' game - maps to currently-under-testing module (Scratchpad1)
+		this.register({ ...Scratchpad1Game, id: 'test', name: 'Test' })
 	}
 
 	register(module: PluggableGameModule): void {
 		if (this.games.has(module.id)) {
-			console.warn(`[GameRegistry] Game ${module.id} already registered, overwriting`)
+			// Game already registered, overwriting
 		}
 
 		this.games.set(module.id, module)
-		console.log(`[GameRegistry] Registered game: ${module.name} (${module.id})`)
+		// Registered game
 	}
 
 	get(gameId: GameId): PluggableGameModule | undefined {

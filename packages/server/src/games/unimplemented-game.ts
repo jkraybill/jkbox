@@ -49,32 +49,47 @@ export function createUnimplementedGame(gameId: GameId, gameName: string): Plugg
 				countdown: 5
 			}
 
-			// Start countdown timer (tick every second)
+			// Start countdown timer with pause support (check every 100ms)
 			let secondsRemaining = 5
+			let lastTickTime = Date.now()
+
 			countdownTimer = setInterval(() => {
-				secondsRemaining--
-
-				if (secondsRemaining <= 0) {
-					// Countdown complete - exit to lobby
-					if (countdownTimer) {
-						clearInterval(countdownTimer)
-						countdownTimer = null
-					}
-
-					console.log(`[UnimplementedGame:${gameId}] Countdown complete, returning to lobby`)
-
-					// Call completion callback
-					if (completeCallback) {
-						completeCallback({
-							winners: [], // No winners in placeholder
-							scores: Object.fromEntries(players.map((p) => [p.id, 0])), // Everyone gets 0
-							achievements: []
-						})
-					}
-				} else {
-					console.log(`[UnimplementedGame:${gameId}] Countdown: ${secondsRemaining}s`)
+				// Check if paused - if so, skip this tick
+				if (context.isPaused()) {
+					lastTickTime = Date.now() // Reset tick timer when paused
+					return
 				}
-			}, 1000)
+
+				// Check if enough time has elapsed (1 second)
+				const now = Date.now()
+				const elapsed = now - lastTickTime
+
+				if (elapsed >= 1000) {
+					lastTickTime = now
+					secondsRemaining--
+
+					if (secondsRemaining <= 0) {
+						// Countdown complete - exit to lobby
+						if (countdownTimer) {
+							clearInterval(countdownTimer)
+							countdownTimer = null
+						}
+
+						console.log(`[UnimplementedGame:${gameId}] Countdown complete, returning to lobby`)
+
+						// Call completion callback
+						if (completeCallback) {
+							completeCallback({
+								winners: [], // No winners in placeholder
+								scores: Object.fromEntries(players.map((p) => [p.id, 0])), // Everyone gets 0
+								achievements: []
+							})
+						}
+					} else {
+						console.log(`[UnimplementedGame:${gameId}] Countdown: ${secondsRemaining}s`)
+					}
+				}
+			}, 100) // Check every 100ms for responsiveness
 
 			return state
 		},

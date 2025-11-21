@@ -14,8 +14,7 @@ const GAME_NAMES: Record<string, string> = {
 	cinephile: 'Cinema Pippin',
 	'fake-facts': 'Fake Facts',
 	'cinema-pippin': 'Cinema Pippin',
-	scratchpad1: 'Scratchpad1',
-	test: 'Test'
+	scratchpad1: 'Scratchpad1'
 }
 
 // Map game IDs to their Jumbotron components
@@ -23,8 +22,7 @@ const GAME_COMPONENTS: Record<GameId, React.ComponentType<any>> = {
 	'fake-facts': UnimplementedGameJumbotron,
 	cinephile: UnimplementedGameJumbotron,
 	'cinema-pippin': UnimplementedGameJumbotron,
-	scratchpad1: Scratchpad1Jumbotron,
-	test: Scratchpad1Jumbotron
+	scratchpad1: Scratchpad1Jumbotron
 }
 
 export function Jumbotron() {
@@ -53,19 +51,14 @@ export function Jumbotron() {
 		const style = document.createElement('style')
 		style.id = 'jumbotron-no-scroll'
 		style.textContent = `
-      html, body, #root {
+      html, body {
         overflow: hidden !important;
         height: 100vh !important;
         width: 100vw !important;
-        background-color: #000000 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
       }
       * {
         scrollbar-width: none !important; /* Firefox */
         -ms-overflow-style: none !important; /* IE and Edge */
-        box-sizing: border-box !important;
       }
       *::-webkit-scrollbar {
         display: none !important; /* Chrome, Safari, Opera */
@@ -191,14 +184,6 @@ export function Jumbotron() {
 		}
 	}, [socket, room, isConnected])
 
-	// Clear countdown when room transitions to playing phase
-	useEffect(() => {
-		if (room?.phase === 'playing' && countdown) {
-			console.log('[Jumbotron] Clearing countdown overlay (game started)')
-			setCountdown(null)
-		}
-	}, [room?.phase, countdown])
-
 	// Handle Pippin intro completion (transition title → lobby)
 	// Wrapped in useCallback to prevent infinite re-render loop
 	const handleIntroComplete = useCallback(async () => {
@@ -269,23 +254,16 @@ export function Jumbotron() {
 
 	// Lobby and beyond - show room state
 	return (
-		<div
-			style={{
-				...styles.container,
-				padding: room.phase === 'playing' ? 0 : '2vh 2vw'
-			}}
-		>
+		<div style={styles.container}>
 			{/* Visual feedback for hard reset (Ctrl-K) */}
 			{resetFeedback && <div style={styles.resetFeedback}>🔄 Server Reset!</div>}
 
 			{/* Only show header when NOT in voting mode (voting has its own header) */}
-			{!(room.phase === 'lobby' && room.players.length > 0) &&
-				room.phase !== 'countdown' &&
-				room.phase !== 'playing' && (
-					<div style={styles.header}>
-						<h1 style={styles.title}>Pippin's Playhouse</h1>
-					</div>
-				)}
+			{!(room.phase === 'lobby' && room.players.length > 0) && room.phase !== 'countdown' && (
+				<div style={styles.header}>
+					<h1 style={styles.title}>Pippin's Playhouse</h1>
+				</div>
+			)}
 
 			{/* Phase-based rendering */}
 			{room.phase === 'lobby' && room.players.length === 0 ? (
@@ -321,15 +299,13 @@ export function Jumbotron() {
 				</div>
 			) : room.phase === 'playing' ? (
 				// Playing: Render game module's Jumbotron component
-			<>
 				{(() => {
-					const GameComponent = GAME_COMPONENTS[room.gameId as GameId]
-					if (!GameComponent) {
-						return <div style={styles.error}>Unknown game: {room.gameId}</div>
-					}
-					return <GameComponent gameState={room.gameState} players={room.players} />
-				})()}
-			</>
+				const GameComponent = GAME_COMPONENTS[room.gameId]
+				if (!GameComponent) {
+					return <div style={styles.error}>Unknown game: {room.gameId}</div>
+				}
+				return <GameComponent gameState={room.gameState} players={room.players} />
+			})()}
 			) : room.phase === 'results' ? (
 				// Results: Show winners and scores
 				<div style={styles.content}>
@@ -390,6 +366,7 @@ const styles = {
 	container: {
 		width: '100vw',
 		height: '100vh',
+		padding: '2vh 2vw',
 		fontFamily: 'var(--font-family)',
 		backgroundColor: 'var(--color-bg-dark)',
 		color: 'var(--color-text-primary)',

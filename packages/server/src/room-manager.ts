@@ -278,6 +278,37 @@ export class RoomManager {
 	}
 
 	/**
+	 * Update game state within playing phase
+	 * Called by: ConnectionHandler when game actions are processed
+	 */
+	updateGameState(roomId: string, newGameState: GameState): PlayingState | null {
+		const room = this.rooms.get(roomId)
+
+		if (!room) {
+			console.error(`[RoomManager] Cannot update game state: room ${roomId} not found`)
+			return null
+		}
+
+		if (room.phase !== 'playing') {
+			console.error(
+				`[RoomManager] Cannot update game state: room ${roomId} is in ${room.phase} phase, expected playing`
+			)
+			return null
+		}
+
+		// Update the game state
+		const updatedRoom: PlayingState = {
+			...room,
+			gameState: newGameState
+		}
+
+		this.rooms.set(roomId, updatedRoom)
+		this.persistRoom(updatedRoom)
+
+		return updatedRoom
+	}
+
+	/**
 	 * Transition room from playing → results
 	 * Called by: GameModuleHost when game calls context.complete(results)
 	 */

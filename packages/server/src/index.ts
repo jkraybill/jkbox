@@ -13,6 +13,8 @@ import type {
 	AdminBackToLobbyMessage,
 	AdminHardResetMessage,
 	AdminUpdateConfigMessage,
+	AdminPauseMessage,
+	AdminUnpauseMessage,
 	RestoreSessionMessage
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
@@ -54,6 +56,16 @@ roomManager.restoreFromStorage()
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+// Serve video clips and subtitles with explicit CORS headers
+app.use('/clips', (req, res, next) => {
+	// Set CORS headers explicitly for video and subtitle files
+	res.setHeader('Access-Control-Allow-Origin', '*')
+	res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+	res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type')
+	res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range')
+	next()
+}, express.static('/home/jk/jkbox/generated/clips'))
 
 // Helper function to get the Windows host's LAN IP (for WSL2)
 function getLocalNetworkIP(): string | null {
@@ -217,6 +229,21 @@ io.on('connection', (socket) => {
 		connectionHandler.handleUpdateConfig(socket, message)
 	})
 
+	// Handle admin pause
+	socket.on('admin:pause', (message: AdminPauseMessage) => {
+		connectionHandler.handlePause(socket, message)
+	})
+
+	// Handle admin unpause
+	socket.on('admin:unpause', (message: AdminUnpauseMessage) => {
+		connectionHandler.handleUnpause(socket, message)
+	})
+
+	// Handle game actions (player/jumbotron interactions during gameplay)
+	socket.on('game:action', (action: any) => {
+		connectionHandler.handleGameAction(socket, action)
+	})
+
 	// Handle disconnect
 	socket.on('disconnect', () => {
 		console.log(`Client disconnected: ${socket.id}`)
@@ -230,5 +257,38 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 	console.log(`🎮 jkbox server running on http://localhost:${PORT}`)
 	console.log(`📡 WebSocket server ready (listening on all network interfaces)`)
 })
+
+// Graceful shutdown handler
+function gracefulShutdown(signal: string) {
+	console.log(`\n⚠️  Received ${signal}, shutting down gracefully...`)
+
+	// Stop accepting new connections
+	httpServer.close(() => {
+		console.log('✓ HTTP server closed')
+
+		// Close all Socket.IO connections
+		io.close(() => {
+			console.log('✓ Socket.IO connections closed')
+
+			// Stop heartbeat monitor
+			connectionHandler.stopHeartbeatMonitor()
+			console.log('✓ Heartbeat monitor stopped')
+
+			// Storage is auto-closed by better-sqlite3 on process exit
+			console.log('✓ Shutdown complete')
+			process.exit(0)
+		})
+	})
+
+	// Force exit after 5 seconds if graceful shutdown fails
+	setTimeout(() => {
+		console.error('⚠️  Graceful shutdown timed out, forcing exit')
+		process.exit(1)
+	}, 5000)
+}
+
+// Register shutdown handlers
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 
 export { app, httpServer, io }

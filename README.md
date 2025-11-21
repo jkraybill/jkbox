@@ -4,6 +4,18 @@
 
 ---
 
+## 🎮 Quick Start - Launch Jumbotron
+
+To launch the jumbotron display with video autoplay enabled (Windows PowerShell):
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --autoplay-policy=no-user-gesture-required http://localhost:3000/jumbotron
+```
+
+This bypasses browser autoplay restrictions for a smooth party game experience.
+
+---
+
 ## Current Status
 
 **Version:** 0.1.0 (Project scaffolding complete, ready for TDD implementation)

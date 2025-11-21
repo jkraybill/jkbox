@@ -15,6 +15,8 @@ import type {
 	AdminBackToLobbyMessage,
 	AdminHardResetMessage,
 	AdminUpdateConfigMessage,
+	AdminPauseMessage,
+	AdminUnpauseMessage,
 	RestoreSessionMessage,
 	GameId,
 	CountdownState,
@@ -368,6 +370,12 @@ export class ConnectionHandler {
 		// Make socket join the Socket.io room to receive broadcasts
 		void socket.join(message.roomId)
 
+		// Map socket to room for game action handling (jumbotron can send game actions)
+		this.socketToPlayer.set(socket.id, {
+			playerId: 'jumbotron',
+			roomId: message.roomId
+		})
+
 		// Send initial room state (snapshot for jumbotron reload tolerance)
 		const roomStateMessage: RoomStateMessage = {
 			type: 'room:state',
@@ -460,7 +468,7 @@ export class ConnectionHandler {
 	}
 
 	/**
-	 * Start countdown for game launch
+	 * Start countdown for game launch (with pause support)
 	 */
 	private async startCountdown(roomId: string, selectedGame: GameId): Promise<void> {
 		const COUNTDOWN_FROM = 5
@@ -495,8 +503,9 @@ export class ConnectionHandler {
 		}
 		this.io.to(roomId).emit('room:state', stateMessage)
 
-		// Emit countdown messages (5, 4, 3, 2, 1, 0)
-		for (let i = COUNTDOWN_FROM; i >= 0; i--) {
+		// Countdown with pause support
+		let currentCount = COUNTDOWN_FROM
+		while (currentCount >= 0) {
 			// Check if countdown was cancelled
 			const currentRoom = this.roomManager.getRoom(roomId)
 			if (currentRoom?.phase !== 'countdown') {
@@ -504,24 +513,36 @@ export class ConnectionHandler {
 				return
 			}
 
-			const countdownMessage: LobbyCountdownMessage = {
-				type: 'lobby:countdown',
-				countdown: i,
-				selectedGame
+			// Check if paused - if so, wait and retry
+			if (currentRoom.pauseState.isPaused) {
+				await new Promise((resolve) => {
+					const timer = setTimeout(resolve, 100) // Check pause state every 100ms
+					this.countdownTimers.set(roomId, timer)
+				})
+				continue // Skip to next iteration without decrementing
 			}
 
+			// Emit countdown message
+			const countdownMessage: LobbyCountdownMessage = {
+				type: 'lobby:countdown',
+				countdown: currentCount,
+				selectedGame
+			}
 			this.io.to(roomId).emit('lobby:countdown', countdownMessage)
 
 			// Update countdown state
-			countdownState.secondsRemaining = i
+			countdownState.secondsRemaining = currentCount
 			this.roomManager.updateRoomState(roomId, countdownState)
 
-			// Wait 1 second between counts
-			if (i > 0) {
+			// Wait 1 second before next count (or finish if at 0)
+			if (currentCount > 0) {
 				await new Promise((resolve) => {
 					const timer = setTimeout(resolve, 1000)
 					this.countdownTimers.set(roomId, timer)
 				})
+				currentCount--
+			} else {
+				break
 			}
 		}
 
@@ -610,7 +631,7 @@ export class ConnectionHandler {
 	}
 
 	/**
-	 * Handle game completion - broadcast results and schedule cleanup
+	 * Handle game completion - broadcast results and schedule cleanup (with pause support)
 	 * Called by: GameModuleHost when game calls context.complete()
 	 */
 	private handleGameComplete(roomId: string): void {
@@ -626,40 +647,57 @@ export class ConnectionHandler {
 			this.io.to(roomId).emit('room:state', stateMessage)
 		}
 
-		// Schedule automatic transition back to lobby after 10 seconds
-		const RESULTS_DISPLAY_TIME = 10000 // 10 seconds
-		setTimeout(() => {
-			void (async () => {
-				console.log(
-					`[ConnectionHandler] Results display time elapsed, returning room ${roomId} to lobby`
-				)
+		// Schedule automatic transition back to lobby after 10 seconds (with pause support)
+		void (async () => {
+			const RESULTS_DISPLAY_TIME = 10000 // 10 seconds
+			const CHECK_INTERVAL = 100 // Check every 100ms
+			let elapsed = 0
 
-				// Cleanup game host
-				const gameHost = this.gameHosts.get(roomId)
-				if (gameHost) {
-					await gameHost.cleanup()
-					this.gameHosts.delete(roomId)
+			while (elapsed < RESULTS_DISPLAY_TIME) {
+				// Check if room still exists and is in results phase
+				const currentRoom = this.roomManager.getRoom(roomId)
+				if (!currentRoom || currentRoom.phase !== 'results') {
+					console.log(`[ConnectionHandler] Results phase cancelled for room ${roomId}`)
+					return
 				}
 
-				// Transition to lobby
-				const lobbyRoom = this.roomManager.transitionResultsToLobby(roomId)
-				if (lobbyRoom) {
-					// Reset voting state
-					const handler = this.getVotingHandler(roomId)
-					handler.reset()
-
-					// Broadcast new lobby state
-					const lobbyMessage: RoomStateMessage = {
-						type: 'room:state',
-						state: lobbyRoom
-					}
-					this.io.to(roomId).emit('room:state', lobbyMessage)
-					this.broadcastVotingUpdate(roomId)
-
-					console.log(`✅ Room ${roomId} returned to lobby`)
+				// If paused, don't increment elapsed time
+				if (!currentRoom.pauseState.isPaused) {
+					elapsed += CHECK_INTERVAL
 				}
-			})()
-		}, RESULTS_DISPLAY_TIME)
+
+				await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL))
+			}
+
+			console.log(
+				`[ConnectionHandler] Results display time elapsed, returning room ${roomId} to lobby`
+			)
+
+			// Cleanup game host
+			const gameHost = this.gameHosts.get(roomId)
+			if (gameHost) {
+				await gameHost.cleanup()
+				this.gameHosts.delete(roomId)
+			}
+
+			// Transition to lobby
+			const lobbyRoom = this.roomManager.transitionResultsToLobby(roomId)
+			if (lobbyRoom) {
+				// Reset voting state
+				const handler = this.getVotingHandler(roomId)
+				handler.reset()
+
+				// Broadcast new lobby state
+				const lobbyMessage: RoomStateMessage = {
+					type: 'room:state',
+					state: lobbyRoom
+				}
+				this.io.to(roomId).emit('room:state', lobbyMessage)
+				this.broadcastVotingUpdate(roomId)
+
+				console.log(`✅ Room ${roomId} returned to lobby`)
+			}
+		})()
 	}
 
 	/**
@@ -1031,6 +1069,126 @@ export class ConnectionHandler {
 	}
 
 	/**
+	 * Admin: Pause the game
+	 */
+	handlePause(socket: Socket, _message: AdminPauseMessage): void {
+		const mapping = this.socketToPlayer.get(socket.id)
+		if (!mapping) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'NOT_IN_ROOM',
+				message: 'You must join a room first'
+			})
+			return
+		}
+
+		// Verify admin permission
+		const room = this.roomManager.getRoom(mapping.roomId)
+		const adminPlayer = room?.players.find((p) => p.id === mapping.playerId)
+		if (!adminPlayer?.isAdmin) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'UNAUTHORIZED',
+				message: 'Admin access required'
+			})
+			return
+		}
+
+		if (!room) {
+			return
+		}
+
+		// Only pause during countdown, playing, or results phases
+		if (
+			room.phase !== 'countdown' &&
+			room.phase !== 'playing' &&
+			room.phase !== 'results'
+		) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'INVALID_PHASE',
+				message: 'Can only pause during countdown, playing, or results phases'
+			})
+			return
+		}
+
+		console.log(`Admin ${adminPlayer.nickname} pausing game in room ${mapping.roomId}`)
+
+		// Update pause state
+		const updatedRoom = {
+			...room,
+			pauseState: {
+				isPaused: true,
+				pausedBy: adminPlayer.id,
+				pausedByName: adminPlayer.nickname,
+				pausedAt: new Date()
+			}
+		}
+
+		this.roomManager.updateRoomState(mapping.roomId, updatedRoom)
+
+		// Broadcast updated room state to all clients
+		const roomStateMessage: RoomStateMessage = {
+			type: 'room:state',
+			state: updatedRoom
+		}
+		this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+	}
+
+	/**
+	 * Admin: Unpause the game
+	 */
+	handleUnpause(socket: Socket, _message: AdminUnpauseMessage): void {
+		const mapping = this.socketToPlayer.get(socket.id)
+		if (!mapping) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'NOT_IN_ROOM',
+				message: 'You must join a room first'
+			})
+			return
+		}
+
+		// Verify admin permission
+		const room = this.roomManager.getRoom(mapping.roomId)
+		const adminPlayer = room?.players.find((p) => p.id === mapping.playerId)
+		if (!adminPlayer?.isAdmin) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'UNAUTHORIZED',
+				message: 'Admin access required'
+			})
+			return
+		}
+
+		if (!room) {
+			return
+		}
+
+		console.log(`Admin ${adminPlayer.nickname} unpausing game in room ${mapping.roomId}`)
+
+		// Update pause state
+		const updatedRoom = {
+			...room,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
+		}
+
+		this.roomManager.updateRoomState(mapping.roomId, updatedRoom)
+
+		// Broadcast updated room state to all clients
+		const roomStateMessage: RoomStateMessage = {
+			type: 'room:state',
+			state: updatedRoom
+		}
+		this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+	}
+
+	/**
 	 * Start monitoring player heartbeats
 	 */
 	startHeartbeatMonitor(): void {
@@ -1105,6 +1263,61 @@ export class ConnectionHandler {
 		if (this.heartbeatMonitor) {
 			clearInterval(this.heartbeatMonitor)
 			this.heartbeatMonitor = null
+		}
+	}
+
+	/**
+	 * Handle game action from player or jumbotron
+	 */
+	async handleGameAction(_socket: Socket, action: any): Promise<void> {
+		console.log('[ConnectionHandler] Received game:action:', action)
+
+		// Get room ID from socket mapping or action
+		const mapping = this.socketToPlayer.get(_socket.id)
+		if (!mapping) {
+			console.error('[ConnectionHandler] game:action from unmapped socket:', _socket.id)
+			return
+		}
+
+		const { roomId } = mapping
+		const room = this.roomManager.getRoom(roomId)
+
+		if (!room) {
+			console.error(`[ConnectionHandler] game:action for non-existent room: ${roomId}`)
+			return
+		}
+
+		if (room.phase !== 'playing') {
+			console.warn(
+				`[ConnectionHandler] game:action received but room ${roomId} is in ${room.phase} phase, not playing`
+			)
+			return
+		}
+
+		// Get the game host for this room
+		const gameHost = this.gameHosts.get(roomId)
+		if (!gameHost) {
+			console.error(`[ConnectionHandler] No game host found for room ${roomId}`)
+			return
+		}
+
+		// Forward action to game host
+		try {
+			const newGameState = await gameHost.handleAction(action)
+
+			// Update room with new game state
+			const updatedRoom = this.roomManager.updateGameState(roomId, newGameState)
+			if (updatedRoom) {
+				// Broadcast updated state to all clients
+				const stateMessage: RoomStateMessage = {
+					type: 'room:state',
+					state: updatedRoom
+				}
+				this.io.to(roomId).emit('room:state', stateMessage)
+				console.log(`[ConnectionHandler] game:action processed, state updated for room ${roomId}`)
+			}
+		} catch (error) {
+			console.error('[ConnectionHandler] Error handling game action:', error)
 		}
 	}
 }

@@ -4,7 +4,9 @@ import type {
 	AdminBootPlayerMessage,
 	AdminBackToLobbyMessage,
 	AdminHardResetMessage,
-	AdminUpdateConfigMessage
+	AdminUpdateConfigMessage,
+	AdminPauseMessage,
+	AdminUnpauseMessage
 } from '@jkbox/shared'
 
 export function AdminTools() {
@@ -61,6 +63,28 @@ export function AdminTools() {
 		socket.emit('admin:update-config', message)
 	}
 
+	const handlePauseToggle = () => {
+		if (!socket) return
+
+		// Only countdown, playing, and results phases have pauseState
+		const isPaused =
+			room.phase === 'countdown' || room.phase === 'playing' || room.phase === 'results'
+				? room.pauseState.isPaused
+				: false
+
+		if (isPaused) {
+			const message: AdminUnpauseMessage = {
+				type: 'admin:unpause'
+			}
+			socket.emit('admin:unpause', message)
+		} else {
+			const message: AdminPauseMessage = {
+				type: 'admin:pause'
+			}
+			socket.emit('admin:pause', message)
+		}
+	}
+
 	return (
 		<div style={styles.overlay}>
 			<div style={styles.panel}>
@@ -89,6 +113,24 @@ export function AdminTools() {
 				</div>
 
 				<div style={styles.adminActions}>
+					<button
+						onClick={handlePauseToggle}
+						style={{
+							...styles.actionButton,
+							...((room.phase === 'countdown' ||
+						room.phase === 'playing' ||
+						room.phase === 'results') &&
+						room.pauseState.isPaused &&
+						styles.pauseButtonActive)
+						}}
+					>
+						{(room.phase === 'countdown' ||
+						room.phase === 'playing' ||
+						room.phase === 'results') &&
+					room.pauseState.isPaused
+						? '▶️ Resume'
+						: '⏸️ Pause'}
+					</button>
 					<button onClick={handleBackToLobby} style={styles.actionButton}>
 						🔄 Back to Lobby
 					</button>
@@ -235,6 +277,9 @@ const styles = {
 		fontSize: '14px',
 		fontWeight: 'bold',
 		transition: 'background-color 0.2s'
+	},
+	pauseButtonActive: {
+		backgroundColor: '#f59e0b'
 	},
 	resetButton: {
 		flex: 1,

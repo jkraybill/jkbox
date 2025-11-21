@@ -59,10 +59,21 @@ export class GameModuleHost {
 			`[GameModuleHost] Initializing game: ${this.gameModule.name} for room: ${this.roomId}`
 		)
 
-		// Create context with completion callback
+		// Create context with completion callback and pause state checker
 		const context: GameModuleContext = {
 			roomId: this.roomId,
-			complete: this.handleGameComplete.bind(this)
+			complete: this.handleGameComplete.bind(this),
+			isPaused: () => {
+				const room = this.roomManager.getRoom(this.roomId)
+				// Only countdown, playing, and results phases have pauseState
+				if (
+					room &&
+					(room.phase === 'countdown' || room.phase === 'playing' || room.phase === 'results')
+				) {
+					return room.pauseState.isPaused
+				}
+				return false
+			}
 		}
 
 		// Initialize game and get initial state

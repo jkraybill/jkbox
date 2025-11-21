@@ -7,16 +7,30 @@ import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import { AdminToggleTab } from '../components/AdminToggleTab'
 import { AdminTools } from '../components/AdminTools'
+import { UnimplementedGameController } from '../games/UnimplementedGameController'
+import { Scratchpad1Controller } from '../games/Scratchpad1Controller'
 import type {
 	LobbyCountdownMessage,
 	RestoreSessionMessage,
-	JoinSuccessMessage
+	JoinSuccessMessage,
+	GameId
 } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
 	cinephile: 'Cinema Pippin',
 	'fake-facts': 'Fake Facts',
-	'cinema-pippin': 'Cinema Pippin'
+	'cinema-pippin': 'Cinema Pippin',
+	scratchpad1: 'Scratchpad1',
+	test: 'Test'
+}
+
+// Map game IDs to their Controller components
+const GAME_CONTROLLERS: Record<GameId, React.ComponentType<any>> = {
+	'fake-facts': UnimplementedGameController,
+	cinephile: UnimplementedGameController,
+	'cinema-pippin': UnimplementedGameController,
+	scratchpad1: Scratchpad1Controller,
+	test: Scratchpad1Controller
 }
 
 export function Player() {
@@ -143,11 +157,27 @@ export function Player() {
 					<LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
 				)}
 
-				{room?.phase === 'playing' && (
-					<div style={styles.gameCard}>
-						<div style={styles.gameText}>Game in progress!</div>
-					</div>
-				)}
+				{room?.phase === 'playing' && (() => {
+					const GameController = GAME_CONTROLLERS[room.gameId as GameId]
+					if (!GameController) {
+						return (
+							<div style={styles.gameCard}>
+								<div style={styles.gameText}>Unknown game: {room.gameId}</div>
+							</div>
+						)
+					}
+					return (
+						<GameController
+							gameState={room.gameState}
+							playerId={currentPlayer.id}
+							onAction={(action: any) => {
+								if (socket) {
+									socket.emit('game:action', action)
+								}
+							}}
+						/>
+					)
+				})()}
 
 				{room?.phase === 'results' && (
 					<div style={styles.gameCard}>
@@ -178,6 +208,20 @@ export function Player() {
 			{/* Countdown overlay */}
 			{countdown && (
 				<Countdown count={countdown.count} gameName={countdown.game} variant="player" />
+			)}
+
+			{/* Pause modal (for non-admin players) */}
+			{room &&
+				(room.phase === 'countdown' || room.phase === 'playing' || room.phase === 'results') &&
+				room.pauseState.isPaused &&
+				!currentPlayer.isAdmin && (
+				<div style={styles.pauseOverlay}>
+					<div style={styles.pauseModal}>
+						<div style={styles.pauseIcon}>⏸️</div>
+						<div style={styles.pauseTitle}>GAME PAUSED</div>
+						<div style={styles.pauseBy}>BY {room.pauseState.pausedByName}</div>
+					</div>
+				</div>
 			)}
 
 			{/* Admin UI (only for admin players) */}
@@ -288,6 +332,40 @@ const styles = {
 	},
 	statusDisconnected: {
 		color: 'var(--color-status-disconnected)'
+	},
+	pauseOverlay: {
+		position: 'fixed' as const,
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: 'rgba(0, 0, 0, 0.95)',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		zIndex: 9999,
+		pointerEvents: 'auto' as const
+	},
+	pauseModal: {
+		textAlign: 'center' as const,
+		padding: '40px'
+	},
+	pauseIcon: {
+		fontSize: '120px',
+		marginBottom: '20px',
+		animation: 'pulse 2s ease-in-out infinite'
+	},
+	pauseTitle: {
+		fontSize: '48px',
+		fontWeight: 'bold',
+		color: '#ffffff',
+		marginBottom: '16px',
+		letterSpacing: '4px'
+	},
+	pauseBy: {
+		fontSize: '24px',
+		color: '#f59e0b',
+		fontWeight: 'bold'
 	},
 	error: {
 		padding: 'var(--space-xl)',

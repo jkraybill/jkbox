@@ -7,7 +7,7 @@ import type { Player } from './player'
 /**
  * Game identifier (e.g., 'fake-facts', 'drawful', 'trivia-murder')
  */
-export type GameId = 'fake-facts' | 'cinephile' | 'cinema-pippin'
+export type GameId = 'fake-facts' | 'cinephile' | 'cinema-pippin' | 'scratchpad1' | 'test'
 
 /**
  * Game-specific state (opaque to lobby system)
@@ -83,6 +83,12 @@ export interface GameModuleContext {
 	 * Room ID for this game session
 	 */
 	roomId: string
+
+	/**
+	 * Check if the game is currently paused
+	 * Game modules should check this before running timers/transitions
+	 */
+	isPaused: () => boolean
 }
 
 /**

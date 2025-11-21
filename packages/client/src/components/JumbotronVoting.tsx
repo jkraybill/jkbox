@@ -12,7 +12,9 @@ interface JumbotronVotingProps {
 const GAME_NAMES: Record<GameId, string> = {
 	cinephile: 'Cinema Pippin',
 	'fake-facts': 'Fake Facts',
-	'cinema-pippin': 'Cinema Pippin'
+	'cinema-pippin': 'Cinema Pippin',
+	scratchpad1: 'Scratchpad1',
+	test: 'Test'
 }
 
 export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
