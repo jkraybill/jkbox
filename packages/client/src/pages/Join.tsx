@@ -68,7 +68,6 @@ export function Join() {
 
 		// Send join message with persistent device ID
 		const deviceId = getDeviceId()
-		console.log('[JOIN] Emitting join message:', { nickname: nickname.trim(), deviceId, roomId })
 
 		socket.emit('join', {
 			type: 'join',
@@ -82,6 +81,11 @@ export function Join() {
 		<div style={styles.container}>
 			<div style={styles.header}>
 				<h1 style={styles.title}>Join Party</h1>
+				{roomId && (
+					<div style={styles.roomCode}>
+						Room: <span style={styles.roomCodeValue}>{roomId}</span>
+					</div>
+				)}
 			</div>
 
 			<form onSubmit={handleSubmit} style={styles.form}>
