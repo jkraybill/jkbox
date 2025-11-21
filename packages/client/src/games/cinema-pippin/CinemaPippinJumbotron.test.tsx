@@ -35,15 +35,13 @@ describe('CinemaPippinJumbotron', () => {
 			expect(sendToServer).not.toHaveBeenCalled()
 
 			// Fast-forward 3 seconds
-			vi.advanceTimersByTime(3000)
+			await vi.advanceTimersByTimeAsync(3000)
 
 			// Should send INTRO_COMPLETE event
-			await waitFor(() => {
-				expect(sendToServer).toHaveBeenCalledWith({
-					playerId: 'jumbotron',
-					type: 'INTRO_COMPLETE',
-					payload: {}
-				})
+			expect(sendToServer).toHaveBeenCalledWith({
+				playerId: 'jumbotron',
+				type: 'INTRO_COMPLETE',
+				payload: {}
 			})
 		})
 
@@ -107,7 +105,7 @@ describe('CinemaPippinJumbotron', () => {
 			expect(video?.src).toContain('/test.mp4')
 		})
 
-		it('should send VIDEO_COMPLETE when video ends', () => {
+		it('should send VIDEO_COMPLETE when video ends', async () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'clip_playback',
@@ -126,6 +124,9 @@ describe('CinemaPippinJumbotron', () => {
 			// Simulate video ending
 			const video = container.querySelector('video')
 			video?.dispatchEvent(new Event('ended'))
+
+			// VideoPlayer has fadeOutDuration (1000ms) before calling onComplete
+			await vi.advanceTimersByTimeAsync(1000)
 
 			expect(sendToServer).toHaveBeenCalledWith({
 				playerId: 'jumbotron',
