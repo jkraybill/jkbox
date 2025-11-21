@@ -7,7 +7,7 @@
  *   .\launch-jumbotron.ps1 (Windows)
  */
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import srtToVtt from 'srt-webvtt'
 import type { JumbotronProps } from '@jkbox/shared'
 import { useSocket } from '../lib/use-socket'
@@ -36,7 +36,7 @@ interface Scratchpad1State {
 
 const FADE_DURATION = 500 // 500ms fade duration
 
-export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
+export function Scratchpad1Jumbotron({ state: gameState }: JumbotronProps) {
 	const state = gameState as Scratchpad1State
 	const { socket } = useSocket()
 	const { room } = useGameStore()
@@ -137,73 +137,101 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 		void loadSubtitle()
 	}, [state.subtitleUrl])
 
+	const advancePhase = useCallback(() => {
+		console.log(
+			'[Scratchpad1] advancePhase called, socket:',
+			!!socket,
+			'current phase:',
+			state.phase
+		)
+		if (!socket) {
+			console.error('[Scratchpad1] Cannot advance phase - no socket!')
+			return
+		}
+		console.log('[Scratchpad1] Emitting game:action to advance phase from', state.phase)
+		socket.emit('game:action', {
+			playerId: 'jumbotron',
+			type: 'advance-phase',
+			payload: {}
+		})
+		console.log('[Scratchpad1] game:action emitted successfully')
+	}, [socket, state.phase])
+
 	// Handle fade-in phases
 	useEffect(() => {
-		if (state.phase.startsWith('fade-in-')) {
-			console.log('[Scratchpad1] Starting fade-in animation for phase:', state.phase)
-			// Start fade-in animation
-			setOpacity(0)
-			const startTime = Date.now()
-			let animationFrameId: number
+		if (!state.phase.startsWith('fade-in-')) {
+			return
+		}
 
-			const animate = () => {
-				const elapsed = Date.now() - startTime
-				const progress = Math.min(elapsed / FADE_DURATION, 1)
-				setOpacity(progress)
+		console.log('[Scratchpad1] Starting fade-in animation for phase:', state.phase)
+		// Start fade-in animation
+		setOpacity(0)
+		const startTime = Date.now()
+		let animationFrameId: number
 
-				if (progress < 1) {
-					animationFrameId = requestAnimationFrame(animate)
-				} else {
-					// Fade complete, advance to play phase
-					console.log('[Scratchpad1] Fade-in complete, advancing phase (elapsed:', elapsed, 'progress:', progress, ')')
-					// Use setTimeout to ensure this happens outside the animation frame
-					setTimeout(() => advancePhase(), 0)
-				}
-			}
-			console.log('[Scratchpad1] Fade-in animation started, first frame scheduled')
+		const animate = () => {
+			const elapsed = Date.now() - startTime
+			const progress = Math.min(elapsed / FADE_DURATION, 1)
+			setOpacity(progress)
 
-			animationFrameId = requestAnimationFrame(animate)
-
-			return () => {
-				if (animationFrameId) {
-					cancelAnimationFrame(animationFrameId)
-				}
+			if (progress < 1) {
+				animationFrameId = requestAnimationFrame(animate)
+			} else {
+				// Fade complete, advance to play phase
+				console.log(
+					'[Scratchpad1] Fade-in complete, advancing phase (elapsed:',
+					elapsed,
+					'progress:',
+					progress,
+					')'
+				)
+				// Use setTimeout to ensure this happens outside the animation frame
+				setTimeout(() => advancePhase(), 0)
 			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [state.phase])
+		console.log('[Scratchpad1] Fade-in animation started, first frame scheduled')
+
+		animationFrameId = requestAnimationFrame(animate)
+
+		return () => {
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId)
+			}
+		}
+	}, [state.phase, advancePhase])
 
 	// Handle fade-out phases
 	useEffect(() => {
-		if (state.phase.startsWith('fade-out-')) {
-			// Start fade-out animation
-			setOpacity(1)
-			const startTime = Date.now()
-			let animationFrameId: number
+		if (!state.phase.startsWith('fade-out-')) {
+			return
+		}
 
-			const animate = () => {
-				const elapsed = Date.now() - startTime
-				const progress = Math.min(elapsed / FADE_DURATION, 1)
-				setOpacity(1 - progress)
+		// Start fade-out animation
+		setOpacity(1)
+		const startTime = Date.now()
+		let animationFrameId: number
 
-				if (progress < 1) {
-					animationFrameId = requestAnimationFrame(animate)
-				} else {
-					// Fade complete, advance to next phase
-					setTimeout(() => advancePhase(), 0)
-				}
-			}
+		const animate = () => {
+			const elapsed = Date.now() - startTime
+			const progress = Math.min(elapsed / FADE_DURATION, 1)
+			setOpacity(1 - progress)
 
-			animationFrameId = requestAnimationFrame(animate)
-
-			return () => {
-				if (animationFrameId) {
-					cancelAnimationFrame(animationFrameId)
-				}
+			if (progress < 1) {
+				animationFrameId = requestAnimationFrame(animate)
+			} else {
+				// Fade complete, advance to next phase
+				setTimeout(() => advancePhase(), 0)
 			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [state.phase])
+
+		animationFrameId = requestAnimationFrame(animate)
+
+		return () => {
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId)
+			}
+		}
+	}, [state.phase, advancePhase])
 
 	// Handle play phases
 	useEffect(() => {
@@ -247,21 +275,6 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 		}
 	}, [isPlaying])
 
-	const advancePhase = () => {
-		console.log('[Scratchpad1] advancePhase called, socket:', !!socket, 'current phase:', state.phase)
-		if (!socket) {
-			console.error('[Scratchpad1] Cannot advance phase - no socket!')
-			return
-		}
-		console.log('[Scratchpad1] Emitting game:action to advance phase from', state.phase)
-		socket.emit('game:action', {
-			playerId: 'jumbotron',
-			type: 'advance-phase',
-			payload: {}
-		})
-		console.log('[Scratchpad1] game:action emitted successfully')
-	}
-
 	const handleVideoEnd = () => {
 		console.log('[Scratchpad1] Video ended, advancing to fade-out')
 		advancePhase()
@@ -295,6 +308,8 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 					// Enable all text tracks
 					for (let i = 0; i < videoElement.textTracks.length; i++) {
 						const track = videoElement.textTracks[i]
+						if (!track) continue
+
 						console.log(`[Scratchpad1] TextTrack ${i} before:`, {
 							kind: track.kind,
 							language: track.language,
@@ -312,18 +327,18 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 		}, 200)
 	}
 
-	const handleVideoError = (error: any) => {
+	const handleVideoError = (error: unknown) => {
 		console.error('[Scratchpad1] Video error:', error, 'URL:', state.videoUrl)
 		// Try to fetch the URL to see what the actual error is
 		fetch(state.videoUrl)
-			.then(response => {
+			.then((response) => {
 				console.log('[Scratchpad1] Fetch test response:', response.status, response.statusText)
 				return response.headers.get('content-type')
 			})
-			.then(contentType => {
+			.then((contentType) => {
 				console.log('[Scratchpad1] Video content-type:', contentType)
 			})
-			.catch(fetchError => {
+			.catch((fetchError) => {
 				console.error('[Scratchpad1] Fetch test failed:', fetchError)
 			})
 	}
@@ -351,13 +366,7 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 					onEnded={handleVideoEnd}
 				>
 					{subtitleVtt && (
-						<track
-							kind="subtitles"
-							src={subtitleVtt}
-							srcLang="en"
-							label="English"
-							default
-						/>
+						<track kind="subtitles" src={subtitleVtt} srcLang="en" label="English" default />
 					)}
 				</video>
 			</div>
@@ -378,7 +387,6 @@ export function Scratchpad1Jumbotron({ gameState }: JumbotronProps) {
 				<div>Playing: {isPlaying ? 'Yes' : 'No'}</div>
 				<div>VTT: {subtitleVtt ? 'Loaded' : 'None'}</div>
 			</div>
-
 		</div>
 	)
 }

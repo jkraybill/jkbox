@@ -32,7 +32,8 @@
   "lint-staged": {
     "packages/*/src/**/*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "bash -c 'npm run build --workspace=@jkbox/shared && npm run build --workspace=@jkbox/client'"
     ]
   },
   "devDependencies": {

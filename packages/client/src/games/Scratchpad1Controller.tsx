@@ -16,7 +16,7 @@ interface Scratchpad1State {
 	transitionDuration: number
 }
 
-export function Scratchpad1Controller({ gameState }: ControllerProps) {
+export function Scratchpad1Controller({ state: gameState }: ControllerProps) {
 	const state = gameState as Scratchpad1State
 
 	const getPhaseMessage = () => {

@@ -7,14 +7,17 @@ import type { PluggableGameModule } from '@jkbox/shared'
 export const Scratchpad1Game: PluggableGameModule = {
 	id: 'scratchpad1',
 	name: 'Scratchpad1',
+	description: 'Video playback test',
+	sortOrder: 900,
+	visible: false,
 	minPlayers: 1,
 	maxPlayers: 12,
 
-	async initialize() {
+	initialize() {
 		throw new Error('Client should not call initialize - server-side only')
 	},
 
-	async handleAction() {
+	handleAction() {
 		throw new Error('Client should not call handleAction - server-side only')
 	},
 

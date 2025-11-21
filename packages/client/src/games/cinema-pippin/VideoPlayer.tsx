@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export interface Subtitle {
 	index: number
@@ -22,8 +22,16 @@ export interface VideoPlayerProps {
  * Format: "00:01:30,500" → 90.5
  */
 function srtTimestampToSeconds(timestamp: string): number {
-	const [time, ms] = timestamp.split(',')
-	const [hours, minutes, seconds] = time.split(':').map(Number)
+	const parts = timestamp.split(',')
+	const time = parts[0]
+	const ms = parts[1]
+	if (!time || !ms) return 0
+
+	const timeParts = time.split(':').map(Number)
+	const hours = timeParts[0] ?? 0
+	const minutes = timeParts[1] ?? 0
+	const seconds = timeParts[2] ?? 0
+
 	return hours * 3600 + minutes * 60 + seconds + Number(ms) / 1000
 }
 
@@ -51,12 +59,14 @@ export function VideoPlayer({
 
 	// Hide pre-roll after duration
 	useEffect(() => {
-		if (preRollText) {
-			const timer = setTimeout(() => {
-				setShowPreRoll(false)
-			}, preRollDuration)
-			return () => clearTimeout(timer)
+		if (!preRollText) {
+			return
 		}
+
+		const timer = setTimeout(() => {
+			setShowPreRoll(false)
+		}, preRollDuration)
+		return () => clearTimeout(timer)
 	}, [preRollText, preRollDuration])
 
 	// Handle video time updates for subtitle display

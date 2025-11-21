@@ -48,18 +48,17 @@ export interface Achievement {
  * Props for game's jumbotron component (TV display)
  */
 export interface JumbotronProps {
-	gameState: GameState
-	players: Player[]
-	onAdminAction?: (action: string) => void // Optional admin controls
+	state: GameState
+	sendToServer: (action: GameAction) => void
 }
 
 /**
  * Props for game's controller component (player phone)
  */
 export interface ControllerProps {
-	gameState: GameState
+	state: GameState
 	playerId: string
-	onAction: (action: GameAction) => void
+	sendToServer: (action: GameAction) => void
 }
 
 /**

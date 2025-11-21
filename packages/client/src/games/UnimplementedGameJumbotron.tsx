@@ -11,7 +11,7 @@ interface UnimplementedGameState {
 	countdown: number
 }
 
-export function UnimplementedGameJumbotron({ gameState }: JumbotronProps) {
+export function UnimplementedGameJumbotron({ state: gameState }: JumbotronProps) {
 	const state = gameState as UnimplementedGameState
 	const [countdown, setCountdown] = useState(5)
 

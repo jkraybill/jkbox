@@ -3,11 +3,11 @@
  * Handles answer submission for C1/C2/C3 clips
  */
 
-import React, { useState, useEffect } from 'react'
-import type { ControllerProps, GameState } from '@jkbox/shared'
+import { useState, useEffect } from 'react'
+import type { ControllerProps } from '@jkbox/shared'
 import { AnswerInput } from './AnswerInput'
 
-interface CinemaPippinGameState extends GameState {
+interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
 	answerTimeout?: number
@@ -28,31 +28,33 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 
 	// Countdown timer
 	useEffect(() => {
-		if (gameState.phase === 'answer_collection') {
-			// Reset timer when entering answer collection phase
-			setTimeRemaining(gameState.answerTimeout ?? 60)
-			setHasSubmitted(false)
-
-			const interval = setInterval(() => {
-				setTimeRemaining((prev) => {
-					if (prev <= 0) {
-						clearInterval(interval)
-						return 0
-					}
-					return prev - 1
-				})
-			}, 1000)
-
-			return () => clearInterval(interval)
+		if (gameState.phase !== 'answer_collection') {
+			return
 		}
+
+		// Reset timer when entering answer collection phase
+		setTimeRemaining(gameState.answerTimeout ?? 60)
+		setHasSubmitted(false)
+
+		const interval = setInterval(() => {
+			setTimeRemaining((prev) => {
+				if (prev <= 0) {
+					clearInterval(interval)
+					return 0
+				}
+				return prev - 1
+			})
+		}, 1000)
+
+		return () => clearInterval(interval)
 	}, [gameState.phase, gameState.answerTimeout])
 
 	const handleSubmitAnswer = (answer: string) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		sendToServer({
+			playerId,
 			type: 'SUBMIT_ANSWER',
 			payload: {
-				playerId,
 				answer
 			}
 		})

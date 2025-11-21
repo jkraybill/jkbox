@@ -326,7 +326,15 @@ export function Jumbotron() {
 						if (!GameComponent) {
 							return <div style={styles.error}>Unknown game: {room.gameId}</div>
 						}
-						return <GameComponent gameState={room.gameState} players={room.players} />
+						if (!socket) {
+							return <div style={styles.error}>Connecting...</div>
+						}
+						return (
+							<GameComponent
+								state={room.gameState}
+								sendToServer={(action) => socket.emit('game:action', action)}
+							/>
+						)
 					})()}
 				</>
 			) : room.phase === 'results' ? (

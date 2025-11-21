@@ -133,58 +133,32 @@ describe('GameModule Types', () => {
 	})
 
 	describe('JumbotronProps', () => {
-		it('should have gameState and players', () => {
-			const mockPlayers: Player[] = [
-				{
-					id: 'player-1',
-					roomId: 'ABCD',
-					nickname: 'Alice',
-					sessionToken: 'token-1',
-					isAdmin: false,
-					isHost: false,
-					score: 0,
-					connectedAt: new Date(),
-					lastSeenAt: new Date(),
-					isConnected: true
-				}
-			]
+		it('should have state and sendToServer', () => {
+			const sendToServer = (action: GameAction) => console.log(action)
 
 			const props: JumbotronProps = {
-				gameState: { round: 1 },
-				players: mockPlayers
+				state: { round: 1 },
+				sendToServer
 			}
 
-			expect(props.gameState).toEqual({ round: 1 })
-			expect(props.players).toHaveLength(1)
-		})
-
-		it('should support optional admin actions', () => {
-			const mockPlayers: Player[] = []
-			const onAdminAction = (action: string) => console.log(action)
-
-			const props: JumbotronProps = {
-				gameState: {},
-				players: mockPlayers,
-				onAdminAction
-			}
-
-			expect(props.onAdminAction).toBeDefined()
+			expect(props.state).toEqual({ round: 1 })
+			expect(props.sendToServer).toBeDefined()
 		})
 	})
 
 	describe('ControllerProps', () => {
-		it('should have gameState, playerId, and onAction', () => {
-			const onAction = (action: GameAction) => console.log(action)
+		it('should have state, playerId, and sendToServer', () => {
+			const sendToServer = (action: GameAction) => console.log(action)
 
 			const props: ControllerProps = {
-				gameState: { round: 1 },
+				state: { round: 1 },
 				playerId: 'player-1',
-				onAction
+				sendToServer
 			}
 
-			expect(props.gameState).toEqual({ round: 1 })
+			expect(props.state).toEqual({ round: 1 })
 			expect(props.playerId).toBe('player-1')
-			expect(props.onAction).toBeDefined()
+			expect(props.sendToServer).toBeDefined()
 		})
 	})
 

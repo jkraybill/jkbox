@@ -3,12 +3,11 @@
  * Displays video playback, voting screens, and results
  */
 
-import React from 'react'
-import type { JumbotronProps, GameState } from '@jkbox/shared'
+import type { JumbotronProps } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
 
-interface CinemaPippinGameState extends GameState {
+interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
 	currentClip?: {
@@ -26,6 +25,7 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 		// Notify server that video has completed
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		sendToServer({
+			playerId: 'jumbotron',
 			type: 'VIDEO_COMPLETE',
 			payload: {}
 		})
