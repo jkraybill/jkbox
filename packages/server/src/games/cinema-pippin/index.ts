@@ -12,7 +12,7 @@ import type {
 	JumbotronProps,
 	ControllerProps
 } from '@jkbox/shared'
-import { CinemaPippinGame } from '../../game-modules/cinema-pippin/cinema-pippin-game'
+import { CinemaPippinGame } from './cinema-pippin'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -30,13 +30,13 @@ class CinemaPippinModule implements PluggableGameModule {
 		this.game = new CinemaPippinGame()
 	}
 
-	async initialize(players: Player[], context: GameModuleContext): Promise<GameState> {
+	initialize(players: Player[], context: GameModuleContext): Promise<GameState> {
 		this.context = context
 
 		const playerIds = players.map((p) => p.id)
-		await this.game.initialize(playerIds)
+		this.game.initialize(playerIds)
 
-		return this.game.getState() as GameState
+		return Promise.resolve(this.game.getState() as GameState)
 	}
 
 	handleAction(action: GameAction, _state: GameState): Promise<GameState> {
