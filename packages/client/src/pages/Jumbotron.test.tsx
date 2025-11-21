@@ -183,6 +183,12 @@ describe('Jumbotron', () => {
         gameState: { round: 1 }
       }
 
+      // Mock fetch to return playing state
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ room: playingState })
+      } as Response)
+
       const { useGameStore } = await import('../store/game-store')
       const mockStore = {
         room: playingState,
@@ -192,11 +198,11 @@ describe('Jumbotron', () => {
 
       render(<Jumbotron />)
 
-      // Should show playing state (placeholder for now)
+      // Should show UnimplementedGameJumbotron for fake-facts
       await waitFor(() => {
-        expect(screen.getByText(/playing/i)).toBeInTheDocument()
+        expect(screen.getByText(/Game Not Implemented Yet/i)).toBeInTheDocument()
       })
-      expect(screen.getByText(/Fake Facts/i)).toBeInTheDocument()
+      expect(screen.getByText(/Returning to lobby/i)).toBeInTheDocument()
     })
 
     it('renders results phase with winners and scores', async () => {
