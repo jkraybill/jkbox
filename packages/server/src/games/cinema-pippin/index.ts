@@ -12,7 +12,7 @@ import type {
 	JumbotronProps,
 	ControllerProps
 } from '@jkbox/shared'
-import { CinemaPippinGame } from './cinema-pippin'
+import { CinemaPippinGame } from '../../game-modules/cinema-pippin/cinema-pippin-game'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -31,28 +31,15 @@ class CinemaPippinModule implements PluggableGameModule {
 		this.context = context
 
 		const playerIds = players.map((p) => p.id)
-		this.game.initialize(playerIds)
+		await this.game.initialize(playerIds)
 
-		return Promise.resolve(this.game.getState() as GameState)
+		return this.game.getState() as GameState
 	}
 
-	async handleAction(action: GameAction, _state: GameState): Promise<GameState> {
+	handleAction(action: GameAction, _state: GameState): Promise<GameState> {
 		// Handle player actions
-		switch (action.type) {
-			case 'SUBMIT_ANSWER': {
-				const { playerId, answer } = action.payload as { playerId: string; answer: string }
-				this.game.submitAnswer(playerId, answer)
-				break
-			}
-
-			case 'VIDEO_COMPLETE': {
-				// Auto-advance to next phase when video completes
-				this.game.advancePhase()
-				break
-			}
-
-			default:
-		}
+		const { playerId } = action.payload as { playerId: string }
+		this.game.handlePlayerAction(playerId, action)
 
 		return Promise.resolve(this.game.getState() as GameState)
 	}
