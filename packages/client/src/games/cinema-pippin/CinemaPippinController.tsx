@@ -11,7 +11,7 @@ interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
 	answerTimeout?: number
-	playerAnswers?: Map<string, string>
+	playerAnswers?: Map<string, string> | Record<string, string>
 }
 
 export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {
@@ -22,7 +22,12 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 	// Check if player has already submitted an answer
 	useEffect(() => {
 		if (gameState.playerAnswers) {
-			setHasSubmitted(gameState.playerAnswers.has(playerId))
+			// Handle both Map (server-side) and plain object (after WebSocket serialization)
+			const hasAnswer =
+				gameState.playerAnswers instanceof Map
+					? gameState.playerAnswers.has(playerId)
+					: playerId in gameState.playerAnswers
+			setHasSubmitted(hasAnswer)
 		}
 	}, [gameState.playerAnswers, playerId])
 
