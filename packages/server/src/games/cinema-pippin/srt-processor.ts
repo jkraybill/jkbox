@@ -23,9 +23,14 @@ export function parseSRT(srtContent: string): Subtitle[] {
 		const lines = block.split('\n')
 		if (lines.length < 3) continue
 
-		const index = parseInt(lines[0], 10)
+		const indexLine = lines[0]
 		const timeLine = lines[1]
+		if (!indexLine || !timeLine) continue
+
+		const index = parseInt(indexLine, 10)
 		const [startTime, endTime] = timeLine.split(' --> ')
+		if (!startTime || !endTime) continue
+
 		const text = lines.slice(2).join('\n')
 
 		subtitles.push({
