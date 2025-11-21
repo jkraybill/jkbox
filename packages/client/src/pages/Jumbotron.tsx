@@ -8,7 +8,8 @@ import { Countdown } from '../components/Countdown'
 import { getJoinUrl } from '../lib/network-url'
 import { UnimplementedGameJumbotron } from '../games/UnimplementedGameJumbotron'
 import { Scratchpad1Jumbotron } from '../games/Scratchpad1Jumbotron'
-import type { LobbyCountdownMessage, RoomState, GameId } from '@jkbox/shared'
+import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbotron'
+import type { LobbyCountdownMessage, RoomState, GameId, JumbotronProps } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
 	cinephile: 'Cinema Pippin',
@@ -19,10 +20,10 @@ const GAME_NAMES: Record<string, string> = {
 }
 
 // Map game IDs to their Jumbotron components
-const GAME_COMPONENTS: Record<GameId, React.ComponentType<any>> = {
+const GAME_COMPONENTS: Record<GameId, React.ComponentType<JumbotronProps>> = {
 	'fake-facts': UnimplementedGameJumbotron,
 	cinephile: UnimplementedGameJumbotron,
-	'cinema-pippin': UnimplementedGameJumbotron,
+	'cinema-pippin': CinemaPippinJumbotron,
 	scratchpad1: Scratchpad1Jumbotron,
 	test: Scratchpad1Jumbotron
 }
@@ -321,15 +322,15 @@ export function Jumbotron() {
 				</div>
 			) : room.phase === 'playing' ? (
 				// Playing: Render game module's Jumbotron component
-			<>
-				{(() => {
-					const GameComponent = GAME_COMPONENTS[room.gameId as GameId]
-					if (!GameComponent) {
-						return <div style={styles.error}>Unknown game: {room.gameId}</div>
-					}
-					return <GameComponent gameState={room.gameState} players={room.players} />
-				})()}
-			</>
+				<>
+					{(() => {
+						const GameComponent = GAME_COMPONENTS[room.gameId as GameId]
+						if (!GameComponent) {
+							return <div style={styles.error}>Unknown game: {room.gameId}</div>
+						}
+						return <GameComponent gameState={room.gameState} players={room.players} />
+					})()}
+				</>
 			) : room.phase === 'results' ? (
 				// Results: Show winners and scores
 				<div style={styles.content}>

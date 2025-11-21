@@ -9,11 +9,13 @@ import { AdminToggleTab } from '../components/AdminToggleTab'
 import { AdminTools } from '../components/AdminTools'
 import { UnimplementedGameController } from '../games/UnimplementedGameController'
 import { Scratchpad1Controller } from '../games/Scratchpad1Controller'
+import { CinemaPippinController } from '../games/cinema-pippin/CinemaPippinController'
 import type {
 	LobbyCountdownMessage,
 	RestoreSessionMessage,
 	JoinSuccessMessage,
-	GameId
+	GameId,
+	ControllerProps
 } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
@@ -25,10 +27,10 @@ const GAME_NAMES: Record<string, string> = {
 }
 
 // Map game IDs to their Controller components
-const GAME_CONTROLLERS: Record<GameId, React.ComponentType<any>> = {
+const GAME_CONTROLLERS: Record<GameId, React.ComponentType<ControllerProps>> = {
 	'fake-facts': UnimplementedGameController,
 	cinephile: UnimplementedGameController,
-	'cinema-pippin': UnimplementedGameController,
+	'cinema-pippin': CinemaPippinController,
 	scratchpad1: Scratchpad1Controller,
 	test: Scratchpad1Controller
 }
@@ -157,27 +159,28 @@ export function Player() {
 					<LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
 				)}
 
-				{room?.phase === 'playing' && (() => {
-					const GameController = GAME_CONTROLLERS[room.gameId as GameId]
-					if (!GameController) {
+				{room?.phase === 'playing' &&
+					(() => {
+						const GameController = GAME_CONTROLLERS[room.gameId as GameId]
+						if (!GameController) {
+							return (
+								<div style={styles.gameCard}>
+									<div style={styles.gameText}>Unknown game: {room.gameId}</div>
+								</div>
+							)
+						}
 						return (
-							<div style={styles.gameCard}>
-								<div style={styles.gameText}>Unknown game: {room.gameId}</div>
-							</div>
+							<GameController
+								state={room.gameState}
+								playerId={currentPlayer.id}
+								sendToServer={(action) => {
+									if (socket) {
+										socket.emit('game:action', action)
+									}
+								}}
+							/>
 						)
-					}
-					return (
-						<GameController
-							gameState={room.gameState}
-							playerId={currentPlayer.id}
-							onAction={(action: any) => {
-								if (socket) {
-									socket.emit('game:action', action)
-								}
-							}}
-						/>
-					)
-				})()}
+					})()}
 
 				{room?.phase === 'results' && (
 					<div style={styles.gameCard}>
@@ -215,14 +218,14 @@ export function Player() {
 				(room.phase === 'countdown' || room.phase === 'playing' || room.phase === 'results') &&
 				room.pauseState.isPaused &&
 				!currentPlayer.isAdmin && (
-				<div style={styles.pauseOverlay}>
-					<div style={styles.pauseModal}>
-						<div style={styles.pauseIcon}>⏸️</div>
-						<div style={styles.pauseTitle}>GAME PAUSED</div>
-						<div style={styles.pauseBy}>BY {room.pauseState.pausedByName}</div>
+					<div style={styles.pauseOverlay}>
+						<div style={styles.pauseModal}>
+							<div style={styles.pauseIcon}>⏸️</div>
+							<div style={styles.pauseTitle}>GAME PAUSED</div>
+							<div style={styles.pauseBy}>BY {room.pauseState.pausedByName}</div>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
 			{/* Admin UI (only for admin players) */}
 			{currentPlayer.isAdmin && (
