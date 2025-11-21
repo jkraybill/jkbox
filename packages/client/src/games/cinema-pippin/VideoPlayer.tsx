@@ -1,0 +1,153 @@
+import React, { useEffect, useRef, useState } from 'react'
+
+export interface Subtitle {
+	index: number
+	startTime: string // "00:00:01,000"
+	endTime: string // "00:00:04,000"
+	text: string
+}
+
+export interface VideoPlayerProps {
+	videoUrl: string
+	subtitles: Subtitle[]
+	onComplete: () => void
+	fadeInDuration: number
+	fadeOutDuration: number
+	preRollText?: string
+	preRollDuration?: number
+}
+
+/**
+ * Convert SRT timestamp to seconds
+ * Format: "00:01:30,500" → 90.5
+ */
+function srtTimestampToSeconds(timestamp: string): number {
+	const [time, ms] = timestamp.split(',')
+	const [hours, minutes, seconds] = time.split(':').map(Number)
+	return hours * 3600 + minutes * 60 + seconds + Number(ms) / 1000
+}
+
+export function VideoPlayer({
+	videoUrl,
+	subtitles,
+	onComplete,
+	fadeInDuration,
+	fadeOutDuration,
+	preRollText,
+	preRollDuration = 2000
+}: VideoPlayerProps) {
+	const videoRef = useRef<HTMLVideoElement>(null)
+	const [currentSubtitle, setCurrentSubtitle] = useState<Subtitle | null>(null)
+	const [opacity, setOpacity] = useState(0)
+	const [showPreRoll, setShowPreRoll] = useState(!!preRollText)
+
+	// Fade in on mount
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setOpacity(1)
+		}, 50)
+		return () => clearTimeout(timer)
+	}, [])
+
+	// Hide pre-roll after duration
+	useEffect(() => {
+		if (preRollText) {
+			const timer = setTimeout(() => {
+				setShowPreRoll(false)
+			}, preRollDuration)
+			return () => clearTimeout(timer)
+		}
+	}, [preRollText, preRollDuration])
+
+	// Handle video time updates for subtitle display
+	const handleTimeUpdate = () => {
+		if (!videoRef.current) return
+
+		const currentTime = videoRef.current.currentTime
+		const activeSubtitle = subtitles.find((sub) => {
+			const start = srtTimestampToSeconds(sub.startTime)
+			const end = srtTimestampToSeconds(sub.endTime)
+			return currentTime >= start && currentTime < end
+		})
+
+		setCurrentSubtitle(activeSubtitle || null)
+	}
+
+	// Handle video end
+	const handleEnded = () => {
+		// Fade out, then call onComplete
+		setOpacity(0)
+		setTimeout(() => {
+			onComplete()
+		}, fadeOutDuration)
+	}
+
+	return (
+		<div
+			data-testid="video-container"
+			style={{
+				position: 'relative',
+				width: '100%',
+				height: '100%',
+				backgroundColor: '#000',
+				opacity,
+				transition: `opacity ${Math.max(fadeInDuration, fadeOutDuration)}ms ease-in-out`
+			}}
+		>
+			<video
+				ref={videoRef}
+				data-testid="video-player"
+				src={videoUrl}
+				onTimeUpdate={handleTimeUpdate}
+				onEnded={handleEnded}
+				autoPlay
+				style={{
+					width: '100%',
+					height: '100%',
+					objectFit: 'contain'
+				}}
+			/>
+
+			{currentSubtitle && (
+				<div
+					data-testid="subtitle-text"
+					style={{
+						position: 'absolute',
+						bottom: '10%',
+						left: '50%',
+						transform: 'translateX(-50%)',
+						backgroundColor: 'rgba(0, 0, 0, 0.8)',
+						color: '#fff',
+						padding: '10px 20px',
+						borderRadius: '4px',
+						fontSize: '24px',
+						textAlign: 'center',
+						maxWidth: '80%'
+					}}
+					dangerouslySetInnerHTML={{
+						__html: currentSubtitle.text.replace(/\n/g, '<br />')
+					}}
+				/>
+			)}
+
+			{showPreRoll && preRollText && (
+				<div
+					data-testid="preroll-overlay"
+					style={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						fontSize: '48px',
+						fontWeight: 'bold',
+						color: '#fff',
+						textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
+						zIndex: 10
+					}}
+				>
+					{preRollText}
+				</div>
+			)}
+		</div>
+	)
+}
