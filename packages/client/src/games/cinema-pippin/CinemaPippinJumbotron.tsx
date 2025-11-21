@@ -3,6 +3,7 @@
  * Displays video playback, voting screens, and results
  */
 
+import { useEffect } from 'react'
 import type { JumbotronProps } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
@@ -19,6 +20,23 @@ interface CinemaPippinGameState {
 
 export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
+
+	// Auto-advance from clip_intro to clip_playback after 3 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'clip_intro') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'INTRO_COMPLETE',
+				payload: {}
+			})
+		}, 3000) // 3 second intro delay
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
 
 	// Handle video completion
 	const handleVideoComplete = () => {
