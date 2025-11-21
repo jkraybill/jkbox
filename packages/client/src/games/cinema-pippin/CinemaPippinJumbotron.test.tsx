@@ -16,6 +16,31 @@ describe('CinemaPippinJumbotron', () => {
 		vi.restoreAllMocks()
 	})
 
+	describe('film_select phase', () => {
+		it('should auto-advance to clip_intro after 2 seconds', async () => {
+			const sendToServer = vi.fn()
+			const state = {
+				phase: 'film_select',
+				currentClipIndex: 0
+			}
+
+			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
+
+			// Should not send immediately
+			expect(sendToServer).not.toHaveBeenCalled()
+
+			// Fast-forward 2 seconds
+			await vi.advanceTimersByTimeAsync(2000)
+
+			// Should send FILM_SELECT_COMPLETE event
+			expect(sendToServer).toHaveBeenCalledWith({
+				playerId: 'jumbotron',
+				type: 'FILM_SELECT_COMPLETE',
+				payload: {}
+			})
+		})
+	})
+
 	describe('clip_intro phase', () => {
 		it('should auto-advance to clip_playback after 3 seconds', async () => {
 			const sendToServer = vi.fn()

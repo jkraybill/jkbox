@@ -13,6 +13,34 @@ describe('Cinema Pippin Phase Transitions', () => {
 		game = new CinemaPippinGame()
 	})
 
+	describe('FILM_SELECT_COMPLETE action', () => {
+		it('should transition from film_select to clip_intro', () => {
+			game.initialize([])
+
+			// Game starts in film_select
+			expect(game.getPhase()).toBe('film_select')
+
+			// Jumbotron sends FILM_SELECT_COMPLETE after showing "Selecting films..."
+			game.handlePlayerAction('jumbotron', { type: 'FILM_SELECT_COMPLETE', payload: {} })
+
+			// Should now be in clip_intro
+			expect(game.getPhase()).toBe('clip_intro')
+		})
+
+		it('should not transition if not in film_select phase', () => {
+			game.initialize([])
+			game.advancePhase() // to clip_intro
+
+			expect(game.getPhase()).toBe('clip_intro')
+
+			// Try to send FILM_SELECT_COMPLETE while in clip_intro
+			game.handlePlayerAction('jumbotron', { type: 'FILM_SELECT_COMPLETE', payload: {} })
+
+			// Should still be in clip_intro
+			expect(game.getPhase()).toBe('clip_intro')
+		})
+	})
+
 	describe('INTRO_COMPLETE action', () => {
 		it('should transition from clip_intro to clip_playback', () => {
 			// Initialize game
@@ -249,8 +277,8 @@ describe('Cinema Pippin Phase Transitions', () => {
 			// Start: film_select
 			expect(game.getPhase()).toBe('film_select')
 
-			// Advance to clip_intro
-			game.advancePhase()
+			// Jumbotron auto-advances from film_select after 2 seconds
+			game.handlePlayerAction('jumbotron', { type: 'FILM_SELECT_COMPLETE', payload: {} })
 			expect(game.getPhase()).toBe('clip_intro')
 
 			// Jumbotron sends INTRO_COMPLETE after 3 seconds
@@ -279,8 +307,11 @@ describe('Cinema Pippin Phase Transitions', () => {
 			game.initialize(['player1', 'player2'])
 			expect(game.getPhase()).toBe('film_select')
 
+			// Auto-advance from film_select
+			game.handlePlayerAction('jumbotron', { type: 'FILM_SELECT_COMPLETE', payload: {} })
+			expect(game.getPhase()).toBe('clip_intro')
+
 			// Clip 1
-			game.advancePhase() // to clip_intro
 			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
 			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
 			expect(game.getPhase()).toBe('answer_collection')

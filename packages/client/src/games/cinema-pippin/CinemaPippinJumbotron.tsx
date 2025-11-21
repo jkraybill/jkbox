@@ -21,6 +21,23 @@ interface CinemaPippinGameState {
 export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
 
+	// Auto-advance from film_select to clip_intro after 2 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'film_select') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'FILM_SELECT_COMPLETE',
+				payload: {}
+			})
+		}, 2000) // 2 second delay to show "Selecting films..."
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
 	// Auto-advance from clip_intro to clip_playback after 3 seconds
 	useEffect(() => {
 		if (gameState.phase !== 'clip_intro') {

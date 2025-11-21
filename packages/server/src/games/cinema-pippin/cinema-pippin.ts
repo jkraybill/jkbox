@@ -133,6 +133,13 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		)
 
 		switch (gameAction.type) {
+			case 'FILM_SELECT_COMPLETE':
+				if (this.state.phase === 'film_select') {
+					this.state.phase = 'clip_intro'
+					console.log('[CinemaPippinGame] Advanced to clip_intro')
+				}
+				break
+
 			case 'INTRO_COMPLETE':
 				if (this.state.phase === 'clip_intro') {
 					this.state.phase = 'clip_playback'
