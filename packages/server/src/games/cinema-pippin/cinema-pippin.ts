@@ -122,9 +122,42 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		}
 	}
 
-	handlePlayerAction(_playerId: string, _action: unknown): void {
-		// To be implemented in subsequent issues
-		throw new Error('Not implemented')
+	handlePlayerAction(_playerId: string, action: unknown): void {
+		const gameAction = action as { type: string; payload: unknown }
+
+		console.log(
+			'[CinemaPippinGame] Handling action:',
+			gameAction.type,
+			'in phase:',
+			this.state.phase
+		)
+
+		switch (gameAction.type) {
+			case 'INTRO_COMPLETE':
+				if (this.state.phase === 'clip_intro') {
+					this.state.phase = 'clip_playback'
+					console.log('[CinemaPippinGame] Advanced to clip_playback')
+				}
+				break
+
+			case 'VIDEO_COMPLETE':
+				if (this.state.phase === 'clip_playback') {
+					this.state.phase = 'answer_collection'
+					console.log('[CinemaPippinGame] Advanced to answer_collection')
+				}
+				break
+
+			case 'SUBMIT_ANSWER': {
+				// Handle answer submission
+				const { answer } = gameAction.payload as { answer: string }
+				this.state.playerAnswers.set(_playerId, answer)
+				console.log('[CinemaPippinGame] Player', _playerId, 'submitted answer')
+				break
+			}
+
+			default:
+				console.log('[CinemaPippinGame] Unknown action type:', gameAction.type)
+		}
 	}
 
 	private createInitialState(): CinemaPippinState {
