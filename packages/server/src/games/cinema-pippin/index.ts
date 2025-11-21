@@ -34,6 +34,7 @@ class CinemaPippinModule implements PluggableGameModule {
 	/**
 	 * Enrich game state with client-ready data
 	 * - Adds currentClip with videoUrl and parsed subtitles
+	 * - Converts Maps to plain objects for JSON serialization
 	 */
 	private enrichStateForClient(): GameState {
 		const rawState = this.game.getState()
@@ -49,8 +50,13 @@ class CinemaPippinModule implements PluggableGameModule {
 		const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
 
 		// Create enriched state for client
+		// Convert Map objects to plain objects for JSON serialization over WebSocket
 		const enrichedState = {
 			...rawState,
+			playerAnswers: Object.fromEntries(rawState.playerAnswers),
+			votes: Object.fromEntries(rawState.votes),
+			scores: Object.fromEntries(rawState.scores),
+			endGameVotes: Object.fromEntries(rawState.endGameVotes),
 			currentClip: {
 				clipNumber: currentClip.clipNumber,
 				videoUrl,
