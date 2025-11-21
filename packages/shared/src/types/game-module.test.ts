@@ -15,12 +15,12 @@ describe('GameModule Types', () => {
 	describe('GameId', () => {
 		it('should accept valid game IDs', () => {
 			const fakeFactsId: GameId = 'fake-facts'
-			const cinephileId: GameId = 'cinema-pippin'
 			const cinemaPippinId: GameId = 'cinema-pippin'
+			const scratchpad1Id: GameId = 'scratchpad1'
 
 			expect(fakeFactsId).toBe('fake-facts')
-			expect(cinephileId).toBe('cinema-pippin')
 			expect(cinemaPippinId).toBe('cinema-pippin')
+			expect(scratchpad1Id).toBe('scratchpad1')
 		})
 	})
 
