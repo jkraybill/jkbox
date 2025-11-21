@@ -44,12 +44,16 @@ class CinemaPippinModule implements PluggableGameModule {
 		// Load and parse SRT subtitles
 		const subtitles = loadSRT(currentClip.srtPath)
 
+		// Convert filesystem path to web URL
+		// /home/jk/jkbox/generated/clips/... → /clips/...
+		const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
+
 		// Create enriched state for client
 		const enrichedState = {
 			...rawState,
 			currentClip: {
 				clipNumber: currentClip.clipNumber,
-				videoUrl: currentClip.videoPath, // Will be served as static file
+				videoUrl,
 				subtitles
 			}
 		}
