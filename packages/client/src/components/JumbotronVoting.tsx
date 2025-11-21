@@ -9,18 +9,34 @@ interface JumbotronVotingProps {
 	roomId: string
 }
 
-const GAME_NAMES: Record<GameId, string> = {
-	cinephile: 'Cinema Pippin',
-	'fake-facts': 'Fake Facts',
-	'cinema-pippin': 'Cinema Pippin',
-	scratchpad1: 'Scratchpad1',
-	test: 'Test'
+interface GameOption {
+	id: GameId
+	name: string
+	description: string
+	minPlayers: number
+	maxPlayers: number
 }
 
 export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 	const { socket } = useSocket()
 	const [votingState, setVotingState] = useState<RoomVotingState | null>(null)
 	const [joinUrl, setJoinUrl] = useState<string>('')
+	const [gameOptions, setGameOptions] = useState<GameOption[]>([])
+
+	// Fetch available games from server
+	useEffect(() => {
+		const fetchGames = async () => {
+			try {
+				const response = await fetch('/api/games')
+				const data = (await response.json()) as { games: GameOption[] }
+				setGameOptions(data.games)
+			} catch (error) {
+				console.error('[JumbotronVoting] Failed to fetch games:', error)
+			}
+		}
+
+		void fetchGames()
+	}, [])
 
 	// Fetch join URL on mount
 	useEffect(() => {
@@ -55,6 +71,15 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 
 	const maxVotes = Math.max(...Object.values(voteTallies), 1)
 	const selectedGame = votingState?.selectedGame
+
+	// Create game name lookup from fetched games
+	const gameNameLookup: Record<string, string> = gameOptions.reduce(
+		(acc, game) => {
+			acc[game.id] = game.name
+			return acc
+		},
+		{} as Record<string, string>
+	)
 
 	// Get player ready states
 	const playerStates = players.map((player) => {
@@ -100,15 +125,15 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 				<div style={styles.votingSection}>
 					<h2 style={styles.sectionTitle}>Vote Tallies</h2>
 					<div style={styles.voteList}>
-						{Object.entries(GAME_NAMES).map(([gameId, name]) => {
-							const votes = voteTallies[gameId as GameId] ?? 0
+						{gameOptions.map((game) => {
+							const votes = voteTallies[game.id] ?? 0
 							const percentage = maxVotes > 0 ? (votes / maxVotes) * 100 : 0
-							const isWinning = selectedGame === gameId
+							const isWinning = selectedGame === game.id
 
 							return (
-								<div key={gameId} style={styles.voteItem}>
+								<div key={game.id} style={styles.voteItem}>
 									<div style={styles.voteName}>
-										{name}
+										{game.name}
 										{isWinning && <span style={styles.winningBadge}>LEADING</span>}
 									</div>
 									<div style={styles.voteBar}>
@@ -146,7 +171,9 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 									{hasVoted && !isReady && <span style={styles.statusVoted}>✓ Voted</span>}
 									{isReady && <span style={styles.statusReady}>✓✓ Ready!</span>}
 								</div>
-								{votedFor && <div style={styles.playerVote}>{GAME_NAMES[votedFor]}</div>}
+								{votedFor && (
+									<div style={styles.playerVote}>{gameNameLookup[votedFor] ?? votedFor}</div>
+								)}
 							</div>
 						))}
 					</div>
