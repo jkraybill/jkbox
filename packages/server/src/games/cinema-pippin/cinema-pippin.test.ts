@@ -112,6 +112,43 @@ describe('CinemaPippinGame', () => {
 		})
 	})
 
+	describe('submitAnswer', () => {
+		it('should store player answer', () => {
+			game.initialize(['player1', 'player2'])
+			game.setState({ ...game.getState(), phase: 'answer_collection' })
+
+			game.submitAnswer('player1', 'banana')
+
+			const state = game.getState()
+			expect(state.playerAnswers.get('player1')).toBe('banana')
+		})
+
+		it('should allow multiple players to submit answers', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			game.setState({ ...game.getState(), phase: 'answer_collection' })
+
+			game.submitAnswer('player1', 'apple')
+			game.submitAnswer('player2', 'orange')
+			game.submitAnswer('player3', 'grape')
+
+			const state = game.getState()
+			expect(state.playerAnswers.get('player1')).toBe('apple')
+			expect(state.playerAnswers.get('player2')).toBe('orange')
+			expect(state.playerAnswers.get('player3')).toBe('grape')
+		})
+
+		it('should clear answers when moving to next clip', () => {
+			game.initialize(['player1', 'player2'])
+			game.setState({ ...game.getState(), phase: 'answer_collection' })
+
+			game.submitAnswer('player1', 'test')
+			expect(game.getState().playerAnswers.size).toBe(1)
+
+			game.clearAnswers()
+			expect(game.getState().playerAnswers.size).toBe(0)
+		})
+	})
+
 	describe('advanceToNextClip', () => {
 		it('should advance from C1 to C2', () => {
 			game.initialize([])

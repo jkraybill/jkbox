@@ -64,6 +64,18 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		return film.clips[this.state.currentClipIndex]
 	}
 
+	setState(newState: CinemaPippinState): void {
+		this.state = newState
+	}
+
+	submitAnswer(playerId: string, answer: string): void {
+		this.state.playerAnswers.set(playerId, answer)
+	}
+
+	clearAnswers(): void {
+		this.state.playerAnswers.clear()
+	}
+
 	advancePhase(): void {
 		const phaseTransitions: Record<GamePhase, GamePhase> = {
 			film_select: 'clip_intro',

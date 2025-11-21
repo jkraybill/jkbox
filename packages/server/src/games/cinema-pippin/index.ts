@@ -13,7 +13,6 @@ import type {
 	ControllerProps
 } from '@jkbox/shared'
 import { CinemaPippinGame } from './cinema-pippin'
-import type { CinemaPippinState } from './types'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -37,24 +36,41 @@ class CinemaPippinModule implements PluggableGameModule {
 		return Promise.resolve(this.game.getState() as GameState)
 	}
 
-	async handleAction(_action: GameAction, _state: GameState): Promise<GameState> {
-		// Update internal game state
-		// (Will be implemented in subsequent issues)
+	async handleAction(action: GameAction, _state: GameState): Promise<GameState> {
+		// Handle player actions
+		switch (action.type) {
+			case 'SUBMIT_ANSWER': {
+				const { playerId, answer } = action.payload as { playerId: string; answer: string }
+				this.game.submitAnswer(playerId, answer)
+				break
+			}
 
-		// For now, just return current state
+			case 'VIDEO_COMPLETE': {
+				// Auto-advance to next phase when video completes
+				this.game.advancePhase()
+				break
+			}
+
+			default:
+		}
+
 		return Promise.resolve(this.game.getState() as GameState)
 	}
 
 	async loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {
 		// Lazy load jumbotron component
-		const module = await import('../../../client/src/games/cinema-pippin/CinemaPippinJumbotron')
-		return module.CinemaPippinJumbotron as React.ComponentType<JumbotronProps>
+		const module = (await import(
+			'../../../client/src/games/cinema-pippin/CinemaPippinJumbotron'
+		)) as { CinemaPippinJumbotron: React.ComponentType<JumbotronProps> }
+		return module.CinemaPippinJumbotron
 	}
 
 	async loadControllerComponent(): Promise<React.ComponentType<ControllerProps>> {
 		// Lazy load controller component
-		const module = await import('../../../client/src/games/cinema-pippin/CinemaPippinController')
-		return module.CinemaPippinController as React.ComponentType<ControllerProps>
+		const module = (await import(
+			'../../../client/src/games/cinema-pippin/CinemaPippinController'
+		)) as { CinemaPippinController: React.ComponentType<ControllerProps> }
+		return module.CinemaPippinController
 	}
 
 	async cleanup(): Promise<void> {
