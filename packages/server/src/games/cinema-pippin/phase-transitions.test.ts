@@ -118,6 +118,130 @@ describe('Cinema Pippin Phase Transitions', () => {
 		})
 	})
 
+	describe('advancePhase', () => {
+		it('should advance through all phase transitions correctly', () => {
+			game.initialize([])
+
+			// Test each phase transition
+			expect(game.getPhase()).toBe('film_select')
+			game.advancePhase()
+			expect(game.getPhase()).toBe('clip_intro')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('clip_playback')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('answer_collection')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('voting_playback')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('voting_collection')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('results_display')
+
+			// Note: results_display normally goes to clip_intro
+			// but advanceToNextClip() would override to film_title_collection after 3 clips
+			game.advancePhase()
+			expect(game.getPhase()).toBe('clip_intro')
+		})
+
+		it('should advance through film title round phases', () => {
+			game.initialize([])
+			game.setState({ ...game.getState(), phase: 'film_title_collection' })
+
+			expect(game.getPhase()).toBe('film_title_collection')
+			game.advancePhase()
+			expect(game.getPhase()).toBe('film_title_voting')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('film_title_results')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('final_montage')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('next_film_or_end')
+		})
+
+		it('should advance through end game phases', () => {
+			game.initialize([])
+			game.setState({ ...game.getState(), phase: 'final_scores' })
+
+			expect(game.getPhase()).toBe('final_scores')
+			game.advancePhase()
+			expect(game.getPhase()).toBe('end_game_vote')
+
+			game.advancePhase()
+			expect(game.getPhase()).toBe('film_select')
+		})
+	})
+
+	describe('advanceToNextClip', () => {
+		it('should advance to next clip when not at clip 3', () => {
+			game.initialize([])
+			const state = game.getState()
+			expect(state.currentClipIndex).toBe(0)
+
+			game.advanceToNextClip()
+			expect(game.getState().currentClipIndex).toBe(1)
+			expect(game.getPhase()).toBe('clip_intro')
+
+			game.advanceToNextClip()
+			expect(game.getState().currentClipIndex).toBe(2)
+			expect(game.getPhase()).toBe('clip_intro')
+		})
+
+		it('should advance to film_title_collection after 3rd clip', () => {
+			game.initialize([])
+			const state = game.getState()
+
+			// Manually set to 2nd clip (0-indexed, so this is the 3rd clip)
+			state.currentClipIndex = 2
+
+			game.advanceToNextClip()
+			expect(game.getState().currentClipIndex).toBe(3)
+			expect(game.getPhase()).toBe('film_title_collection')
+		})
+	})
+
+	describe('advanceToNextFilm', () => {
+		it('should advance to next film when not at film 3', () => {
+			game.initialize([])
+			const state = game.getState()
+			expect(state.currentFilmIndex).toBe(0)
+			expect(state.currentClipIndex).toBe(0)
+
+			game.advanceToNextFilm()
+			expect(game.getState().currentFilmIndex).toBe(1)
+			expect(game.getState().currentClipIndex).toBe(0) // Reset to first clip
+			expect(game.getPhase()).toBe('clip_intro')
+		})
+
+		it('should advance to final_scores after 3rd film', () => {
+			game.initialize([])
+			const state = game.getState()
+			state.currentFilmIndex = 2 // 3rd film (0-indexed)
+
+			game.advanceToNextFilm()
+			expect(game.getState().currentFilmIndex).toBe(3)
+			expect(game.getPhase()).toBe('final_scores')
+		})
+
+		it('should reset clip index when advancing films', () => {
+			game.initialize([])
+			const state = game.getState()
+			state.currentClipIndex = 2
+			state.currentFilmIndex = 0
+
+			game.advanceToNextFilm()
+			expect(game.getState().currentClipIndex).toBe(0)
+			expect(game.getState().currentFilmIndex).toBe(1)
+		})
+	})
+
 	describe('Full flow simulation', () => {
 		it('should handle complete clip cycle', () => {
 			game.initialize(['player1', 'player2'])
@@ -149,6 +273,101 @@ describe('Cinema Pippin Phase Transitions', () => {
 
 			const state = game.getState()
 			expect(state.playerAnswers.size).toBe(2)
+		})
+
+		it('should handle complete 3-clip game flow', () => {
+			game.initialize(['player1', 'player2'])
+			expect(game.getPhase()).toBe('film_select')
+
+			// Clip 1
+			game.advancePhase() // to clip_intro
+			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
+			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
+			expect(game.getPhase()).toBe('answer_collection')
+
+			// Advance through voting and results
+			game.advancePhase() // voting_playback
+			game.advancePhase() // voting_collection
+			game.advancePhase() // results_display
+
+			// Advance to next clip
+			game.advanceToNextClip()
+			expect(game.getPhase()).toBe('clip_intro')
+			expect(game.getState().currentClipIndex).toBe(1)
+
+			// Clip 2
+			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
+			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
+			game.advancePhase() // voting_playback
+			game.advancePhase() // voting_collection
+			game.advancePhase() // results_display
+			game.advanceToNextClip()
+			expect(game.getState().currentClipIndex).toBe(2)
+
+			// Clip 3
+			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
+			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
+			game.advancePhase() // voting_playback
+			game.advancePhase() // voting_collection
+			game.advancePhase() // results_display
+
+			// After 3rd clip, should go to film title round
+			game.advanceToNextClip()
+			expect(game.getPhase()).toBe('film_title_collection')
+		})
+
+		it('should handle complete 3-film game flow', () => {
+			game.initialize(['player1'])
+			game.setState({ ...game.getState(), currentFilmIndex: 0 })
+
+			// Complete film 1
+			game.advanceToNextFilm()
+			expect(game.getState().currentFilmIndex).toBe(1)
+			expect(game.getPhase()).toBe('clip_intro')
+
+			// Complete film 2
+			game.advanceToNextFilm()
+			expect(game.getState().currentFilmIndex).toBe(2)
+			expect(game.getPhase()).toBe('clip_intro')
+
+			// Complete film 3 - should go to final_scores
+			game.advanceToNextFilm()
+			expect(game.getState().currentFilmIndex).toBe(3)
+			expect(game.getPhase()).toBe('final_scores')
+		})
+	})
+
+	describe('State management', () => {
+		it('should clear answers', () => {
+			game.initialize(['player1', 'player2'])
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_ANSWER',
+				payload: { answer: 'Answer 1' }
+			})
+			game.handlePlayerAction('player2', {
+				type: 'SUBMIT_ANSWER',
+				payload: { answer: 'Answer 2' }
+			})
+
+			expect(game.getState().playerAnswers.size).toBe(2)
+
+			game.clearAnswers()
+			expect(game.getState().playerAnswers.size).toBe(0)
+		})
+
+		it('should get current film', () => {
+			game.initialize([])
+			const film = game.getCurrentFilm()
+			expect(film).toBeDefined()
+			expect(film.clips).toBeDefined()
+			expect(film.clips.length).toBeGreaterThan(0)
+		})
+
+		it('should get current clip', () => {
+			game.initialize([])
+			const clip = game.getCurrentClip()
+			expect(clip).toBeDefined()
+			expect(clip.clipNumber).toBe(1) // First clip
 		})
 	})
 })
