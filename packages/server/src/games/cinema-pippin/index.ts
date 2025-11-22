@@ -13,7 +13,7 @@ import type {
 	ControllerProps
 } from '@jkbox/shared'
 import { CinemaPippinGame } from './cinema-pippin'
-import { loadSRT } from './srt-processor'
+import { loadSRT, loadSRTWithKeywordReplacement } from './srt-processor'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -44,7 +44,24 @@ class CinemaPippinModule implements PluggableGameModule {
 		const currentClip = this.game.getCurrentClip()
 
 		// Load and parse SRT subtitles
-		let subtitles = loadSRT(currentClip.srtPath)
+		// For C2/C3, replace [keyword] with C1 winner (preserving casing)
+		let subtitles: ReturnType<typeof loadSRT>
+		const isC2OrC3 = rawState.currentClipIndex > 0
+		const keyword = rawState.keywords[rawState.currentFilmIndex]
+
+		if (isC2OrC3 && keyword) {
+			// Get the original SRT path by replacing "-question.srt" with "-original.srt"
+			const originalSrtPath = currentClip.srtPath.replace('-question.srt', '-original.srt')
+			subtitles = loadSRTWithKeywordReplacement(currentClip.srtPath, originalSrtPath, keyword)
+			console.log(
+				'[CinemaPippinModule] Replaced [keyword] with',
+				keyword,
+				'for clip',
+				currentClip.clipNumber
+			)
+		} else {
+			subtitles = loadSRT(currentClip.srtPath)
+		}
 
 		// During voting_playback, merge current answer into subtitles
 		if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {

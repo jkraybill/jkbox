@@ -48,6 +48,11 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 			return
 		}
 
+		// Guard against undefined currentResult
+		if (!currentResult) {
+			return
+		}
+
 		let timer: ReturnType<typeof setTimeout> | undefined
 
 		switch (displayState) {
@@ -98,15 +103,28 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 				clearTimeout(timer)
 			}
 		}
-	}, [displayState, currentIndex, animatingScore, isLastResult, currentResult, sortedResults.length, onComplete])
+	}, [
+		displayState,
+		currentIndex,
+		animatingScore,
+		isLastResult,
+		currentResult,
+		sortedResults.length,
+		onComplete
+	])
 
 	if (sortedResults.length === 0) {
 		return (
 			<div style={styles.container}>
 				<h1 style={styles.title}>No Results</h1>
-				<p style={styles.subtitle}>Nobody voted!</p>
+				<p style={styles.authorText}>Nobody voted!</p>
 			</div>
 		)
+	}
+
+	// Guard against undefined currentResult
+	if (!currentResult) {
+		return null
 	}
 
 	if (displayState === DisplayState.ShowWinner) {
@@ -122,7 +140,9 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 					<p style={styles.authorText}>
 						{winner.answer.authorId === 'house' ? '🤖 AI' : `👤 ${winner.answer.authorId}`}
 					</p>
-					<p style={styles.voteCount}>{winner.voteCount} {winner.voteCount === 1 ? 'vote' : 'votes'}</p>
+					<p style={styles.voteCount}>
+						{winner.voteCount} {winner.voteCount === 1 ? 'vote' : 'votes'}
+					</p>
 				</div>
 			</div>
 		)
@@ -142,12 +162,13 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 				{displayState !== DisplayState.ShowAnswer && (
 					<>
 						<p style={styles.authorText}>
-							by {currentResult.answer.authorId === 'house' ? '🤖 AI' : `👤 ${currentResult.answer.authorId}`}
+							by{' '}
+							{currentResult.answer.authorId === 'house'
+								? '🤖 AI'
+								: `👤 ${currentResult.answer.authorId}`}
 						</p>
 
-						<p style={styles.votersText}>
-							Voted by: {currentResult.voters.join(', ')}
-						</p>
+						<p style={styles.votersText}>Voted by: {currentResult.voters.join(', ')}</p>
 
 						{displayState === DisplayState.ShowScoreAnimation && (
 							<p style={styles.scoreText}>

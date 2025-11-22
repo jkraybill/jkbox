@@ -4,6 +4,7 @@
  */
 
 import { readFileSync } from 'fs'
+import { replaceKeywordPreservingCasing } from './casing-utils'
 
 export interface Subtitle {
 	index: number
@@ -83,4 +84,58 @@ export function formatSRT(subtitles: Subtitle[]): string {
 export function loadSRT(srtPath: string): Subtitle[] {
 	const content = readFileSync(srtPath, 'utf-8')
 	return parseSRT(content)
+}
+
+/**
+ * Replace [keyword] with C1 winner, preserving original word's casing
+ * @param questionSrtPath Path to the question SRT file (contains [keyword])
+ * @param originalSrtPath Path to the original SRT file (contains original word)
+ * @param replacementKeyword The C1 winning answer to use
+ * @returns Subtitles with [keyword] replaced, preserving casing
+ */
+export function loadSRTWithKeywordReplacement(
+	questionSrtPath: string,
+	originalSrtPath: string,
+	replacementKeyword: string
+): Subtitle[] {
+	// Load question SRT (has [keyword] placeholders)
+	const questionSubs = loadSRT(questionSrtPath)
+
+	// Load original SRT to detect casing
+	const originalSubs = loadSRT(originalSrtPath)
+
+	// Find the original keyword by looking for the first subtitle with [keyword] in question
+	// and extracting the corresponding word from the original
+	let originalKeyword = ''
+
+	for (let i = 0; i < questionSubs.length && i < originalSubs.length; i++) {
+		const questionText = questionSubs[i]?.text
+		const originalText = originalSubs[i]?.text
+
+		if (questionText?.includes('[keyword]') && originalText) {
+			// Extract the word that was replaced with [keyword]
+			// Find word at same position in original text
+			const words = originalText.split(/\s+/)
+			const questionWords = questionText.split(/\s+/)
+			const keywordWordIndex = questionWords.findIndex((w) => w.includes('[keyword]'))
+			if (keywordWordIndex >= 0 && words[keywordWordIndex]) {
+				originalKeyword = words[keywordWordIndex].replace(/[.,!?;:]/g, '')
+				break
+			}
+		}
+	}
+
+	// If we found the original keyword, apply casing-aware replacement
+	if (originalKeyword) {
+		return questionSubs.map((sub) => ({
+			...sub,
+			text: replaceKeywordPreservingCasing(sub.text, originalKeyword, replacementKeyword)
+		}))
+	}
+
+	// Fallback: simple replacement without casing preservation
+	return questionSubs.map((sub) => ({
+		...sub,
+		text: sub.text.replace(/\[keyword\]/g, replacementKeyword)
+	}))
 }

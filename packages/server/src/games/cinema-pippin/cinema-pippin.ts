@@ -362,6 +362,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			case 'RESULTS_COMPLETE':
 				if (this.state.phase === 'results_display') {
+					// If this was C1 (clip index 0), store the winning answer as the keyword
+					if (this.state.currentClipIndex === 0) {
+						const winner = this.calculateWinner()
+						if (winner) {
+							this.state.keywords[this.state.currentFilmIndex] = winner.text
+							console.log(
+								'[CinemaPippinGame] Stored C1 winner as keyword:',
+								winner.text,
+								'for film',
+								this.state.currentFilmIndex
+							)
+						}
+					}
+
 					// Advance to next clip
 					this.advanceToNextClip()
 					console.log('[CinemaPippinGame] Results complete, advanced to', this.state.phase)
