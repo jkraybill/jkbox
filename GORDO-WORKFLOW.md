@@ -98,6 +98,12 @@ npm run lint      # No warnings
 npm run build     # Verify compiles
 ```
 
+**Pre-commit hooks:**
+- NEVER use `--no-verify` to bypass hooks
+- If hook fails → fix ALL errors before committing
+- Hooks exist to prevent issues, not to be skipped
+- Exception: Only if user explicitly requests bypass
+
 ### 4. Commit & Push
 
 **Format:** `Fix #123: Description (optional humor)`

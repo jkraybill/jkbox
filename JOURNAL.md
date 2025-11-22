@@ -315,3 +315,7 @@ Journal entries reference HC outcomes:
 ### Session 2 (2025-11-20) - jkbox
 
 [2025-11-20 07:59 UTC] Session 2✓. ARCHITECTURE.md created→comprehensive storage architecture doc (server state vs persistent data, discriminated unions, Socket.io channels, XState future). Terminology standardized: "server state" (ephemeral, 5min crash recovery) vs "persistent data" (long-term). Updated README, MIGRATION, fsm/README→consistent terms✓. Fixed .mcp.json: /home/jkraybill→/home/jk (username mismatch)→gordo-memory MCP ready✓. T:111/111✓. C:e9dac95. Pattern: Documentation sweep prevents future confusion. JKLES: 8/10.
+
+### Session 3 (2025-11-22) - jkbox
+
+[2025-11-22 05:24 UTC] Session 3✓. Cinema Pippin results+keyword features. ResultsDisplay: sequential reveal (lowest→highest votes), score animation (100ms/point), winner screen, tie-breaking (human>AI>random)✓. Keyword replacement: C1 winner→replaces [keyword] in C2/C3, casing-aware (God+banana→Banana)✓. T:210/210✓ (+7 casing tests). C:8960250,9774b68. Pattern: Casing detection via original SRT comparison→apply to replacement. TS undefined guards critical for build✓. JKLES: ∅ (focused technical).
