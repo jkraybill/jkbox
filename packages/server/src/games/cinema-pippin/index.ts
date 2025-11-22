@@ -61,6 +61,10 @@ class CinemaPippinModule implements PluggableGameModule {
 		// /home/jk/jkbox/generated/clips/... → /clips/...
 		const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
 
+		// During results_display, include sorted answers with vote data
+		const sortedResults =
+			rawState.phase === 'results_display' ? this.game.getSortedAnswersByVotes() : undefined
+
 		// Create enriched state for client
 		// Convert Map objects to plain objects for JSON serialization over WebSocket
 		const enrichedState = {
@@ -73,7 +77,8 @@ class CinemaPippinModule implements PluggableGameModule {
 				clipNumber: currentClip.clipNumber,
 				videoUrl,
 				subtitles
-			}
+			},
+			...(sortedResults && { sortedResults })
 		}
 
 		return enrichedState as GameState

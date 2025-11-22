@@ -78,6 +78,113 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.state.playerAnswers.clear()
 	}
 
+	/**
+	 * Calculate winner from votes
+	 * Tie-breaking rules: most votes > human beats AI > random selection for tied humans
+	 */
+	calculateWinner(): (typeof this.state.allAnswers)[number] | null {
+		if (this.state.allAnswers.length === 0) {
+			return null
+		}
+
+		// Count votes for each answer
+		const voteCounts = new Map<string, number>()
+		for (const [, answerId] of this.state.votes) {
+			voteCounts.set(answerId, (voteCounts.get(answerId) || 0) + 1)
+		}
+
+		// Find max vote count
+		let maxVotes = 0
+		for (const count of voteCounts.values()) {
+			if (count > maxVotes) {
+				maxVotes = count
+			}
+		}
+
+		// Get all answers with max votes
+		const topAnswers = this.state.allAnswers.filter(
+			(answer) => (voteCounts.get(answer.id) || 0) === maxVotes
+		)
+
+		if (topAnswers.length === 0) {
+			return this.state.allAnswers[0]
+		}
+
+		if (topAnswers.length === 1) {
+			return topAnswers[0]
+		}
+
+		// Tie-breaking: human answers beat AI answers
+		const humanAnswers = topAnswers.filter((a) => a.authorId !== 'house')
+		if (humanAnswers.length > 0 && humanAnswers.length < topAnswers.length) {
+			// There are humans and AI tied - pick random human
+			return humanAnswers[Math.floor(Math.random() * humanAnswers.length)]
+		}
+
+		// All tied answers are same type (all human or all AI) - random selection
+		return topAnswers[Math.floor(Math.random() * topAnswers.length)]
+	}
+
+	/**
+	 * Get answers sorted by vote count (ascending - lowest first)
+	 * Only includes answers that received at least 1 vote
+	 */
+	getSortedAnswersByVotes(): Array<{
+		answer: (typeof this.state.allAnswers)[number]
+		voteCount: number
+		voters: string[]
+	}> {
+		// Count votes and track voters for each answer
+		const answerData = new Map<
+			string,
+			{ answer: (typeof this.state.allAnswers)[number]; voteCount: number; voters: string[] }
+		>()
+
+		// Initialize with all answers
+		for (const answer of this.state.allAnswers) {
+			answerData.set(answer.id, {
+				answer,
+				voteCount: 0,
+				voters: []
+			})
+		}
+
+		// Count votes
+		for (const [voterId, answerId] of this.state.votes) {
+			const data = answerData.get(answerId)
+			if (data) {
+				data.voteCount++
+				data.voters.push(voterId)
+			}
+		}
+
+		// Filter to only answers with 1+ votes and sort by vote count (ascending)
+		return Array.from(answerData.values())
+			.filter((data) => data.voteCount > 0)
+			.sort((a, b) => a.voteCount - b.voteCount)
+	}
+
+	/**
+	 * Apply vote scores to player scores
+	 * Each vote a player's answer receives = 1 point
+	 */
+	applyVoteScores(): void {
+		// Count votes for each answer
+		const voteCounts = new Map<string, number>()
+		for (const [, answerId] of this.state.votes) {
+			voteCounts.set(answerId, (voteCounts.get(answerId) || 0) + 1)
+		}
+
+		// Award points to players whose answers got votes
+		for (const answer of this.state.allAnswers) {
+			const voteCount = voteCounts.get(answer.id) || 0
+			if (voteCount > 0 && answer.authorId !== 'house') {
+				const currentScore = this.state.scores.get(answer.authorId) || 0
+				this.state.scores.set(answer.authorId, currentScore + voteCount)
+			}
+		}
+	}
+
 	advancePhase(): void {
 		const phaseTransitions: Record<GamePhase, GamePhase> = {
 			film_select: 'clip_intro',
@@ -243,6 +350,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				// Auto-advance if all players have voted
 				if (this.state.totalPlayers && this.state.votes.size >= this.state.totalPlayers) {
 					console.log('[CinemaPippinGame] All players voted, advancing to results_display')
+
+					// Calculate scores before showing results
+					this.applyVoteScores()
+					console.log('[CinemaPippinGame] Applied vote scores')
+
 					this.state.phase = 'results_display'
 				}
 				break

@@ -7,6 +7,20 @@ import { useEffect } from 'react'
 import type { JumbotronProps } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
+import { ResultsDisplay } from './ResultsDisplay'
+
+interface Answer {
+	id: string
+	text: string
+	authorId: string
+	votedBy: string[]
+}
+
+interface ResultEntry {
+	answer: Answer
+	voteCount: number
+	voters: string[]
+}
 
 interface CinemaPippinGameState {
 	phase: string
@@ -16,6 +30,8 @@ interface CinemaPippinGameState {
 		videoUrl: string
 		subtitles: Subtitle[]
 	}
+	sortedResults?: ResultEntry[]
+	scores?: Record<string, number>
 }
 
 export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
@@ -230,10 +246,22 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 				)
 
 			case 'results_display':
+				if (gameState.sortedResults && gameState.scores) {
+					return (
+						<ResultsDisplay
+							sortedResults={gameState.sortedResults}
+							scores={gameState.scores}
+							onComplete={() => {
+								// Results animation complete, no action needed
+								// Auto-advance will be handled by timer
+							}}
+						/>
+					)
+				}
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Results</h1>
-						<p style={styles.subtitle}>And the winner is...</p>
+						<p style={styles.subtitle}>Calculating scores...</p>
 					</div>
 				)
 

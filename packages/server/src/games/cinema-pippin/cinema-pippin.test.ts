@@ -236,4 +236,112 @@ describe('CinemaPippinGame', () => {
 			expect(stateAfter.phase).toBe('final_scores')
 		})
 	})
+
+	describe('Winner Calculation', () => {
+		it('should select answer with most votes as winner', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			const state = game.getState()
+			state.allAnswers = [
+				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
+				{ id: 'a2', text: 'answer2', authorId: 'player2', votedBy: [] },
+				{ id: 'a3', text: 'answer3', authorId: 'player3', votedBy: [] }
+			]
+			state.votes = new Map([
+				['player1', 'a2'],
+				['player2', 'a3'],
+				['player3', 'a2']
+			])
+			game.setState(state)
+
+			const winner = game.calculateWinner()
+
+			expect(winner?.id).toBe('a2')
+			expect(winner?.authorId).toBe('player2')
+		})
+
+		it('should break tie with human answer beating AI answer', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			const state = game.getState()
+			state.allAnswers = [
+				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
+				{ id: 'house-1', text: 'house answer', authorId: 'house', votedBy: [] }
+			]
+			state.votes = new Map([
+				['player2', 'a1'],
+				['player3', 'house-1']
+			])
+			game.setState(state)
+
+			const winner = game.calculateWinner()
+
+			expect(winner?.id).toBe('a1')
+			expect(winner?.authorId).toBe('player1')
+		})
+
+		it('should handle tied human answers with deterministic selection', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			const state = game.getState()
+			state.allAnswers = [
+				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
+				{ id: 'a2', text: 'answer2', authorId: 'player2', votedBy: [] }
+			]
+			state.votes = new Map([
+				['player3', 'a1']
+			])
+			game.setState(state)
+
+			const winner = game.calculateWinner()
+
+			expect(['a1', 'a2']).toContain(winner?.id)
+		})
+
+		it('should sort answers by vote count ascending for results display', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			const state = game.getState()
+			state.allAnswers = [
+				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
+				{ id: 'a2', text: 'answer2', authorId: 'player2', votedBy: [] },
+				{ id: 'a3', text: 'answer3', authorId: 'player3', votedBy: [] }
+			]
+			state.votes = new Map([
+				['player1', 'a3'],
+				['player2', 'a3'],
+				['player3', 'a1']
+			])
+			game.setState(state)
+
+			const sorted = game.getSortedAnswersByVotes()
+
+			expect(sorted.length).toBe(2) // Only answers with 1+ votes
+			expect(sorted[0].answer.id).toBe('a1') // 1 vote (lowest first)
+			expect(sorted[0].voteCount).toBe(1)
+			expect(sorted[1].answer.id).toBe('a3') // 2 votes
+			expect(sorted[1].voteCount).toBe(2)
+		})
+
+		it('should calculate score increases from votes', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+			const state = game.getState()
+			state.allAnswers = [
+				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
+				{ id: 'a2', text: 'answer2', authorId: 'player2', votedBy: [] }
+			]
+			state.votes = new Map([
+				['player2', 'a1'],
+				['player3', 'a1']
+			])
+			state.scores = new Map([
+				['player1', 0],
+				['player2', 0],
+				['player3', 0]
+			])
+			game.setState(state)
+
+			game.applyVoteScores()
+
+			const updatedState = game.getState()
+			expect(updatedState.scores.get('player1')).toBe(2)
+			expect(updatedState.scores.get('player2')).toBe(0)
+		})
+	})
 })
