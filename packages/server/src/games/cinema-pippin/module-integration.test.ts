@@ -257,5 +257,132 @@ describe('Cinema Pippin Module Integration', () => {
 				expect(true).toBe(true)
 			}
 		})
+
+		it('should auto-advance to voting_playback when all players submit answers', async () => {
+			// This test prevents the bug where game hung after all players submitted
+			const players: Player[] = [
+				{ id: 'player1', name: 'Alice' },
+				{ id: 'player2', name: 'Bob' }
+			]
+			let state = await CinemaPippinGameModule.initialize(players, context)
+
+			// Advance to answer_collection
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'FILM_SELECT_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'INTRO_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'VIDEO_COMPLETE', payload: {} },
+				state
+			)
+			expect(state.phase).toBe('answer_collection')
+
+			// First player submits - should stay in answer_collection
+			state = await CinemaPippinGameModule.handleAction(
+				{
+					playerId: 'player1',
+					type: 'SUBMIT_ANSWER',
+					payload: { answer: 'First answer' }
+				},
+				state
+			)
+			expect(state.phase).toBe('answer_collection') // Still waiting
+
+			// Second player submits - should auto-advance
+			state = await CinemaPippinGameModule.handleAction(
+				{
+					playerId: 'player2',
+					type: 'SUBMIT_ANSWER',
+					payload: { answer: 'Second answer' }
+				},
+				state
+			)
+			expect(state.phase).toBe('voting_playback') // Auto-advanced!
+		})
+
+		it('should set answerCollectionStartTime when entering answer_collection', async () => {
+			// This test prevents the bug where timer reset on page reload
+			const players: Player[] = [{ id: 'player1', name: 'Alice' }]
+			let state = await CinemaPippinGameModule.initialize(players, context)
+
+			// Before answer_collection, no timestamp
+			expect(state.answerCollectionStartTime).toBeUndefined()
+
+			// Advance to answer_collection
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'FILM_SELECT_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'INTRO_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'VIDEO_COMPLETE', payload: {} },
+				state
+			)
+
+			// Now should have timestamp
+			expect(state.answerCollectionStartTime).toBeDefined()
+			expect(typeof state.answerCollectionStartTime).toBe('number')
+			expect(state.answerCollectionStartTime).toBeGreaterThan(0)
+		})
+
+		it('should track totalPlayers for auto-advance logic', async () => {
+			// This test ensures we know how many players to wait for
+			const players: Player[] = [
+				{ id: 'player1', name: 'Alice' },
+				{ id: 'player2', name: 'Bob' },
+				{ id: 'player3', name: 'Charlie' }
+			]
+			const state = await CinemaPippinGameModule.initialize(players, context)
+
+			expect(state.totalPlayers).toBe(3)
+		})
+
+		it('should serialize Maps to plain objects for WebSocket', async () => {
+			// This test prevents the infinite submit loop bug
+			const players: Player[] = [
+				{ id: 'player1', name: 'Alice' },
+				{ id: 'player2', name: 'Bob' }
+			]
+			let state = await CinemaPippinGameModule.initialize(players, context)
+
+			// Advance to answer_collection and submit
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'FILM_SELECT_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'INTRO_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{ playerId: 'jumbotron', type: 'VIDEO_COMPLETE', payload: {} },
+				state
+			)
+			state = await CinemaPippinGameModule.handleAction(
+				{
+					playerId: 'player1',
+					type: 'SUBMIT_ANSWER',
+					payload: { answer: 'Test answer' }
+				},
+				state
+			)
+
+			// playerAnswers should be a plain object (not a Map)
+			expect(state.playerAnswers).not.toBeInstanceOf(Map)
+			expect(typeof state.playerAnswers).toBe('object')
+			expect(state.playerAnswers['player1']).toBe('Test answer')
+
+			// Same for other Map fields
+			expect(state.votes).not.toBeInstanceOf(Map)
+			expect(state.scores).not.toBeInstanceOf(Map)
+			expect(state.endGameVotes).not.toBeInstanceOf(Map)
+		})
 	})
 })
