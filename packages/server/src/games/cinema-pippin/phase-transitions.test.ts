@@ -401,4 +401,225 @@ describe('Cinema Pippin Phase Transitions', () => {
 			expect(clip.clipNumber).toBe(1) // First clip
 		})
 	})
+
+	describe('SUBMIT_VOTE action', () => {
+		it('should store vote during voting_collection phase', () => {
+			game.initialize(['player1', 'player2'])
+
+			// Advance to voting_collection
+			const state = game.getState()
+			state.phase = 'voting_collection'
+			state.allAnswers = [
+				{ id: 'answer-1', text: 'banana', authorId: 'player1', votedBy: [] },
+				{ id: 'answer-2', text: 'rocket', authorId: 'player2', votedBy: [] }
+			]
+			game.setState(state)
+
+			// Player1 votes for answer-2
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-2' }
+			})
+
+			const updatedState = game.getState()
+			expect(updatedState.votes.get('player1')).toBe('answer-2')
+		})
+
+		it('should auto-advance to results_display when all players vote', () => {
+			game.initialize(['player1', 'player2'])
+
+			// Advance to voting_collection
+			const state = game.getState()
+			state.phase = 'voting_collection'
+			state.allAnswers = [
+				{ id: 'answer-1', text: 'banana', authorId: 'player1', votedBy: [] },
+				{ id: 'answer-2', text: 'rocket', authorId: 'player2', votedBy: [] }
+			]
+			game.setState(state)
+
+			expect(game.getPhase()).toBe('voting_collection')
+
+			// Player1 votes
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-2' }
+			})
+
+			// Still in voting_collection (only 1/2 voted)
+			expect(game.getPhase()).toBe('voting_collection')
+
+			// Player2 votes
+			game.handlePlayerAction('player2', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-1' }
+			})
+
+			// Should auto-advance to results_display
+			expect(game.getPhase()).toBe('results_display')
+		})
+
+		it('should not advance if not all players voted', () => {
+			game.initialize(['player1', 'player2', 'player3'])
+
+			const state = game.getState()
+			state.phase = 'voting_collection'
+			state.allAnswers = [{ id: 'answer-1', text: 'banana', authorId: 'player1', votedBy: [] }]
+			game.setState(state)
+
+			// Only 2 out of 3 players vote
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-1' }
+			})
+			game.handlePlayerAction('player2', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-1' }
+			})
+
+			// Should still be in voting_collection
+			expect(game.getPhase()).toBe('voting_collection')
+			expect(game.getState().votes.size).toBe(2)
+		})
+
+		it('should not process SUBMIT_VOTE when not in voting_collection phase', () => {
+			game.initialize(['player1'])
+
+			// In wrong phase
+			game.setState({ ...game.getState(), phase: 'answer_collection' })
+
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-1' }
+			})
+
+			// Should not have stored vote
+			expect(game.getState().votes.size).toBe(0)
+		})
+
+		it('should allow player to change their vote before all votes in', () => {
+			game.initialize(['player1', 'player2'])
+
+			const state = game.getState()
+			state.phase = 'voting_collection'
+			state.allAnswers = [
+				{ id: 'answer-1', text: 'banana', authorId: 'player1', votedBy: [] },
+				{ id: 'answer-2', text: 'rocket', authorId: 'player2', votedBy: [] }
+			]
+			game.setState(state)
+
+			// Player1 votes for answer-2
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-2' }
+			})
+
+			expect(game.getState().votes.get('player1')).toBe('answer-2')
+
+			// Player1 changes vote to answer-1
+			game.handlePlayerAction('player1', {
+				type: 'SUBMIT_VOTE',
+				payload: { answerId: 'answer-1' }
+			})
+
+			expect(game.getState().votes.get('player1')).toBe('answer-1')
+		})
+	})
+
+	describe('RESULTS_COMPLETE action', () => {
+		it('should advance to next clip when results complete', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'results_display'
+			state.currentClipIndex = 0
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+
+			// Should advance to clip_intro for next clip
+			expect(game.getPhase()).toBe('clip_intro')
+			expect(game.getState().currentClipIndex).toBe(1)
+		})
+
+		it('should advance to film_title_collection after third clip', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'results_display'
+			state.currentClipIndex = 2 // Third clip (0-indexed)
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+
+			expect(game.getPhase()).toBe('film_title_collection')
+		})
+	})
+
+	describe('FILM_TITLE_RESULTS_COMPLETE action', () => {
+		it('should advance to final_montage', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'film_title_results'
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'FILM_TITLE_RESULTS_COMPLETE', payload: {} })
+
+			expect(game.getPhase()).toBe('final_montage')
+		})
+	})
+
+	describe('FINAL_SCORES_COMPLETE action', () => {
+		it('should advance to end_game_vote', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'final_scores'
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'FINAL_SCORES_COMPLETE', payload: {} })
+
+			expect(game.getPhase()).toBe('end_game_vote')
+		})
+	})
+
+	describe('MONTAGE_COMPLETE action', () => {
+		it('should advance to next_film_or_end', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'final_montage'
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'MONTAGE_COMPLETE', payload: {} })
+
+			expect(game.getPhase()).toBe('next_film_or_end')
+		})
+	})
+
+	describe('NEXT_FILM_CHECK action', () => {
+		it('should advance to next film if more films remain', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'next_film_or_end'
+			state.currentFilmIndex = 0
+			state.currentClipIndex = 2
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'NEXT_FILM_CHECK', payload: {} })
+
+			// Should advance to next film
+			expect(game.getPhase()).toBe('clip_intro')
+			expect(game.getState().currentFilmIndex).toBe(1)
+			expect(game.getState().currentClipIndex).toBe(0) // Reset to first clip
+		})
+
+		it('should advance to final_scores if all films complete', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'next_film_or_end'
+			state.currentFilmIndex = 2 // Third film (0-indexed)
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'NEXT_FILM_CHECK', payload: {} })
+
+			// Should go to final scores
+			expect(game.getPhase()).toBe('final_scores')
+		})
+	})
 })

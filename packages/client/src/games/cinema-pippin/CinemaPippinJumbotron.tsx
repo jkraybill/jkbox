@@ -55,6 +55,91 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 		return () => clearTimeout(timer)
 	}, [gameState.phase, sendToServer])
 
+	// Auto-advance from results_display after 5 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'results_display') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'RESULTS_COMPLETE',
+				payload: {}
+			})
+		}, 5000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
+	// Auto-advance from film_title_results after 5 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'film_title_results') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'FILM_TITLE_RESULTS_COMPLETE',
+				payload: {}
+			})
+		}, 5000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
+	// Auto-advance from final_scores after 5 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'final_scores') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'FINAL_SCORES_COMPLETE',
+				payload: {}
+			})
+		}, 5000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
+	// Auto-advance from final_montage after 3 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'final_montage') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'MONTAGE_COMPLETE',
+				payload: {}
+			})
+		}, 3000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
+	// Auto-advance from next_film_or_end after 2 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'next_film_or_end') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'NEXT_FILM_CHECK',
+				payload: {}
+			})
+		}, 2000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
 	// Handle video completion
 	const handleVideoComplete = () => {
 		// Notify server that video has completed
@@ -115,8 +200,13 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 
 			case 'voting_playback':
 				if (gameState.currentClip) {
+					// Add key based on currentAnswerIndex to force VideoPlayer remount
+					// This ensures video plays from beginning for each answer
+					const currentAnswerIndex =
+						(state as { currentAnswerIndex?: number }).currentAnswerIndex ?? 0
 					return (
 						<VideoPlayer
+							key={`voting-answer-${currentAnswerIndex}`}
 							videoUrl={gameState.currentClip.videoUrl}
 							subtitles={gameState.currentClip.subtitles}
 							onComplete={handleVideoComplete}

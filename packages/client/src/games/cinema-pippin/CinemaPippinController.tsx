@@ -6,6 +6,14 @@
 import { useState, useEffect } from 'react'
 import type { ControllerProps } from '@jkbox/shared'
 import { AnswerInput } from './AnswerInput'
+import { VotingUI } from './VotingUI'
+
+interface Answer {
+	id: string
+	text: string
+	authorId: string
+	votedBy: string[]
+}
 
 interface CinemaPippinGameState {
 	phase: string
@@ -13,6 +21,7 @@ interface CinemaPippinGameState {
 	answerTimeout?: number
 	answerCollectionStartTime?: number
 	playerAnswers?: Map<string, string> | Record<string, string>
+	allAnswers?: Answer[]
 }
 
 export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {
@@ -101,11 +110,28 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 				)
 
 			case 'voting_playback':
+				return (
+					<div style={styles.container}>
+						<h1 style={styles.title}>Watch the Answers!</h1>
+						<p style={styles.message}>Get ready to vote...</p>
+					</div>
+				)
+
 			case 'voting_collection':
 				return (
 					<div style={styles.container}>
-						<h1 style={styles.title}>Voting Time!</h1>
-						<p style={styles.message}>Get ready to vote...</p>
+						<h1 style={styles.title}>Vote for the Funniest!</h1>
+						<VotingUI
+							playerId={playerId}
+							allAnswers={gameState.allAnswers}
+							onVote={(answerId) => {
+								sendToServer({
+									playerId,
+									type: 'SUBMIT_VOTE',
+									payload: { answerId }
+								})
+							}}
+						/>
 					</div>
 				)
 

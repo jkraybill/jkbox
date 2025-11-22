@@ -219,6 +219,71 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				break
 			}
 
+			case 'SUBMIT_VOTE': {
+				// Handle vote submission
+				if (this.state.phase !== 'voting_collection') {
+					console.log('[CinemaPippinGame] Ignoring SUBMIT_VOTE - not in voting_collection phase')
+					break
+				}
+
+				const { answerId } = gameAction.payload as { answerId: string }
+				this.state.votes.set(_playerId, answerId)
+				console.log(
+					'[CinemaPippinGame] Player',
+					_playerId,
+					'voted for',
+					answerId,
+					'(',
+					this.state.votes.size,
+					'/',
+					this.state.totalPlayers,
+					')'
+				)
+
+				// Auto-advance if all players have voted
+				if (this.state.totalPlayers && this.state.votes.size >= this.state.totalPlayers) {
+					console.log('[CinemaPippinGame] All players voted, advancing to results_display')
+					this.state.phase = 'results_display'
+				}
+				break
+			}
+
+			case 'RESULTS_COMPLETE':
+				if (this.state.phase === 'results_display') {
+					// Advance to next clip
+					this.advanceToNextClip()
+					console.log('[CinemaPippinGame] Results complete, advanced to', this.state.phase)
+				}
+				break
+
+			case 'FILM_TITLE_RESULTS_COMPLETE':
+				if (this.state.phase === 'film_title_results') {
+					this.state.phase = 'final_montage'
+					console.log('[CinemaPippinGame] Film title results complete, advanced to final_montage')
+				}
+				break
+
+			case 'FINAL_SCORES_COMPLETE':
+				if (this.state.phase === 'final_scores') {
+					this.state.phase = 'end_game_vote'
+					console.log('[CinemaPippinGame] Final scores complete, advanced to end_game_vote')
+				}
+				break
+
+			case 'MONTAGE_COMPLETE':
+				if (this.state.phase === 'final_montage') {
+					this.state.phase = 'next_film_or_end'
+					console.log('[CinemaPippinGame] Montage complete, advanced to next_film_or_end')
+				}
+				break
+
+			case 'NEXT_FILM_CHECK':
+				if (this.state.phase === 'next_film_or_end') {
+					this.advanceToNextFilm()
+					console.log('[CinemaPippinGame] Next film check, advanced to', this.state.phase)
+				}
+				break
+
 			default:
 				console.log('[CinemaPippinGame] Unknown action type:', gameAction.type)
 		}
