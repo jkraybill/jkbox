@@ -37,6 +37,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			playerAnswers: new Map(),
 			houseAnswers: [],
 			allAnswers: [],
+			currentAnswerIndex: 0,
 			votes: new Map(),
 			scores: new Map(playerIds.map((id) => [id, 0])),
 			clipWinners: [],
@@ -153,6 +154,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					this.state.phase = 'answer_collection'
 					this.state.answerCollectionStartTime = Date.now()
 					console.log('[CinemaPippinGame] Advanced to answer_collection')
+				} else if (this.state.phase === 'voting_playback') {
+					// Advance to next answer or move to voting_collection
+					this.state.currentAnswerIndex++
+					if (this.state.currentAnswerIndex >= this.state.allAnswers.length) {
+						// All answers shown, move to voting
+						this.state.phase = 'voting_collection'
+						console.log('[CinemaPippinGame] All answers shown, advanced to voting_collection')
+					} else {
+						// Stay in voting_playback, show next answer
+						console.log(
+							'[CinemaPippinGame] Showing next answer',
+							this.state.currentAnswerIndex + 1,
+							'/',
+							this.state.allAnswers.length
+						)
+					}
 				}
 				break
 
@@ -173,7 +190,31 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				// Auto-advance if all players have submitted
 				if (this.state.totalPlayers && this.state.playerAnswers.size >= this.state.totalPlayers) {
 					console.log('[CinemaPippinGame] All players submitted, advancing to voting_playback')
+
+					// Prepare answers for voting
+					const answers: typeof this.state.allAnswers = []
+
+					// Add all player answers
+					for (const [playerId, answerText] of this.state.playerAnswers.entries()) {
+						answers.push({
+							id: `player-${playerId}`,
+							text: answerText,
+							authorId: playerId,
+							votedBy: []
+						})
+					}
+
+					// TODO: Add house answers from precomputedAnswers
+					// For now, just shuffle player answers
+					this.state.allAnswers = answers.sort(() => Math.random() - 0.5)
+					this.state.currentAnswerIndex = 0
 					this.state.phase = 'voting_playback'
+
+					console.log(
+						'[CinemaPippinGame] Prepared',
+						this.state.allAnswers.length,
+						'answers for voting'
+					)
 				}
 				break
 			}
@@ -193,6 +234,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			playerAnswers: new Map(),
 			houseAnswers: [],
 			allAnswers: [],
+			currentAnswerIndex: 0,
 			votes: new Map(),
 			scores: new Map(),
 			clipWinners: [],

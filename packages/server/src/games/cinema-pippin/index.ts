@@ -35,6 +35,7 @@ class CinemaPippinModule implements PluggableGameModule {
 	 * Enrich game state with client-ready data
 	 * - Adds currentClip with videoUrl and parsed subtitles
 	 * - Converts Maps to plain objects for JSON serialization
+	 * - Merges current answer into subtitles during voting_playback
 	 */
 	private enrichStateForClient(): GameState {
 		const rawState = this.game.getState()
@@ -43,7 +44,18 @@ class CinemaPippinModule implements PluggableGameModule {
 		const currentClip = this.game.getCurrentClip()
 
 		// Load and parse SRT subtitles
-		const subtitles = loadSRT(currentClip.srtPath)
+		let subtitles = loadSRT(currentClip.srtPath)
+
+		// During voting_playback, merge current answer into subtitles
+		if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {
+			const currentAnswer = rawState.allAnswers[rawState.currentAnswerIndex]
+			if (currentAnswer) {
+				subtitles = subtitles.map((sub) => ({
+					...sub,
+					text: sub.text.replace(/_{2,}(\s+_{2,})*/g, currentAnswer.text)
+				}))
+			}
+		}
 
 		// Convert filesystem path to web URL
 		// /home/jk/jkbox/generated/clips/... → /clips/...

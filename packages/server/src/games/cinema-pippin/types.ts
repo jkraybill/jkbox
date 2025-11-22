@@ -49,6 +49,7 @@ export interface CinemaPippinState {
 	playerAnswers: Map<string, string>
 	houseAnswers: string[]
 	allAnswers: Answer[]
+	currentAnswerIndex: number // Which answer is currently being shown in voting_playback
 	votes: Map<string, string> // playerId -> answerId
 	scores: Map<string, number>
 	clipWinners: string[] // Winning answer per clip
