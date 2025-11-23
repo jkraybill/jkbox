@@ -25,9 +25,13 @@ export interface AIConfig {
 }
 
 /**
- * Claude API pricing (per million tokens) as of 2024
+ * Claude API pricing (per million tokens) as of November 2025
  */
 const CLAUDE_PRICING: Record<string, { input: number; output: number }> = {
+	'claude-sonnet-4-5-20250929': { input: 3.0, output: 15.0 },
+	'claude-haiku-4-5-20251001': { input: 1.0, output: 5.0 },
+	'claude-opus-4-1-20250805': { input: 15.0, output: 75.0 },
+	// Legacy models
 	'claude-3-5-sonnet-20241022': { input: 3.0, output: 15.0 },
 	'claude-3-5-sonnet-20240620': { input: 3.0, output: 15.0 },
 	'claude-3-5-haiku-20241022': { input: 1.0, output: 5.0 },
@@ -47,8 +51,8 @@ function calculateClaudeCost(
 	const pricing = CLAUDE_PRICING[model]
 
 	if (!pricing) {
-		console.warn(`[AI] Unknown model pricing for ${model}, using Sonnet 3.5 pricing as default`)
-		const defaultPricing = CLAUDE_PRICING['claude-3-5-sonnet-20241022']
+		console.warn(`[AI] Unknown model pricing for ${model}, using Haiku 4.5 pricing as default`)
+		const defaultPricing = CLAUDE_PRICING['claude-haiku-4-5-20251001']
 		const inputCost = (inputTokens / 1_000_000) * defaultPricing.input
 		const outputCost = (outputTokens / 1_000_000) * defaultPricing.output
 		return { cost: inputCost + outputCost, inputCost, outputCost }
@@ -315,7 +319,7 @@ export async function generateBatchAnswers(
 		}
 
 		{
-			const claudeModel = 'claude-3-5-sonnet-20240620'
+			const claudeModel = 'claude-haiku-4-5-20251001'
 			console.log(`[AI] Using Claude API (${claudeModel}) for generation...`)
 			const anthropic = new Anthropic({
 				apiKey: process.env.ANTHROPIC_API_KEY
