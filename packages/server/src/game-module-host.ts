@@ -49,6 +49,13 @@ export class GameModuleHost {
 	}
 
 	/**
+	 * Get the game module instance
+	 */
+	get module(): GameModule {
+		return this.gameModule
+	}
+
+	/**
 	 * Initialize the game module
 	 * FSM transition: countdown → playing
 	 *
