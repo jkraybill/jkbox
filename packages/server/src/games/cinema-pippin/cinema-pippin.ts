@@ -662,7 +662,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	 */
 	private async generateAIAnswers(): Promise<void> {
 		const clipNumber = (this.state.currentClipIndex + 1) as 1 | 2 | 3
-		const keyword = clipNumber === 1 ? 'blank' : this.state.keywords[0] || 'blank'
+		const keyword = clipNumber === 1 ? 'blank' : this.state.clipWinners[0] || 'blank'
 
 		const aiConstraints = this.state.aiPlayers.map((ai) => ai.constraint)
 		const playerCount = this.state.scores.size
