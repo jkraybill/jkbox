@@ -259,14 +259,18 @@ export async function generateBatchAnswers(
 		return match ? match[1].trim() : constraint.split(/\s+/)[0]
 	}
 
-	const constraint1 = randomizedConstraints[0] ? getConstraintTitle(randomizedConstraints[0] ?? '') : ''
-	const constraint2 = randomizedConstraints[1] ? getConstraintTitle(randomizedConstraints[1] ?? '') : ''
-	const constraint3 = randomizedConstraints[2] ? getConstraintTitle(randomizedConstraints[2] ?? '') : ''
+	const constraint1 = randomizedConstraints[0]
+		? getConstraintTitle(randomizedConstraints[0] ?? '')
+		: ''
+	const constraint2 = randomizedConstraints[1]
+		? getConstraintTitle(randomizedConstraints[1] ?? '')
+		: ''
+	const constraint3 = randomizedConstraints[2]
+		? getConstraintTitle(randomizedConstraints[2] ?? '')
+		: ''
 
 	// Build enhanced SRT context (with previous clips if T > 1)
-	const enhancedSrt = questionSrt
-		? buildSrtContext(questionSrt, previousClips || [], keyword)
-		: ''
+	const enhancedSrt = questionSrt ? buildSrtContext(questionSrt, previousClips || [], keyword) : ''
 
 	// Build system prompt from template
 	const systemPrompt = getPrompt('batch-generation-system.md', {
@@ -311,7 +315,7 @@ export async function generateBatchAnswers(
 		}
 
 		{
-			const claudeModel = 'claude-3-5-sonnet-20241022'
+			const claudeModel = 'claude-3-5-sonnet-20240620'
 			console.log(`[AI] Using Claude API (${claudeModel}) for generation...`)
 			const anthropic = new Anthropic({
 				apiKey: process.env.ANTHROPIC_API_KEY
@@ -376,18 +380,18 @@ export async function generateBatchAnswers(
 		const answerMap = JSON.parse(jsonMatch[0]) as Record<string, string>
 
 		// Extract constraint titles from randomizedConstraints for validation
-		const expectedTitles = randomizedConstraints.map(c => getConstraintTitle(c))
+		const expectedTitles = randomizedConstraints.map((c) => getConstraintTitle(c))
 
 		// Validate that all expected constraint titles are present in the map
 		const mapKeys = Object.keys(answerMap)
-		const missingKeys = expectedTitles.filter(title => !mapKeys.includes(title))
+		const missingKeys = expectedTitles.filter((title) => !mapKeys.includes(title))
 
 		if (missingKeys.length > 0) {
 			throw new Error(`Missing constraint keys in response: ${missingKeys.join(', ')}`)
 		}
 
 		// Map answers back to the order of randomizedConstraints
-		const orderedAnswers = expectedTitles.map(title => {
+		const orderedAnswers = expectedTitles.map((title) => {
 			const answer = answerMap[title]
 			if (!answer) {
 				throw new Error(`No answer found for constraint: ${title}`)
