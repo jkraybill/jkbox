@@ -123,7 +123,7 @@ export function VideoPlayer({
 					data-testid="subtitle-text"
 					style={{
 						position: 'absolute',
-						bottom: 'calc(10% - 2em)',
+						bottom: 'calc(10% - 0.5em)',
 						left: '50%',
 						transform: 'translateX(-50%)',
 						backgroundColor: 'rgba(0, 0, 0, 0.8)',
