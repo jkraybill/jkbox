@@ -22,7 +22,5 @@ Generate {{NUM_CONSTRAINTS}} HILARIOUS {{ANSWER_TYPE}} that maximize LAUGHS and 
 - **CONTEXT-AWARE:** These fill blanks in FILM SUBTITLES (dramatic, romantic, tense scenes)
 - **INCOGNITO CONSTRAINTS:** Satisfy constraint WITHOUT being obvious about it
 
-{{CRITICAL_NOTE}}
-
 📋 CONSTRAINTS (one per answer, in ORDER):
 {{CONSTRAINTS_LIST}}

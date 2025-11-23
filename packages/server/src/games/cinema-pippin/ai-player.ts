@@ -167,9 +167,6 @@ export async function generateBatchAnswers(
 		WORD_COUNT_C3: clipNumber === 3 ? 3 : 4,
 		NUM_CONSTRAINTS: combinedConstraints.length,
 		ANSWER_TYPE: isC1 ? 'WORDS' : 'PHRASES',
-		CRITICAL_NOTE: isC1
-			? '⚠️ C1 CRITICAL: Winning word becomes the KEYWORD for C2/C3! Pick words with COMEDIC POTENTIAL for reuse.'
-			: `⚠️ C${clipNumber} KEYWORD: "${keyword}" - Use this word NATURALLY in your phrase`,
 		CONSTRAINTS_LIST: randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
 	})
 
