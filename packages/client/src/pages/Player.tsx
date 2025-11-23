@@ -250,7 +250,7 @@ const styles = {
 		height: '100vh',
 		width: '100vw',
 		overflow: 'hidden',
-		padding: 'var(--space-xl)',
+		padding: 0,
 		fontFamily: 'var(--font-family)',
 		backgroundColor: 'var(--color-bg-dark)',
 		color: 'var(--color-text-primary)',
@@ -264,8 +264,8 @@ const styles = {
 		maxWidth: '500px',
 		width: '100%',
 		margin: '0 auto',
-		overflowY: 'auto' as const,
-		overflowX: 'hidden' as const
+		overflow: 'hidden',
+		padding: 'var(--space-md)'
 	},
 	waitingCard: {
 		padding: 'var(--space-3xl) var(--space-xl)',
@@ -313,8 +313,7 @@ const styles = {
 		color: 'var(--color-accent-blue)'
 	},
 	footer: {
-		marginTop: 'var(--space-3xl)',
-		paddingTop: 'var(--space-xl)',
+		padding: 'var(--space-md)',
 		borderTop: '1px solid var(--color-bg-light)'
 	},
 	statusRow: {
