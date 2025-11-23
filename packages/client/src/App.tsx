@@ -7,7 +7,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Jumbotron />} />
-      <Route path="/join/:roomId" element={<Join />} />
+      <Route path="/join" element={<Join />} />
       <Route path="/play/:roomId" element={<Player />} />
     </Routes>
   )

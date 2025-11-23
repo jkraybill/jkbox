@@ -50,9 +50,10 @@ export async function getNetworkUrl(): Promise<string> {
 }
 
 /**
- * Get the full join URL for a room
+ * Get the full join URL for the singleton room
+ * roomId parameter is deprecated and ignored (kept for backwards compatibility)
  */
-export async function getJoinUrl(roomId: string): Promise<string> {
+export async function getJoinUrl(_roomId?: string): Promise<string> {
 	const baseUrl = await getNetworkUrl()
-	return `${baseUrl}/join/${roomId}`
+	return `${baseUrl}/join`
 }

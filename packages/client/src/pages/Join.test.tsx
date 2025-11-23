@@ -23,14 +23,12 @@ vi.mock('../store/game-store', () => ({
   })
 }))
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return {
-    ...actual,
-    useParams: () => ({ roomId: 'TEST' }),
-    useNavigate: () => vi.fn()
-  }
-})
+// Mock fetch for /api/room
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({ room: { roomId: 'TEST' } })
+  })
+) as any
 
 describe('Join', () => {
   beforeEach(() => {
@@ -62,13 +60,15 @@ describe('Join', () => {
     expect(button).toBeDefined()
   })
 
-  it('should show room code in header', () => {
+  it('should show room code in header after loading', async () => {
     render(
       <BrowserRouter>
         <Join />
       </BrowserRouter>
     )
 
-    expect(screen.getByText(/TEST/)).toBeDefined()
+    await waitFor(() => {
+      expect(screen.getByText(/TEST/)).toBeDefined()
+    })
   })
 })

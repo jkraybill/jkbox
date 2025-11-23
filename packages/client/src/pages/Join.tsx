@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { getSavedNickname, saveNickname } from '../utils/cookies'
@@ -7,7 +7,6 @@ import { getDeviceId } from '../lib/device-id'
 import type { JoinSuccessMessage, ErrorMessage } from '@jkbox/shared'
 
 export function Join() {
-	const { roomId } = useParams<{ roomId: string }>()
 	const navigate = useNavigate()
 	const { socket, isConnected } = useSocket()
 	const { setCurrentPlayer, setSessionToken, setRoom } = useGameStore()
@@ -15,6 +14,24 @@ export function Join() {
 	const [nickname, setNickname] = useState('')
 	const [isJoining, setIsJoining] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const [roomId, setRoomId] = useState<string | null>(null)
+	const [isFetchingRoom, setIsFetchingRoom] = useState(true)
+
+	// Fetch singleton room on mount
+	useEffect(() => {
+		const fetchRoom = async () => {
+			try {
+				const response = await fetch('/api/room')
+				const data = await response.json()
+				setRoomId(data.room.roomId)
+			} catch (err) {
+				setError('Failed to connect to server')
+			} finally {
+				setIsFetchingRoom(false)
+			}
+		}
+		fetchRoom()
+	}, [])
 
 	// Load saved nickname from cookie on mount
 	useEffect(() => {
@@ -109,10 +126,10 @@ export function Join() {
 
 				<button
 					type="submit"
-					disabled={!isConnected || isJoining || !nickname.trim()}
+					disabled={!isConnected || isJoining || !nickname.trim() || isFetchingRoom || !roomId}
 					style={{
 						...styles.button,
-						...((!isConnected || isJoining || !nickname.trim()) && styles.buttonDisabled)
+						...((!isConnected || isJoining || !nickname.trim() || isFetchingRoom || !roomId) && styles.buttonDisabled)
 					}}
 				>
 					{isJoining ? 'Joining...' : 'Join Party'}
@@ -120,6 +137,7 @@ export function Join() {
 
 				{error && <div style={styles.error}>{error}</div>}
 
+				{isFetchingRoom && <div style={styles.connectionWarning}>Loading room...</div>}
 				{!isConnected && <div style={styles.connectionWarning}>Connecting to server...</div>}
 			</form>
 
