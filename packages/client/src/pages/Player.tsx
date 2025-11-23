@@ -155,10 +155,6 @@ export function Player() {
 
 	return (
 		<div style={styles.container}>
-			<div style={styles.header}>
-				<div style={styles.nickname}>{currentPlayer.nickname}</div>
-			</div>
-
 			<div style={styles.content}>
 				{room?.phase === 'lobby' && roomId && currentPlayer && (
 					<LobbyVoting roomId={roomId} playerId={currentPlayer.id} />
@@ -259,19 +255,6 @@ const styles = {
 		backgroundColor: 'var(--color-bg-dark)',
 		color: 'var(--color-text-primary)',
 		boxSizing: 'border-box' as const
-	},
-	header: {
-		textAlign: 'center' as const,
-		marginBottom: 'var(--space-3xl)'
-	},
-	nickname: {
-		fontSize: 'var(--font-size-4xl)',
-		fontWeight: 'bold',
-		marginBottom: 'var(--space-sm)'
-	},
-	roomCode: {
-		fontSize: 'var(--font-size-sm)',
-		color: 'var(--color-text-muted)'
 	},
 	content: {
 		flex: 1,
