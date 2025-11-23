@@ -15,6 +15,7 @@ export interface VideoPlayerProps {
 	fadeOutDuration: number
 	preRollText?: string
 	preRollDuration?: number
+	isPaused?: boolean
 }
 
 /**
@@ -42,12 +43,14 @@ export function VideoPlayer({
 	fadeInDuration,
 	fadeOutDuration,
 	preRollText,
-	preRollDuration = 2000
+	preRollDuration = 2000,
+	isPaused = false
 }: VideoPlayerProps) {
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const [currentSubtitle, setCurrentSubtitle] = useState<Subtitle | null>(null)
 	const [opacity, setOpacity] = useState(0)
 	const [showPreRoll, setShowPreRoll] = useState(!!preRollText)
+	const previousPausedRef = useRef<boolean>(isPaused)
 
 	// Fade in on mount
 	useEffect(() => {
@@ -68,6 +71,28 @@ export function VideoPlayer({
 		}, preRollDuration)
 		return () => clearTimeout(timer)
 	}, [preRollText, preRollDuration])
+
+	// Handle pause/play based on isPaused prop (only when it changes)
+	useEffect(() => {
+		if (!videoRef.current) return
+
+		// Only act on changes to isPaused, not initial mount (autoPlay handles that)
+		if (previousPausedRef.current === isPaused) return
+		previousPausedRef.current = isPaused
+
+		if (isPaused) {
+			// Only call pause if it's implemented (not in test environment)
+			if (typeof videoRef.current.pause === 'function') {
+				videoRef.current.pause()
+			}
+		} else {
+			// Only call play if it's implemented (not in test environment)
+			const playPromise = videoRef.current.play?.()
+			void playPromise?.catch((error) => {
+				console.warn('[VideoPlayer] Failed to play video:', error)
+			})
+		}
+	}, [isPaused])
 
 	// Handle video time updates for subtitle display
 	const handleTimeUpdate = () => {

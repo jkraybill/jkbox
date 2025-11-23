@@ -334,6 +334,7 @@ export function Jumbotron() {
 								state={room.gameState}
 								players={room.players}
 								sendToServer={(action) => socket.emit('game:action', action)}
+								pauseState={room.pauseState}
 							/>
 						)
 					})()}

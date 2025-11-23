@@ -3,6 +3,7 @@
 
 import type * as React from 'react'
 import type { Player } from './player'
+import type { PauseState } from './room-state'
 
 /**
  * Game identifier (e.g., 'fake-facts', 'drawful', 'trivia-murder')
@@ -51,6 +52,7 @@ export interface JumbotronProps {
 	state: GameState
 	players: Player[]
 	sendToServer: (action: GameAction) => void
+	pauseState?: PauseState
 }
 
 /**

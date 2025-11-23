@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react'
-import type { JumbotronProps, Player } from '@jkbox/shared'
+import type { JumbotronProps, Player, PauseState } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
 import { ResultsDisplay } from './ResultsDisplay'
@@ -127,8 +127,15 @@ const statusStyles = {
 	}
 }
 
-export function CinemaPippinJumbotron({ state, players, sendToServer }: JumbotronProps) {
+export function CinemaPippinJumbotron({
+	state,
+	players,
+	sendToServer,
+	pauseState
+}: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
+	const typedPauseState = pauseState as PauseState | undefined
+	const isPaused: boolean = typedPauseState ? typedPauseState.isPaused : false
 
 	// Auto-advance from film_select to clip_intro after 2 seconds
 	useEffect(() => {
@@ -291,6 +298,7 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 								fadeOutDuration={1000}
 								preRollText={`Act ${gameState.currentClip.clipNumber}`}
 								preRollDuration={2000}
+								isPaused={isPaused}
 							/>
 						</div>
 					)
@@ -330,6 +338,7 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 								onComplete={handleVideoComplete}
 								fadeInDuration={1000}
 								fadeOutDuration={1000}
+								isPaused={isPaused}
 							/>
 						</div>
 					)
