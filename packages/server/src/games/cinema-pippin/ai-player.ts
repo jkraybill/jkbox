@@ -57,8 +57,14 @@ function calculateClaudeCost(model: string, inputTokens: number, outputTokens: n
 
 /**
  * Log AI conversation to ~/pippin-ai.log
+ * Only logs when running in an active game (not during automated tests)
  */
 function logAIConversation(type: 'prompt' | 'response', content: string, metadata?: Record<string, any>): void {
+	// Skip logging during automated tests
+	if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
+		return
+	}
+
 	const logPath = path.join(os.homedir(), 'pippin-ai.log')
 	const timestamp = new Date().toISOString()
 	const metadataStr = metadata ? `\nMetadata: ${JSON.stringify(metadata, null, 2)}` : ''
