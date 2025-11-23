@@ -68,8 +68,7 @@ function PlayerStatusList({
 		<div style={statusStyles.container}>
 			{playerIds.map((playerId) => {
 				const status = playerStatus[playerId]
-				const isComplete =
-					mode === 'answering' ? status?.hasSubmittedAnswer : status?.hasVoted
+				const isComplete = mode === 'answering' ? status?.hasSubmittedAnswer : status?.hasVoted
 				const playerName = playerNicknames.get(playerId) || playerId
 
 				return (
@@ -283,15 +282,17 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 			case 'clip_playback':
 				if (gameState.currentClip) {
 					return (
-						<VideoPlayer
-							videoUrl={gameState.currentClip.videoUrl}
-							subtitles={gameState.currentClip.subtitles}
-							onComplete={handleVideoComplete}
-							fadeInDuration={1000}
-							fadeOutDuration={1000}
-							preRollText={`Act ${gameState.currentClip.clipNumber}`}
-							preRollDuration={2000}
-						/>
+						<div style={{ width: '100%', height: '90vh' }}>
+							<VideoPlayer
+								videoUrl={gameState.currentClip.videoUrl}
+								subtitles={gameState.currentClip.subtitles}
+								onComplete={handleVideoComplete}
+								fadeInDuration={1000}
+								fadeOutDuration={1000}
+								preRollText={`Act ${gameState.currentClip.clipNumber}`}
+								preRollDuration={2000}
+							/>
+						</div>
 					)
 				}
 				return (
@@ -308,7 +309,7 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 						<PlayerStatusList
 							playerStatus={gameState.playerStatus}
 							scores={gameState.scores}
-					players={players}
+							players={players}
 							mode="answering"
 						/>
 					</div>
@@ -321,14 +322,16 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 					const currentAnswerIndex =
 						(state as { currentAnswerIndex?: number }).currentAnswerIndex ?? 0
 					return (
-						<VideoPlayer
-							key={`voting-answer-${currentAnswerIndex}`}
-							videoUrl={gameState.currentClip.videoUrl}
-							subtitles={gameState.currentClip.subtitles}
-							onComplete={handleVideoComplete}
-							fadeInDuration={1000}
-							fadeOutDuration={1000}
-						/>
+						<div style={{ width: '100%', height: '90vh' }}>
+							<VideoPlayer
+								key={`voting-answer-${currentAnswerIndex}`}
+								videoUrl={gameState.currentClip.videoUrl}
+								subtitles={gameState.currentClip.subtitles}
+								onComplete={handleVideoComplete}
+								fadeInDuration={1000}
+								fadeOutDuration={1000}
+							/>
+						</div>
 					)
 				}
 				return (
@@ -345,7 +348,7 @@ export function CinemaPippinJumbotron({ state, players, sendToServer }: Jumbotro
 						<PlayerStatusList
 							playerStatus={gameState.playerStatus}
 							scores={gameState.scores}
-					players={players}
+							players={players}
 							mode="voting"
 						/>
 					</div>
