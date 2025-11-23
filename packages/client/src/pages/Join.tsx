@@ -22,7 +22,7 @@ export function Join() {
 		const fetchRoom = async () => {
 			try {
 				const response = await fetch('/api/room')
-				const data = await response.json()
+				const data = (await response.json()) as { room: { roomId: string } }
 				setRoomId(data.room.roomId)
 			} catch (err) {
 				setError('Failed to connect to server')
@@ -30,7 +30,7 @@ export function Join() {
 				setIsFetchingRoom(false)
 			}
 		}
-		fetchRoom()
+		void fetchRoom()
 	}, [])
 
 	// Load saved nickname from cookie on mount
@@ -52,7 +52,7 @@ export function Join() {
 			setRoom(message.state)
 
 			// Navigate to player view
-			navigate(`/play/${roomId}`)
+			navigate('/play')
 		}
 
 		// Listen for errors
@@ -129,7 +129,8 @@ export function Join() {
 					disabled={!isConnected || isJoining || !nickname.trim() || isFetchingRoom || !roomId}
 					style={{
 						...styles.button,
-						...((!isConnected || isJoining || !nickname.trim() || isFetchingRoom || !roomId) && styles.buttonDisabled)
+						...((!isConnected || isJoining || !nickname.trim() || isFetchingRoom || !roomId) &&
+							styles.buttonDisabled)
 					}}
 				>
 					{isJoining ? 'Joining...' : 'Join Party'}

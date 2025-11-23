@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../lib/use-socket'
 import { useGameStore } from '../store/game-store'
 import { LobbyVoting } from '../components/LobbyVoting'
@@ -34,14 +34,29 @@ const GAME_CONTROLLERS: Record<GameId, React.ComponentType<ControllerProps>> = {
 }
 
 export function Player() {
-	const { roomId } = useParams<{ roomId: string }>()
 	const navigate = useNavigate()
 	const { socket, isConnected } = useSocket()
 	const { currentPlayer, room, setCurrentPlayer, setRoom } = useGameStore()
 	const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
 	const [showAdminTools, setShowAdminTools] = useState(false)
 	const [restoring, setRestoring] = useState(true)
+	const [roomId, setRoomId] = useState<string | null>(null)
 	const restorationAttempted = useRef(false)
+
+	// Fetch singleton room on mount
+	useEffect(() => {
+		const fetchRoom = async () => {
+			try {
+				const response = await fetch('/api/room')
+				const data = (await response.json()) as { room: { roomId: string } }
+				setRoomId(data.room.roomId)
+			} catch (err) {
+				console.error('[Player] Failed to fetch room, redirecting to join...')
+				navigate('/join')
+			}
+		}
+		void fetchRoom()
+	}, [navigate])
 
 	// Attempt session restoration on mount
 	useEffect(() => {
@@ -63,7 +78,7 @@ export function Player() {
 		if (!storedPlayerId || storedRoomId !== roomId || !storedSessionToken) {
 			// No stored session, redirect to join immediately
 			console.log('[Player] No stored session, redirecting to join...')
-			navigate(`/join/${roomId}`)
+			navigate('/join')
 			return undefined
 		}
 
@@ -81,7 +96,7 @@ export function Player() {
 		// Set timeout to redirect if restoration fails
 		const redirectTimer = setTimeout(() => {
 			console.log('[Player] Session restoration timed out, redirecting to join...')
-			navigate(`/join/${roomId}`)
+			navigate('/join')
 		}, 3000)
 
 		// Listen for successful restoration
@@ -97,7 +112,7 @@ export function Player() {
 		const handleError = () => {
 			clearTimeout(redirectTimer)
 			console.log('[Player] Session restoration failed, redirecting to join...')
-			navigate(`/join/${roomId}`)
+			navigate('/join')
 		}
 
 		socket.once('join:success', handleJoinSuccess)
