@@ -9,6 +9,7 @@ import * as os from 'os'
 import { Ollama } from 'ollama'
 import Anthropic from '@anthropic-ai/sdk'
 import type { ClipNumber } from './types'
+import { getPrompt } from './prompt-loader'
 
 export interface AIPlayer {
 	playerId: string
@@ -59,7 +60,7 @@ function calculateClaudeCost(model: string, inputTokens: number, outputTokens: n
  * Log AI conversation to ~/pippin-ai.log
  * Only logs when running in an active game (not during automated tests)
  */
-function logAIConversation(type: 'prompt' | 'response', content: string, metadata?: Record<string, any>): void {
+function logAIConversation(type: 'prompt' | 'response', content: string, metadata?: Record<string, unknown>): void {
 	// Skip logging during automated tests
 	if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
 		return
@@ -147,8 +148,6 @@ export async function generateBatchAnswers(
 	aiConstraints: string[], // AI player constraints
 	additionalCount: number // Number of additional house answers to generate
 ): Promise<string[]> {
-	const ollama = new Ollama({ host: config.ollamaEndpoint })
-
 	const isC1 = clipNumber === 1
 	const wordCount = isC1 ? 1 : clipNumber === 2 ? 4 : 3
 
@@ -162,69 +161,41 @@ export async function generateBatchAnswers(
 	const combinedConstraints = [...aiConstraints, ...houseConstraints]
 	const randomizedConstraints = shuffleConstraints(combinedConstraints)
 
-	const systemPrompt = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin".
+	// Build system prompt from template
+	const systemPrompt = getPrompt('batch-generation-system.md', {
+		WORD_COUNT_C2: clipNumber === 2 ? 4 : 3,
+		WORD_COUNT_C3: clipNumber === 3 ? 3 : 4,
+		NUM_CONSTRAINTS: combinedConstraints.length,
+		ANSWER_TYPE: isC1 ? 'WORDS' : 'PHRASES',
+		CRITICAL_NOTE: isC1
+			? '⚠️ C1 CRITICAL: Winning word becomes the KEYWORD for C2/C3! Pick words with COMEDIC POTENTIAL for reuse.'
+			: `⚠️ C${clipNumber} KEYWORD: "${keyword}" - Use this word NATURALLY in your phrase`,
+		CONSTRAINTS_LIST: randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
+	})
 
-🎬 THE GAME:
-- Players watch foreign film clips with subtitles that have BLANKS
-- Act 1 (C1): Submit a single word to fill the blank
-- THE WINNING C1 WORD becomes the KEYWORD for Acts 2 & 3
-- Act 2 (C2): Submit ${clipNumber === 2 ? 4 : 3}-word phrase/sentence using the keyword
-- Act 3 (C3): Submit ${clipNumber === 3 ? 3 : 4}-word phrase/sentence using the keyword
-- Players VOTE on the funniest answers
-- VOTES = POINTS. Winner takes all!
-
-🎯 YOUR TASK:
-Generate ${combinedConstraints.length} HILARIOUS ${isC1 ? 'WORDS' : 'PHRASES'} that maximize LAUGHS and VOTES in a competitive party setting.
-
-💡 EXPERT STRATEGY:
-- **THINK LIKE A PLAYER:** What would make ME vote for this over others?
-- **VARIETY > REPETITION:** Each answer should feel UNIQUE (avoid thematic overlap)
-- **SURPRISE > EXPECTED:** Subvert expectations, avoid obvious choices
-- **CLEVER > CRUDE:** "accidental pregnancy test" beats "big boobies"
-- **CONTEXT-AWARE:** These fill blanks in FILM SUBTITLES (dramatic, romantic, tense scenes)
-- **INCOGNITO CONSTRAINTS:** Satisfy constraint WITHOUT being obvious about it
-
-${isC1 ? '⚠️ C1 CRITICAL: Winning word becomes the KEYWORD for C2/C3! Pick words with COMEDIC POTENTIAL for reuse.' : `⚠️ C${clipNumber} KEYWORD: "${keyword}" - Use this word NATURALLY in your phrase`}
-
-📋 CONSTRAINTS (one per answer, in ORDER):
-${randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}`
-
+	// Build user prompt from template
 	const userPrompt = isC1
-		? `Generate EXACTLY ${combinedConstraints.length} single HILARIOUS WORDS, one per constraint listed above.
-
-🎯 C1 RULES:
-• EXACTLY 1 word each (no phrases, no spaces, no hyphens unless part of word like "McDonald's")
-• Each word MUST satisfy its numbered constraint
-• Follow proper capitalization (proper nouns capitalized, otherwise lowercase)
-• NO punctuation (no periods, exclamation marks, question marks)
-• **WINNING WORD BECOMES KEYWORD** - pick words with comedic reuse potential!
-
-📤 OUTPUT FORMAT:
-Return ONLY a JSON array of ${combinedConstraints.length} strings:
-["word1", "word2", "word3", ...]
-
-NO explanations, NO markdown, NO extra text. ONLY the JSON array.`
-		: `Generate EXACTLY ${combinedConstraints.length} HILARIOUS ${wordCount}-WORD PHRASES, one per constraint listed above.
-
-🎯 C${clipNumber} RULES:
-• EXACTLY ${wordCount} words each (±1 OK, but aim for ${wordCount})
-• Each phrase MUST satisfy its numbered constraint
-• MUST use keyword "${keyword}" naturally in the phrase
-• Follow proper capitalization
-• MUST end with punctuation (. ! or ?)
-• **CLEVER > CRUDE:** Absurd juxtapositions beat lazy obscenity
-
-📤 OUTPUT FORMAT:
-Return ONLY a JSON array of ${combinedConstraints.length} strings:
-["phrase one here!", "phrase two here.", "phrase three here!"]
-
-NO explanations, NO markdown, NO extra text. ONLY the JSON array.`
+		? getPrompt('batch-generation-user-c1.md', {
+				NUM_CONSTRAINTS: combinedConstraints.length
+			})
+		: getPrompt('batch-generation-user-c2c3.md', {
+				NUM_CONSTRAINTS: combinedConstraints.length,
+				WORD_COUNT: wordCount,
+				CLIP_NUMBER: clipNumber,
+				KEYWORD: keyword
+			})
 
 	try {
 		let rawResponse: string
 
-		// Use Claude API if ANTHROPIC_API_KEY is set, otherwise fall back to Ollama
-		if (process.env.ANTHROPIC_API_KEY) {
+		// Always use Claude Sonnet for batch generation (higher quality)
+		if (!process.env.ANTHROPIC_API_KEY) {
+			throw new Error(
+				'ANTHROPIC_API_KEY environment variable is required for AI answer generation. Please set it in your .env file.'
+			)
+		}
+
+		{
 			const claudeModel = 'claude-3-5-sonnet-20241022'
 			console.log(`[AI] Using Claude API (${claudeModel}) for generation...`)
 			const anthropic = new Anthropic({
@@ -274,42 +245,6 @@ NO explanations, NO markdown, NO extra text. ONLY the JSON array.`
 				costBreakdown: {
 					input: `$${inputCost.toFixed(6)}`,
 					output: `$${outputCost.toFixed(6)}`
-				}
-			})
-		} else {
-			console.log('[AI] Using Ollama (qwen-fast) for generation...')
-
-			// Log the prompt
-			const fullPrompt = `SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`
-			logAIConversation('prompt', fullPrompt, {
-				model: config.model,
-				clipNumber,
-				keyword,
-				numConstraints: combinedConstraints.length,
-				temperature: config.temperature,
-				endpoint: config.ollamaEndpoint
-			})
-
-			const response = await ollama.generate({
-				model: config.model,
-				system: systemPrompt,
-				prompt: userPrompt,
-				options: {
-					temperature: config.temperature,
-					num_predict: isC1 ? 50 : 200
-				}
-			})
-			rawResponse = response.response
-
-			// Log the response with token counts
-			logAIConversation('response', rawResponse, {
-				model: config.model,
-				inputTokens: response.prompt_eval_count || 0,
-				outputTokens: response.eval_count || 0,
-				totalTokens: (response.prompt_eval_count || 0) + (response.eval_count || 0),
-				timing: {
-					totalDuration: response.total_duration,
-					loadDuration: response.load_duration
 				}
 			})
 		}
@@ -368,42 +303,18 @@ export async function generateAIAnswer(
 	const isC1 = clipNumber === 1
 	const wordCount = isC1 ? 1 : clipNumber === 2 ? 4 : 3
 
-	const systemPrompt = `You are a PROFESSIONAL COMEDY WRITER for an adults-only party game called "Cinema Pippin". You excel at generating HILARIOUS, ABSURD, and CLEVER punchlines that maximize humor through unexpected juxtapositions, shock value, and perfect contextual fit. You excel at dark humor, sexual innuendo, and toilet humor while respecting creative constraints.`
+	const systemPrompt = getPrompt('single-answer-system.md')
 
 	const userPrompt = isC1
-		? `Generate a single HILARIOUS word that fits this constraint: "${constraint}"
-
-🎯 CRITICAL RULES:
-• Generate EXACTLY 1 word (no phrases, no spaces, no hyphens unless part of the word like "McDonald's")
-• The word MUST satisfy the constraint: ${constraint}
-• Maximize ABSURDITY, SURPRISE, and HUMOR
-• This is an ADULTS-ONLY game - dark humor, sexual innuendo, toilet humor all ENCOURAGED
-• The word will replace the keyword "${keyword}" in a film subtitle
-• Follow proper English capitalization (capitalize if it's a proper noun, otherwise lowercase)
-• DO NOT include any punctuation (no periods, exclamation marks, question marks)
-
-Examples of good words: "boobies", "McDonald", "Hell", "butt", "taco"
-Examples of bad words: "McDonald's!" (has punctuation), "New York" (has space), "very good" (multiple words)
-
-Respond with ONLY the single word, nothing else.`
-		: `Generate a HILARIOUS ${wordCount}-word phrase/sentence that fits this constraint: "${constraint}"
-
-🎯 CRITICAL RULES:
-• Generate EXACTLY ${wordCount} words (±1 word is OK, but aim for ${wordCount})
-• The phrase MUST satisfy the constraint: ${constraint}
-• Maximize ABSURDITY, SURPRISE, and HUMOR in context
-• This is an ADULTS-ONLY game - dark humor, sexual innuendo, toilet humor all ENCOURAGED
-• The phrase will replace the keyword "${keyword}" in a film subtitle
-• Follow proper English capitalization
-• MUST end with punctuation (. or ! or ?)
-• **CLEVER TWIST > CRUDE SHOCK:** "May the Force be with you... and in you" beats "just fucking"
-• **ABSURD JUXTAPOSITION:** Mix serious + silly, formal + crude, mundane + extreme
-• Avoid pure sound effects ("Vroom vroom"), preachy lectures, lazy obscenity
-
-Examples of good phrases: "munching delicious tacos!", "showing off my boobies!", "eating fresh avocado toast."
-Examples of bad phrases: "very good day" (boring), "Vroom vroom" (sound effect), "just sex" (no ending punctuation)
-
-Respond with ONLY the phrase/sentence, nothing else.`
+		? getPrompt('single-answer-user-c1.md', {
+				CONSTRAINT: constraint,
+				KEYWORD: keyword
+			})
+		: getPrompt('single-answer-user-c2c3.md', {
+				WORD_COUNT: wordCount,
+				CONSTRAINT: constraint,
+				KEYWORD: keyword
+			})
 
 	const response = await ollama.generate({
 		model: config.model,
@@ -450,27 +361,15 @@ export async function generateAIVote(
 
 	const ollama = new Ollama({ host: config.ollamaEndpoint })
 
-	const systemPrompt = `You are an EXPERT COMEDY JUDGE for "Cinema Pippin", an adults-only party game. You have impeccable taste in humor and can identify what makes people laugh hardest. You evaluate punchlines based on: maximum comedic impact, surprise/shock value, absurdity, clever contextual fit, and broad adult appeal.`
+	const systemPrompt = getPrompt('judging-system.md')
 
 	const answerList = answers.map((a, i) => `${i + 1}. ${a.text}`).join('\n')
 
-	const userPrompt = `Judge these ${answers.length} punchlines and pick the FUNNIEST one that best fits this judging preference: "${judgingConstraint}"
-
-🎯 YOUR TASK:
-Pick the answer that:
-• Maximizes HUMOR and makes people LAUGH HARDEST
-• Best aligns with the judging constraint: ${judgingConstraint}
-• Has the best SURPRISE/SHOCK value
-• Creates the most ABSURD or CLEVER juxtaposition
-• Has broad ADULT APPEAL for a party game
-
-📋 THE ${answers.length} OPTIONS:
-${answerList}
-
-⚠️ OUTPUT FORMAT:
-Respond with ONLY the number (1-${answers.length}) of the funniest answer. No explanations, no other text.
-
-Your response should be a single number between 1 and ${answers.length}.`
+	const userPrompt = getPrompt('judging-user.md', {
+		NUM_ANSWERS: answers.length,
+		JUDGING_CONSTRAINT: judgingConstraint,
+		ANSWERS_LIST: answerList
+	})
 
 	// Log the prompt
 	const fullPrompt = `SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`
