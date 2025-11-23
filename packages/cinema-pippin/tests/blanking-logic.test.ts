@@ -104,12 +104,12 @@ _____
 00:00:02,000 --> 00:00:04,000
 ____ __ _____`;
 
-      // Since we use .replace() with g flag, it replaces ALL occurrences
-      // This test documents current behavior - may need adjustment
+      // Should only replace first occurrence (for T2/T3 F3 frame replacement)
       const result = replaceBlankedText(scene, "TEXT");
       const matches = result.match(/TEXT/g);
       expect(matches).toBeTruthy();
-      expect(matches!.length).toBeGreaterThan(0);
+      expect(matches!.length).toBe(1); // Only first occurrence replaced
+      expect(result).toContain("_____"); // Second blank still present (in frame 2)
     });
 
     it('should handle punctuation in replacement text', () => {
