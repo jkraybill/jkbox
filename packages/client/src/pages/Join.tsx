@@ -99,11 +99,6 @@ export function Join() {
 		<div style={styles.container}>
 			<div style={styles.header}>
 				<h1 style={styles.title}>Join Party</h1>
-				{roomId && (
-					<div style={styles.roomCode}>
-						Room: <span style={styles.roomCodeValue}>{roomId}</span>
-					</div>
-				)}
 			</div>
 
 			<form onSubmit={handleSubmit} style={styles.form}>
@@ -167,17 +162,8 @@ const styles = {
 	},
 	title: {
 		fontSize: '48px',
-		margin: '0 0 20px 0',
+		margin: '0',
 		fontWeight: 'bold'
-	},
-	roomCode: {
-		fontSize: '18px',
-		color: '#aaaaaa'
-	},
-	roomCodeValue: {
-		color: '#3b82f6',
-		fontWeight: 'bold',
-		fontSize: '24px'
 	},
 	form: {
 		width: '100%',
