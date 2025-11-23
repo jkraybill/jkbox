@@ -123,17 +123,17 @@ export function VideoPlayer({
 					data-testid="subtitle-text"
 					style={{
 						position: 'absolute',
-						bottom: '10%',
+						bottom: 'calc(10% - 2em)',
 						left: '50%',
 						transform: 'translateX(-50%)',
 						backgroundColor: 'rgba(0, 0, 0, 0.8)',
 						color: '#fff',
 						padding: '10px 20px',
 						borderRadius: '4px',
-						fontSize: '60px',
+						fontSize: '51px',
 						textAlign: 'center',
-						maxWidth: '100%',
-						whiteSpace: 'pre-line'
+						maxWidth: '95%',
+						whiteSpace: 'nowrap'
 					}}
 					dangerouslySetInnerHTML={{
 						__html: currentSubtitle.text.replace(/\n/g, '<br />')

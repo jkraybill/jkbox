@@ -5,6 +5,7 @@
 
 import { readFileSync } from 'fs'
 import { replaceKeywordPreservingCasing } from './casing-utils'
+import { replaceBlankedText } from '@jkbox/cinema-pippin'
 
 export interface Subtitle {
 	index: number
@@ -47,12 +48,41 @@ export function parseSRT(srtContent: string): Subtitle[] {
 
 /**
  * Replace blank (_____ or ____ __ ____) with player answer
+ * Uses replaceBlankedText which:
+ * - Replaces only first occurrence (F3 frame)
+ * - Applies smart line splitting for long answers
  */
 export function mergeSRT(subtitles: Subtitle[], answer: string): Subtitle[] {
-	return subtitles.map((sub) => ({
-		...sub,
-		text: sub.text.replace(/_{2,}(\s+_{2,})*/g, answer)
-	}))
+	// Convert subtitles to SRT text format
+	const srtText = subtitles.map((sub) =>
+		`${sub.index}\n${sub.startTime} --> ${sub.endTime}\n${sub.text}`
+	).join('\n\n')
+
+	// Replace blanks with answer (handles line splitting automatically)
+	const replacedText = replaceBlankedText(srtText, answer)
+
+	// Parse back to subtitle objects
+	const blocks = replacedText.trim().split(/\n\n+/)
+	const result: Subtitle[] = []
+
+	for (const block of blocks) {
+		const lines = block.split('\n')
+		if (lines.length < 3) continue
+
+		const indexLine = lines[0]
+		const timeLine = lines[1]
+		if (!indexLine || !timeLine) continue
+
+		const index = parseInt(indexLine, 10)
+		const [startTime, endTime] = timeLine.split(' --> ')
+		if (!startTime || !endTime) continue
+
+		const text = lines.slice(2).join('\n')
+
+		result.push({ index, startTime, endTime, text })
+	}
+
+	return result
 }
 
 /**
