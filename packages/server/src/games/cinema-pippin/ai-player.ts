@@ -39,7 +39,11 @@ const CLAUDE_PRICING: Record<string, { input: number; output: number }> = {
 /**
  * Calculate cost for Claude API calls based on model pricing
  */
-function calculateClaudeCost(model: string, inputTokens: number, outputTokens: number): { cost: number; inputCost: number; outputCost: number } {
+function calculateClaudeCost(
+	model: string,
+	inputTokens: number,
+	outputTokens: number
+): { cost: number; inputCost: number; outputCost: number } {
 	const pricing = CLAUDE_PRICING[model]
 
 	if (!pricing) {
@@ -60,7 +64,11 @@ function calculateClaudeCost(model: string, inputTokens: number, outputTokens: n
  * Log AI conversation to ~/pippin-ai.log
  * Only logs when running in an active game (not during automated tests)
  */
-function logAIConversation(type: 'prompt' | 'response', content: string, metadata?: Record<string, unknown>): void {
+function logAIConversation(
+	type: 'prompt' | 'response',
+	content: string,
+	metadata?: Record<string, unknown>
+): void {
 	// Skip logging during automated tests
 	if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
 		return
@@ -146,7 +154,8 @@ export async function generateBatchAnswers(
 	clipNumber: ClipNumber,
 	keyword: string,
 	aiConstraints: string[], // AI player constraints
-	additionalCount: number // Number of additional house answers to generate
+	additionalCount: number, // Number of additional house answers to generate
+	questionSrt?: string // Optional SRT text of the question for context
 ): Promise<string[]> {
 	const isC1 = clipNumber === 1
 	const wordCount = isC1 ? 1 : clipNumber === 2 ? 4 : 3
@@ -173,13 +182,15 @@ export async function generateBatchAnswers(
 	// Build user prompt from template
 	const userPrompt = isC1
 		? getPrompt('batch-generation-user-c1.md', {
-				NUM_CONSTRAINTS: combinedConstraints.length
+				NUM_CONSTRAINTS: combinedConstraints.length,
+				QUESTION_SRT: questionSrt || ''
 			})
 		: getPrompt('batch-generation-user-c2c3.md', {
 				NUM_CONSTRAINTS: combinedConstraints.length,
 				WORD_COUNT: wordCount,
 				CLIP_NUMBER: clipNumber,
-				KEYWORD: keyword
+				KEYWORD: keyword,
+				QUESTION_SRT: questionSrt || ''
 			})
 
 	try {
@@ -215,17 +226,19 @@ export async function generateBatchAnswers(
 				max_tokens: isC1 ? 256 : 1024,
 				temperature: config.temperature,
 				system: systemPrompt,
-				messages: [{
-					role: 'user',
-					content: userPrompt
-				}]
+				messages: [
+					{
+						role: 'user',
+						content: userPrompt
+					}
+				]
 			})
 
 			const content = message.content[0]
 			if (content.type !== 'text') {
 				throw new Error('Expected text response from Claude')
 			}
-			rawResponse = content.text
+			rawResponse = (content as { type: 'text'; text: string }).text
 
 			// Calculate cost and log the response
 			const { cost, inputCost, outputCost } = calculateClaudeCost(
@@ -255,9 +268,7 @@ export async function generateBatchAnswers(
 		const answers = JSON.parse(jsonMatch[0]) as string[]
 
 		if (answers.length !== combinedConstraints.length) {
-			throw new Error(
-				`Expected ${combinedConstraints.length} answers, got ${answers.length}`
-			)
+			throw new Error(`Expected ${combinedConstraints.length} answers, got ${answers.length}`)
 		}
 
 		// Clean up answers

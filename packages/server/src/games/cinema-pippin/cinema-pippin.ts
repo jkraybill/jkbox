@@ -2,6 +2,7 @@
  * Cinema Pippin - Main Game Module
  */
 
+import * as fs from 'fs'
 import type { GameModuleMetadata, GameModule } from '@jkbox/shared'
 import { loadFilms } from './film-loader'
 import type { CinemaPippinState, GamePhase, FilmData, ClipData, AIPlayerData } from './types'
@@ -666,6 +667,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		const aiConstraints = this.state.aiPlayers.map((ai) => ai.constraint)
 		const playerCount = this.state.scores.size
 
+		// Load the SRT text for context
+		const currentClip = this.getCurrentClip()
+		const questionSrt = fs.readFileSync(currentClip.srtPath, 'utf-8')
+
 		// ALWAYS block auto-advance during generation (for both AI players + house answers)
 		// The auto-advance check will only wait if there are actual AI players
 		this.aiGenerationInProgress = true
@@ -691,7 +696,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				clipNumber,
 				keyword,
 				aiConstraints,
-				playerCount
+				playerCount,
+				questionSrt
 			)
 
 			console.log(`[AI] Batch generation returned ${batchAnswers.length} answers`)
