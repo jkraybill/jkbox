@@ -319,3 +319,5 @@ Journal entries reference HC outcomes:
 ### Session 3 (2025-11-22) - jkbox
 
 [2025-11-22 05:24 UTC] Session 3✓. Cinema Pippin results+keyword features. ResultsDisplay: sequential reveal (lowest→highest votes), score animation (100ms/point), winner screen, tie-breaking (human>AI>random)✓. Keyword replacement: C1 winner→replaces [keyword] in C2/C3, casing-aware (God+banana→Banana)✓. T:210/210✓ (+7 casing tests). C:8960250,9774b68. Pattern: Casing detection via original SRT comparison→apply to replacement. TS undefined guards critical for build✓. JKLES: ∅ (focused technical).
+
+[2025-11-23 12:21 UTC] Session 3 cont✓. AI generation: Haiku 4.5, hot-reload .md prompts (fs.watch), SRT context+prev clips merged, map validation→fallback, self-improving answers.json. UI: admin toggle↻90°, -nickname/-room/-scroll. /play/:roomId→/play singleton. dotenv ES module fix. T:734/734✓. C:125a609. Pattern: import.meta.url for __dirname in ES modules. Hot-reload fs.watch()✓. Map-based validation→robust fallback. JKLES: TBD.
