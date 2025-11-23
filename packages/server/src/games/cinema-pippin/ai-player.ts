@@ -170,27 +170,46 @@ export async function generateBatchAnswers(
 	const combinedConstraints = [...aiConstraints, ...houseConstraints]
 	const randomizedConstraints = shuffleConstraints(combinedConstraints)
 
+	// Extract constraint titles (part before " -- ")
+	const getConstraintTitle = (constraint: string): string => {
+		const match = constraint.match(/^([^-]+)\s*--/)
+		return match ? match[1].trim() : constraint.split(/\s+/)[0]
+	}
+
+	const constraint1 = randomizedConstraints[0] ? getConstraintTitle(randomizedConstraints[0]) : ''
+	const constraint2 = randomizedConstraints[1] ? getConstraintTitle(randomizedConstraints[1]) : ''
+	const constraint3 = randomizedConstraints[2] ? getConstraintTitle(randomizedConstraints[2]) : ''
+
 	// Build system prompt from template
 	const systemPrompt = getPrompt('batch-generation-system.md', {
 		WORD_COUNT_C2: clipNumber === 2 ? 4 : 3,
 		WORD_COUNT_C3: clipNumber === 3 ? 3 : 4,
 		NUM_CONSTRAINTS: combinedConstraints.length,
 		ANSWER_TYPE: isC1 ? 'WORDS' : 'PHRASES',
-		CONSTRAINTS_LIST: randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
+		CONSTRAINTS_LIST: randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n'),
+		CONSTRAINT_1: constraint1,
+		CONSTRAINT_2: constraint2,
+		CONSTRAINT_3: constraint3
 	})
 
 	// Build user prompt from template
 	const userPrompt = isC1
 		? getPrompt('batch-generation-user-c1.md', {
 				NUM_CONSTRAINTS: combinedConstraints.length,
-				QUESTION_SRT: questionSrt || ''
+				QUESTION_SRT: questionSrt || '',
+				CONSTRAINT_1: constraint1,
+				CONSTRAINT_2: constraint2,
+				CONSTRAINT_3: constraint3
 			})
 		: getPrompt('batch-generation-user-c2c3.md', {
 				NUM_CONSTRAINTS: combinedConstraints.length,
 				WORD_COUNT: wordCount,
 				CLIP_NUMBER: clipNumber,
 				KEYWORD: keyword,
-				QUESTION_SRT: questionSrt || ''
+				QUESTION_SRT: questionSrt || '',
+				CONSTRAINT_1: constraint1,
+				CONSTRAINT_2: constraint2,
+				CONSTRAINT_3: constraint3
 			})
 
 	try {
