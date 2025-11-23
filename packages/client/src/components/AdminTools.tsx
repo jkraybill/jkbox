@@ -17,7 +17,6 @@ export function AdminTools() {
 		return null
 	}
 
-	const aiGuesses = room.config?.aiGuesses ?? 1
 	const cinemaPippinAIPlayers = room.config?.cinemaPippinAIPlayers ?? 1
 
 	const handleBootPlayer = (playerId: string) => {
@@ -51,17 +50,6 @@ export function AdminTools() {
 		}
 
 		socket.emit('admin:hard-reset', message)
-	}
-
-	const handleAiGuessesChange = (value: number) => {
-		if (!socket) return
-
-		const message: AdminUpdateConfigMessage = {
-			type: 'admin:update-config',
-			config: { aiGuesses: value }
-		}
-
-		socket.emit('admin:update-config', message)
 	}
 
 	const handleCinemaPippinAIPlayersChange = (value: number) => {
@@ -108,37 +96,6 @@ export function AdminTools() {
 				<div style={styles.configSection}>
 					<div style={styles.configTitle}>Game Configuration</div>
 					<div style={styles.configRow}>
-						<label htmlFor="ai-guesses" style={styles.configLabel}>
-							AI Guesses
-						</label>
-						<div style={styles.spinnerContainer}>
-							<button
-								onClick={() => handleAiGuessesChange(Math.max(0, aiGuesses - 1))}
-								disabled={aiGuesses <= 0}
-								style={{
-									...styles.spinnerButton,
-									...(aiGuesses <= 0 ? styles.spinnerButtonDisabled : {})
-								}}
-								aria-label="Decrease AI guesses"
-							>
-								−
-							</button>
-							<div style={styles.spinnerValue}>{aiGuesses}</div>
-							<button
-								onClick={() => handleAiGuessesChange(Math.min(5, aiGuesses + 1))}
-								disabled={aiGuesses >= 5}
-								style={{
-									...styles.spinnerButton,
-									...(aiGuesses >= 5 ? styles.spinnerButtonDisabled : {})
-								}}
-								aria-label="Increase AI guesses"
-							>
-								+
-							</button>
-						</div>
-						<div style={styles.configHint}>Number of AI-generated fake answers (0-5)</div>
-					</div>
-					<div style={{ ...styles.configRow, marginTop: '16px' }}>
 						<label htmlFor="cinema-pippin-ai-players" style={styles.configLabel}>
 							Cinema Pippin AI Players
 						</label>

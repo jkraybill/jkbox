@@ -20,7 +20,6 @@ import { loadConstraints, shuffleConstraints } from './games/cinema-pippin/ai-pl
 function getDefaultConfig(): RoomConfig {
 	const globalConfig = getGlobalConfigStorage()
 	return {
-		aiGuesses: 1, // Default: 1 AI-generated fake answer per round
 		cinemaPippinAIPlayers: globalConfig.getAIPlayerCount() // Default from global config
 	}
 }

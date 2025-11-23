@@ -1055,7 +1055,7 @@ export class ConnectionHandler {
 			phase: 'title',
 			roomId,
 			players: [],
-			config: currentRoom?.config || { aiGuesses: 1, cinemaPippinAIPlayers: 1 }
+			config: currentRoom?.config || { cinemaPippinAIPlayers: 1 }
 		}
 		this.roomManager.updateRoomState(roomId, titleRoom)
 
