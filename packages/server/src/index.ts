@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
@@ -248,7 +249,7 @@ io.on('connection', (socket) => {
 
 	// Handle admin config update
 	socket.on('admin:update-config', (message: AdminUpdateConfigMessage) => {
-		connectionHandler.handleUpdateConfig(socket, message)
+		void connectionHandler.handleUpdateConfig(socket, message)
 	})
 
 	// Handle admin pause
