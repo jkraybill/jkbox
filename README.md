@@ -9,7 +9,7 @@
 To launch the jumbotron display with video autoplay enabled (Windows PowerShell):
 
 ```powershell
-& "C:\Program Files\Google\Chrome\Application\chrome.exe" --autoplay-policy=no-user-gesture-required http://localhost:3000/jumbotron
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --autoplay-policy=no-user-gesture-required http://localhost:3000/
 ```
 
 This bypasses browser autoplay restrictions for a smooth party game experience.
