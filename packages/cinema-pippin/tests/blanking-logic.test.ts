@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { blankWithSpaces, replaceBlankedText, condenseAndBlank } from '../src/blanking-utils.js';
+import { blankWithSpaces, replaceBlankedText, condenseAndBlank, splitLongLine } from '../src/blanking-utils.js';
 
 describe('Blanking Logic', () => {
   describe('blankWithSpaces', () => {
@@ -236,6 +236,83 @@ ${blankedFrame}`;
       expect(result).toBe("___ ____ ___ ___ ____ ____ ____ __");
       const wordCount = result.split(/\s+/).length;
       expect(wordCount).toBe(8);
+    });
+  });
+
+  describe('splitLongLine', () => {
+    it('should not split lines <= 60 characters', () => {
+      const short = "This is a short line that fits easily.";
+      expect(splitLongLine(short)).toBe(short);
+    });
+
+    it('should split on punctuation near midpoint', () => {
+      const text = "This is a longer line with a comma here, and more text after it.";
+      const result = splitLongLine(text);
+      expect(result).toContain('\n');
+      const lines = result.split('\n');
+      expect(lines).toHaveLength(2);
+      // Should split after the comma
+      expect(lines[0]).toMatch(/,\s*$/);
+    });
+
+    it('should prefer period over other punctuation', () => {
+      const text = "This is the first sentence. This is the second sentence that continues!";
+      const result = splitLongLine(text);
+      expect(result).toContain('\n');
+      const lines = result.split('\n');
+      // Should split after the period
+      expect(lines[0]).toMatch(/\.\s*$/);
+    });
+
+    it('should split on question mark if near midpoint', () => {
+      const text = "Do you think this will work? I really hope it does work well.";
+      const result = splitLongLine(text);
+      expect(result).toContain('\n');
+      const lines = result.split('\n');
+      // Should split after the question mark
+      expect(lines[0]).toMatch(/\?\s*$/);
+    });
+
+    it('should split on word boundary if no punctuation near midpoint', () => {
+      const text = "This is a very long line without any punctuation marks near the middle area";
+      const result = splitLongLine(text);
+      expect(result).toContain('\n');
+      const lines = result.split('\n');
+      expect(lines).toHaveLength(2);
+      // Both lines should be trimmed
+      expect(lines[0]).toBe(lines[0].trim());
+      expect(lines[1]).toBe(lines[1].trim());
+      // Lines should be roughly equal length (within 20 chars)
+      expect(Math.abs(lines[0].length - lines[1].length)).toBeLessThan(20);
+    });
+
+    it('should create approximately equal line lengths', () => {
+      const text = "The quick brown fox jumps over the lazy dog and runs through the forest";
+      const result = splitLongLine(text);
+      const lines = result.split('\n');
+      const diff = Math.abs(lines[0].length - lines[1].length);
+      // Lines should be within 15 chars of each other
+      expect(diff).toBeLessThan(15);
+    });
+
+    it('should integrate with replaceBlankedText for long phrases', () => {
+      const scene = `1
+00:00:00,000 --> 00:00:02,000
+Frame before.
+
+2
+00:00:02,000 --> 00:00:04,000
+____ __ _____`;
+
+      const longPhrase = "This is a very long phrase that should be split into two lines automatically!";
+      const result = replaceBlankedText(scene, longPhrase);
+
+      expect(result).toContain('\n');
+      // Should have replaced the blanks with the split phrase
+      expect(result).not.toContain('____');
+      // Should contain the long phrase content (split)
+      expect(result).toContain('This is a very long');
+      expect(result).toContain('automatically!');
     });
   });
 });

@@ -113,7 +113,7 @@ export function VideoPlayer({
 				autoPlay
 				style={{
 					width: '100%',
-					height: '100%',
+					height: 'calc(100% - 4em)',
 					objectFit: 'contain'
 				}}
 			/>
@@ -130,9 +130,10 @@ export function VideoPlayer({
 						color: '#fff',
 						padding: '10px 20px',
 						borderRadius: '4px',
-						fontSize: '48px',
+						fontSize: '60px',
 						textAlign: 'center',
-						maxWidth: '80%'
+						maxWidth: '100%',
+						whiteSpace: 'pre-line'
 					}}
 					dangerouslySetInnerHTML={{
 						__html: currentSubtitle.text.replace(/\n/g, '<br />')
