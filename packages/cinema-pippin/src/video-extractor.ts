@@ -2,7 +2,7 @@
  * Video extraction utilities for triplet sequences
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join, basename } from 'path';
 import { execSync } from 'child_process';
 
@@ -87,9 +87,44 @@ export function rebaseSrtTimestamps(srtContent: string, originalStartTime: strin
 }
 
 /**
+ * Extend the end timestamp of the last subtitle frame
+ * Used for T2 F3 and T3 F3 to allow longer player answers to be readable
+ * @param srtContent - The SRT content
+ * @param extensionSeconds - Seconds to add to the end timestamp of last frame (default 2.0)
+ * @returns Modified SRT content with extended last frame
+ */
+export function extendLastFrameTimestamp(srtContent: string, extensionSeconds: number = 2.0): string {
+  const frames = srtContent.trim().split(/\n\n+/);
+
+  if (frames.length === 0) {
+    return srtContent;
+  }
+
+  const lastFrame = frames[frames.length - 1];
+  const lastFrameLines = lastFrame.split('\n');
+
+  // Second line should be the timestamp
+  if (lastFrameLines[1] && lastFrameLines[1].includes('-->')) {
+    lastFrameLines[1] = lastFrameLines[1].replace(
+      /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/,
+      (match, start, end) => {
+        const endSeconds = srtTimeToSeconds(end);
+        const newEnd = endSeconds + extensionSeconds;
+        return `${start} --> ${secondsToSrtTime(newEnd)}`;
+      }
+    );
+  }
+
+  // Reconstruct the SRT with modified last frame
+  const modifiedLastFrame = lastFrameLines.join('\n');
+  return [...frames.slice(0, -1), modifiedLastFrame].join('\n\n') + '\n';
+}
+
+/**
  * Extract video segment using ffmpeg and embed subtitles
  * Adds configurable padding on each side of the video, but subtitles only appear during the original time range
- * @param paddingSeconds - Seconds of padding to add before/after video (default 1.0)
+ * @param startPaddingSeconds - Seconds of padding to add before video (default 1.0)
+ * @param endPaddingSeconds - Seconds of padding to add after video (default 2.0)
  */
 export function extractVideoSegment(
   inputVideo: string,
@@ -98,7 +133,8 @@ export function extractVideoSegment(
   outputVideo: string,
   srtFile: string,
   audioStreamIndex?: number | null,
-  paddingSeconds: number = 1.0
+  startPaddingSeconds: number = 1.0,
+  endPaddingSeconds: number = 2.0
 ): void {
   const startSeconds = srtTimeToSeconds(startTime);
   const endSeconds = srtTimeToSeconds(endTime);
@@ -106,12 +142,12 @@ export function extractVideoSegment(
 
   // Add configurable padding on each side
   // Ensure we don't go below 0 (can't seek before video start)
-  const paddedStart = Math.max(0, startSeconds - paddingSeconds);
-  const paddedEnd = endSeconds + paddingSeconds;
+  const paddedStart = Math.max(0, startSeconds - startPaddingSeconds);
+  const paddedEnd = endSeconds + endPaddingSeconds;
   const paddedDuration = paddedEnd - paddedStart;
 
   console.log(`    Extracting video: ${startTime} -> ${endTime} (${originalDuration.toFixed(1)}s)`);
-  console.log(`    With padding: ${secondsToSrtTime(paddedStart)} -> ${secondsToSrtTime(paddedEnd)} (${paddedDuration.toFixed(1)}s, ${paddingSeconds}s padding)`);
+  console.log(`    With padding: ${secondsToSrtTime(paddedStart)} -> ${secondsToSrtTime(paddedEnd)} (${paddedDuration.toFixed(1)}s, ${startPaddingSeconds}s start / ${endPaddingSeconds}s end)`);
 
   // Build audio mapping based on audioStreamIndex
   // If audioStreamIndex is a number, use that specific stream: -map 0:${audioStreamIndex}
@@ -128,13 +164,13 @@ export function extractVideoSegment(
 
   // Build audio filter to MUTE (write silent samples) in padding regions
   // volume filter with multiplier of 0 writes actual silent audio samples (not just metadata)
-  // First paddingSeconds: multiply by 0 (silent samples)
+  // First startPaddingSeconds: multiply by 0 (silent samples)
   // Middle section: multiply by 1.0 (original audio)
-  // Last paddingSeconds: multiply by 0 (silent samples)
-  const volumeThreshold = paddedDuration - paddingSeconds;
+  // Last endPaddingSeconds: multiply by 0 (silent samples)
+  const volumeThreshold = paddedDuration - endPaddingSeconds;
   // Expression uses single quotes inside double quotes: "volume='expression':eval=frame"
   // eval=frame is required for time-based expressions (t variable)
-  const volumeExpr = `if(lt(t,${paddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))`;
+  const volumeExpr = `if(lt(t,${startPaddingSeconds}),0,if(gt(t,${volumeThreshold}),0,1.0))`;
   const audioFilter = `-af "volume='${volumeExpr}':eval=frame"`;
 
   // Use ffmpeg to extract the segment with embedded subtitles
@@ -152,17 +188,19 @@ export function extractVideoSegment(
   const ffmpegCmd = `ffmpeg -y -ss ${paddedStart} -i "${inputVideo}" -i "${srtFile}" -t ${paddedDuration} -map 0:v ${audioMap} -map 1:0 ${audioFilter} -vf scale=1280:-2 -c:v libx264 -crf 23 -preset fast -c:a aac -b:a 128k ${audioDisposition} -c:s mov_text -metadata:s:s:0 language=eng -disposition:s:0 default -avoid_negative_ts make_zero "${outputVideo}" 2>&1`;
 
   try {
-    const output = execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: '/bin/bash' });
-    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${paddingSeconds}s silent padding)`);
-  } catch (error: any) {
-    const stderr = error.stderr || error.stdout || error.message || 'Unknown error';
+    execSync(ffmpegCmd, { encoding: 'utf-8', stdio: 'pipe', shell: '/bin/bash' });
+    console.log(`    ✓ Created ${basename(outputVideo)} (${paddedDuration.toFixed(1)}s with ${startPaddingSeconds}s start / ${endPaddingSeconds}s end silent padding)`);
+  } catch (error: unknown) {
+    const err = error as { stderr?: string; stdout?: string; message?: string };
+    const stderr = err.stderr || err.stdout || err.message || 'Unknown error';
     throw new Error(`ffmpeg failed for ${basename(outputVideo)}:\n${stderr}`);
   }
 }
 
 /**
  * Extract videos for all 3 scenes in a sequence directory
- * @param paddingSeconds - Seconds of padding to add before/after each video (default 1.0)
+ * @param startPaddingSeconds - Seconds of padding to add before each video (default 1.0)
+ * @param endPaddingSeconds - Seconds of padding to add after each video (default 2.0)
  */
 export function extractVideosForSequence(
   sequenceDir: string,
@@ -170,7 +208,8 @@ export function extractVideosForSequence(
   srtBasename: string,
   timestampRanges: Array<{ startTime: string; endTime: string }>,
   audioStreamIndex?: number | null,
-  paddingSeconds: number = 1.0
+  startPaddingSeconds: number = 1.0,
+  endPaddingSeconds: number = 2.0
 ): void {
   console.log(`\n  🎬 Extracting videos for ${basename(sequenceDir)}/`);
 
@@ -184,14 +223,11 @@ export function extractVideosForSequence(
       continue;
     }
 
-    // Read the already-rebased question SRT
-    const questionSrt = readFileSync(questionSrtPath, 'utf-8');
-
     // Get the original timestamp range for this scene
     const { startTime, endTime } = timestampRanges[sceneNum - 1];
 
     // Extract video segment (question SRT is already rebased with padding delay)
     const outputVideoPath = join(sequenceDir, `${srtBasename}-${sceneNum}-question.mp4`);
-    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath, audioStreamIndex, paddingSeconds);
+    extractVideoSegment(sourceVideo, startTime, endTime, outputVideoPath, questionSrtPath, audioStreamIndex, startPaddingSeconds, endPaddingSeconds);
   }
 }
