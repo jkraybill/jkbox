@@ -332,6 +332,7 @@ export function Jumbotron() {
 						return (
 							<GameComponent
 								state={room.gameState}
+								players={room.players}
 								sendToServer={(action) => socket.emit('game:action', action)}
 							/>
 						)

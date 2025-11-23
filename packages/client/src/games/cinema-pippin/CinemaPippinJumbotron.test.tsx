@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, waitFor } from '@testing-library/react'
+import { render, waitFor, act } from '@testing-library/react'
 import { CinemaPippinJumbotron } from './CinemaPippinJumbotron'
 
 describe('CinemaPippinJumbotron', () => {
@@ -148,10 +148,11 @@ describe('CinemaPippinJumbotron', () => {
 
 			// Simulate video ending
 			const video = container.querySelector('video')
-			video?.dispatchEvent(new Event('ended'))
-
-			// VideoPlayer has fadeOutDuration (1000ms) before calling onComplete
-			await vi.advanceTimersByTimeAsync(1000)
+			await act(async () => {
+				video?.dispatchEvent(new Event('ended'))
+				// VideoPlayer has fadeOutDuration (1000ms) before calling onComplete
+				await vi.advanceTimersByTimeAsync(1000)
+			})
 
 			expect(sendToServer).toHaveBeenCalledWith({
 				playerId: 'jumbotron',
@@ -272,9 +273,10 @@ describe('CinemaPippinJumbotron', () => {
 			)
 
 			const video = container.querySelector('video')
-			video?.dispatchEvent(new Event('ended'))
-
-			await vi.advanceTimersByTimeAsync(1000)
+			await act(async () => {
+				video?.dispatchEvent(new Event('ended'))
+				await vi.advanceTimersByTimeAsync(1000)
+			})
 
 			expect(sendToServer).toHaveBeenCalledWith({
 				playerId: 'jumbotron',

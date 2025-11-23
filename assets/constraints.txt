@@ -1,29 +1,32 @@
-Suggestive -- this punchline should maximize humorous adult innuendo, suggestiveness, sexual allusions, etc.
-Peep and poop and farts and butts and stuff -- this punchline should optimize for maximal 'toilet humor' that fits the context.
-The letter 'E' -- this punchline's first letter must be the letter 'E'.
-The letter 'A' -- this punchline's first letter must be the letter 'A'.
-The letter 'S' -- this punchline's first letter must be the letter 'S'.
-The letter 'T' -- this punchline's first letter must be the letter 'T'.
-The letter 'R' -- this punchline's first letter must be the letter 'R'.
-Punny -- this punchline should be a pun in context that makes smart word-nerd type people laugh.
+Saynomore -- this punchline should maximize humorous adult innuendo, suggestiveness, sexual allusions, etc.
+Poop and Pee and farts and butts and stuff -- this punchline should optimize for maximal 'toilet humor' that fits the context.
+Pun -- this punchline should be a pun in context that makes smart word-nerd type people laugh. Great wordplay.
 Bizarro world -- this punchline should maximize for being completely out of left field. Weird and wild and unexpected.
-Pippin's word -- this punchline should be dog-related, invoking the energy of Pippin, our mischevious moodle puppy and game host.
+Pippin word -- this punchline should be dog-related, invoking the energy of Pippin, our mischevious moodle puppy and game host who loves Penny and loves Shmakkos.
 Pop culture -- this punchline should invoke pop culture references from popular TV, movies, music, celebrities, etc.
 Political -- this punchline should maximize for political but funny content. References to politicians, countries, wars, etc are all fine.
-Super random -- this punchline should just be super random and unexpected while hopefully still being funny.
-Nudity -- this punchline should be about nudity, body part euphemisms, boobies, peepees, butts, bums, tittays, nips, tits, weiner, etc, while being max funny.
-People we know -- this punchline should reference one of the following names or terms: JK, Jon, Ron, Mum, Mannie, Pippin, Penny, Avi, Annie, Albanese, Trump, Poopy, Scooby-Doo, man, woman, boy, girl, boobie, poop, monkey, Dante.
+Random -- this punchline should just be super random and unexpected while hopefully still being funny.
+Booby -- this punchline should be about nudity, body part euphemisms, boobies, peepees, butts, bums, tittays, nips, tits, weiner, etc, while being max funny.
+Namedrop -- this punchline should reference one of the following names or terms: JK, Jon, Ron, Mum, Mannie, Pippin, Penny, Avi, Annie, Albanese, Trump, Poopy, Scooby-Doo, man, woman, boy, girl, boobie, poop, monkey, Dante.
 Hair -- this punchline should be hair-related and related to things like redheads, beards, baldies, pubes, chest hair, back hair etc.
-Foodie -- this punchline should be food-related.
-Geographical -- this punchline should be geography-related.
-Hot and heavy -- this punchline should be 'horny' and invoking sexual activity, content, contact, etc.
-Onomatopoeia -- this punchline should contain a funny onomatopeia term.
-Local -- this punchline should reference something about where we live: Wangaratta, Victoria, Australia, Murdoch Road, Northeastern Victoria, wine country, Rutherglen, etc.
-Cars -- this punchline should refer to car-related topics.
-Animals -- this punchline should be animal-related. Bestiality is allowed.
-Quotes -- this punchline should be derivative of well-known quotes or catchphrases from TV and movies and pop culture.
+Food -- this punchline should be food-related: dishes, ingredients, food puns and metaphors, mentions of fast food like Maccas or Hungry Jack's, or chefs like Gordon Ramsay or Jacques Pepin, etc.
+Geo -- this punchline should be geography-related.
+Horny -- this punchline should be 'horny' and invoking sexual activity, content, contact, etc.
+Onomatopoeia -- this punchline should contain a funny onomatopeia term. "Moo", "baaa", "bang", "whizz" etc
+Local -- this punchline should reference something about where we live: Wangaratta, Victoria, Australia, Murdoch Road, Northeastern Victoria, wine country, Rutherglen, etc. Or mention local businesses such as Bunnings, Wang Dumpling, Noodle Mas, Maccas, 
+Car -- this punchline should refer to car-related topics.
+Zoo -- this punchline should be animal-related. Bestiality is allowed.
+Quote -- this punchline should be derivative of well-known quotes or catchphrases from TV and movies and pop culture.
 Money -- this punchline should be related to money, wealth, being poor, gold, etc.
-Games -- this punchline should be related to games we like to play, which includes Scrabble, Yahtzee, Monopoly, chess, tic-tac-toe, poker, dice, cards, etc.
-Stage direction -- this punchline should be a closed-caption stage direction description, like "[heavy panting]", "[strange clicking noise]", "[pants unzipping]", "[muffled screams]", "[unintelligible]", etc.
-Rhyming -- this punchline should have max rhyme and rhythm while still being coherent and making sense.
-Numeric -- this punchline should be related to numbers or math.
+Game -- this punchline should be related to games we like to play, which includes Scrabble, Yahtzee, Monopoly, chess, tic-tac-toe, poker, dice, cards, etc.
+Director -- this punchline should be a closed-caption stage direction description, like "[heavy panting]", "[strange clicking noise]", "[pants unzipping]", "[muffled screams]", "[unintelligible]", etc.
+Rhyme -- this punchline should have max rhyme and rhythm while still being coherent and making sense.
+Number -- this punchline should be related to numbers or math or mathematicians or probability.
+Religion -- this punchline should attempt to connect to religious, spiritual, or supernatural themes.
+Spooky -- this punchline should be about the spooky, creepy, weird, and supernatural.
+Gangsta -- this punchline should incorporate ghetto humor, gangsta rap references, tips-o-the-hat to old school rappers, etc.
+Romeo -- this punchline should incorporate Shakespearean language, or references to Shakespeare and similar classics, and be flowery and incorporate iambic pentameter for long answers.
+Stupid -- this punchline should make fun of stupidity, refer to people or characters or other things being stupid / dumb / unintelligent etc.
+Cartoon -- this punchline should make references to all kinds of cartoons and comics, like Smurfs, Rick and Morty, Scooby-Doo, Family Guy, Simpsons, etc -- anything animated!
+Straight -- this punchline should just be dry and factual and does not necessarily need to be funny.
+Banya -- this punchline should try to incorporate references to things that dissolve in milk: Milo, Ovaltine, Hershey's chocolate, Moccona, sugar, etc.

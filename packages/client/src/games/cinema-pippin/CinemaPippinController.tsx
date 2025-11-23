@@ -3,7 +3,7 @@
  * Handles answer submission for C1/C2/C3 clips
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ControllerProps } from '@jkbox/shared'
 import { AnswerInput } from './AnswerInput'
 import { VotingUI } from './VotingUI'
@@ -15,6 +15,12 @@ interface Answer {
 	votedBy: string[]
 }
 
+interface PlayerError {
+	playerId: string
+	message: string
+	code: string
+}
+
 interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
@@ -22,6 +28,7 @@ interface CinemaPippinGameState {
 	answerCollectionStartTime?: number
 	playerAnswers?: Map<string, string> | Record<string, string>
 	allAnswers?: Answer[]
+	playerErrors?: Map<string, PlayerError> | Record<string, PlayerError>
 }
 
 export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {
@@ -71,17 +78,20 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 		return () => clearInterval(interval)
 	}, [gameState.phase, gameState.answerTimeout, gameState.answerCollectionStartTime])
 
-	const handleSubmitAnswer = (answer: string) => {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-		sendToServer({
-			playerId,
-			type: 'SUBMIT_ANSWER',
-			payload: {
-				answer
-			}
-		})
-		setHasSubmitted(true)
-	}
+	const handleSubmitAnswer = useCallback(
+		(answer: string) => {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+			sendToServer({
+				playerId,
+				type: 'SUBMIT_ANSWER',
+				payload: {
+					answer
+				}
+			})
+			setHasSubmitted(true)
+		},
+		[sendToServer, playerId]
+	)
 
 	// Render different views based on game phase
 	const renderPhaseContent = () => {
@@ -96,7 +106,13 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 					</div>
 				)
 
-			case 'answer_collection':
+			case 'answer_collection': {
+				// Get error for this player if any
+				const playerError =
+					gameState.playerErrors instanceof Map
+						? gameState.playerErrors.get(playerId)
+						: gameState.playerErrors?.[playerId]
+
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Submit Your Answer!</h1>
@@ -105,9 +121,11 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 							timeRemaining={timeRemaining}
 							onSubmit={handleSubmitAnswer}
 							submitted={hasSubmitted}
+							error={playerError}
 						/>
 					</div>
 				)
+			}
 
 			case 'voting_playback':
 				return (

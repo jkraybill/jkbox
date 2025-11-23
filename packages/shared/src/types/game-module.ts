@@ -49,6 +49,7 @@ export interface Achievement {
  */
 export interface JumbotronProps {
 	state: GameState
+	players: Player[]
 	sendToServer: (action: GameAction) => void
 }
 
@@ -58,6 +59,7 @@ export interface JumbotronProps {
 export interface ControllerProps {
 	state: GameState
 	playerId: string
+	players: Player[]
 	sendToServer: (action: GameAction) => void
 }
 

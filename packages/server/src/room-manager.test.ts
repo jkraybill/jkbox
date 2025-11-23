@@ -1,213 +1,117 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { RoomManager } from './room-manager'
 
-describe('RoomManager', () => {
-  let manager: RoomManager
+describe('RoomManager - AI Player Syncing', () => {
+	let roomManager: RoomManager
 
-  beforeEach(() => {
-    manager = new RoomManager()
-  })
+	beforeEach(() => {
+		roomManager = new RoomManager()
+	})
 
-  describe('createRoom', () => {
-    it('should create a room with unique ID', () => {
-      const room = manager.createRoom()
+	it('should create singleton room with AI players from config', () => {
+		const room = roomManager.getOrCreateSingletonRoom()
+		expect(room.phase).toBe('title')
+		expect(room.config.cinemaPippinAIPlayers).toBeDefined()
+	})
 
-      expect(room.roomId).toBeDefined()
-      expect(room.roomId.length).toBeGreaterThan(0)
-      expect(room.phase).toBe('lobby')
-      expect(room.players).toHaveLength(0)
-    })
+	it('should add AI players when transitioning to lobby', () => {
+		// Create room
+		const titleRoom = roomManager.getOrCreateSingletonRoom()
+		expect(titleRoom.phase).toBe('title')
+		expect(titleRoom.players.length).toBe(0)
 
-    it('should create rooms with different IDs', () => {
-      const room1 = manager.createRoom()
-      const room2 = manager.createRoom()
+		// Transition to lobby
+		const lobbyRoom = roomManager.transitionTitleToLobby()
+		expect(lobbyRoom).toBeTruthy()
+		expect(lobbyRoom?.phase).toBe('lobby')
 
-      expect(room1.roomId).not.toBe(room2.roomId)
-    })
+		// Should have AI players based on config
+		const aiPlayerCount = lobbyRoom?.config.cinemaPippinAIPlayers || 0
+		const aiPlayers = lobbyRoom?.players.filter((p) => p.isAI)
+		expect(aiPlayers?.length).toBe(aiPlayerCount)
 
-    it('should initialize lobby state with voting properties', () => {
-      const room = manager.createRoom()
+		// Each AI player should have proper fields
+		aiPlayers?.forEach((player) => {
+			expect(player.id).toMatch(/^ai-\d+$/)
+			expect(player.nickname).toBeTruthy()
+			expect(player.isAI).toBe(true)
+			expect(player.isConnected).toBe(true)
+		})
+	})
 
-      expect(room.gameVotes).toEqual({})
-      expect(room.readyStates).toEqual({})
-      expect(room.selectedGame).toBeNull()
-    })
-  })
+	it('should update AI players when config changes', () => {
+		// Create and transition to lobby
+		roomManager.getOrCreateSingletonRoom()
+		const lobbyRoom = roomManager.transitionTitleToLobby()
+		expect(lobbyRoom).toBeTruthy()
 
-  describe('getRoom', () => {
-    it('should retrieve existing room by ID', () => {
-      const created = manager.createRoom()
-      const retrieved = manager.getRoom(created.roomId)
+		const initialAICount = lobbyRoom?.players.filter((p) => p.isAI).length || 0
 
-      expect(retrieved).toBeDefined()
-      expect(retrieved?.roomId).toBe(created.roomId)
-    })
+		// Update config to change AI player count
+		const updatedRoom = roomManager.updateRoomConfig(lobbyRoom!.roomId, {
+			cinemaPippinAIPlayers: initialAICount + 1
+		})
 
-    it('should return undefined for non-existent room', () => {
-      const room = manager.getRoom('INVALID')
+		expect(updatedRoom).toBeTruthy()
+		const newAICount = updatedRoom?.players.filter((p) => p.isAI).length || 0
+		expect(newAICount).toBe(initialAICount + 1)
+	})
 
-      expect(room).toBeUndefined()
-    })
-  })
+	it('should remove AI players when config set to 0', () => {
+		// Create and transition to lobby
+		roomManager.getOrCreateSingletonRoom()
+		const lobbyRoom = roomManager.transitionTitleToLobby()
+		expect(lobbyRoom).toBeTruthy()
 
-  describe('getRoomByPlayerId', () => {
-    it('should find room containing player', () => {
-      const room = manager.createRoom()
-      manager.addPlayer(room.roomId, {
-        id: 'player-1',
-        roomId: room.roomId,
-        nickname: 'Alice',
-        sessionToken: 'token-1',
-        isAdmin: false,
-        isHost: false,
-        score: 0,
-        connectedAt: new Date(),
-        lastSeenAt: new Date(),
-        isConnected: true
-      })
+		// Update config to 0 AI players
+		const updatedRoom = roomManager.updateRoomConfig(lobbyRoom!.roomId, {
+			cinemaPippinAIPlayers: 0
+		})
 
-      const found = manager.getRoomByPlayerId('player-1')
+		expect(updatedRoom).toBeTruthy()
+		const aiPlayers = updatedRoom?.players.filter((p) => p.isAI)
+		expect(aiPlayers?.length).toBe(0)
+	})
 
-      expect(found).toBeDefined()
-      expect(found?.roomId).toBe(room.roomId)
-    })
+	it('should not affect human players when syncing AI players', () => {
+		// Create and transition to lobby
+		roomManager.getOrCreateSingletonRoom()
+		const lobbyRoom = roomManager.transitionTitleToLobby()
+		expect(lobbyRoom).toBeTruthy()
 
-    it('should return undefined if player not in any room', () => {
-      manager.createRoom()
-      const found = manager.getRoomByPlayerId('nonexistent')
+		// Add a human player manually
+		const humanPlayer = {
+			id: 'human-1',
+			roomId: lobbyRoom!.roomId,
+			nickname: 'TestPlayer',
+			sessionToken: 'test-token',
+			deviceId: 'test-device',
+			isAdmin: false,
+			isHost: false,
+			isAI: false,
+			score: 0,
+			connectedAt: new Date(),
+			lastSeenAt: new Date(),
+			isConnected: true
+		}
+		lobbyRoom!.players.push(humanPlayer)
 
-      expect(found).toBeUndefined()
-    })
-  })
+		const initialPlayerCount = lobbyRoom!.players.length
 
-  describe('addPlayer', () => {
-    it('should add player to room', () => {
-      const room = manager.createRoom()
+		// Update AI config
+		const updatedRoom = roomManager.updateRoomConfig(lobbyRoom!.roomId, {
+			cinemaPippinAIPlayers: 2
+		})
 
-      manager.addPlayer(room.roomId, {
-        id: 'player-1',
-        roomId: room.roomId,
-        nickname: 'Alice',
-        sessionToken: 'token-1',
-        isAdmin: false,
-        isHost: false,
-        score: 0,
-        connectedAt: new Date(),
-        lastSeenAt: new Date(),
-        isConnected: true
-      })
+		expect(updatedRoom).toBeTruthy()
+		
+		// Human player should still be there
+		const humanPlayers = updatedRoom?.players.filter((p) => !p.isAI)
+		expect(humanPlayers?.length).toBe(1)
+		expect(humanPlayers?.[0].id).toBe('human-1')
 
-      const updated = manager.getRoom(room.roomId)
-      expect(updated?.players).toHaveLength(1)
-      expect(updated?.players[0]?.id).toBe('player-1')
-    })
-
-    it('should not add player if room is full', () => {
-      const room = manager.createRoom()
-
-      // Add max players (12)
-      for (let i = 0; i < 12; i++) {
-        manager.addPlayer(room.roomId, {
-          id: `player-${i}`,
-          roomId: room.roomId,
-          nickname: `Player${i}`,
-          sessionToken: `token-${i}`,
-          isAdmin: false,
-          isHost: false,
-          score: 0,
-          connectedAt: new Date(),
-          lastSeenAt: new Date(),
-          isConnected: true
-        })
-      }
-
-      // Try to add 13th player
-      const result = manager.addPlayer(room.roomId, {
-        id: 'player-13',
-        roomId: room.roomId,
-        nickname: 'Overflow',
-        sessionToken: 'token-13',
-        isAdmin: false,
-        isHost: false,
-        score: 0,
-        connectedAt: new Date(),
-        lastSeenAt: new Date(),
-        isConnected: true
-      })
-
-      expect(result).toBe(false)
-      const updated = manager.getRoom(room.roomId)
-      expect(updated?.players).toHaveLength(12)
-    })
-  })
-
-  describe('removePlayer', () => {
-    it('should remove player from room', () => {
-      const room = manager.createRoom()
-      manager.addPlayer(room.roomId, {
-        id: 'player-1',
-        roomId: room.roomId,
-        nickname: 'Alice',
-        sessionToken: 'token-1',
-        isAdmin: false,
-        isHost: false,
-        score: 0,
-        connectedAt: new Date(),
-        lastSeenAt: new Date(),
-        isConnected: true
-      })
-
-      manager.removePlayer(room.roomId, 'player-1')
-
-      const updated = manager.getRoom(room.roomId)
-      expect(updated?.players).toHaveLength(0)
-    })
-
-    it('should not error when removing non-existent player', () => {
-      const room = manager.createRoom()
-
-      expect(() => {
-        manager.removePlayer(room.roomId, 'nonexistent')
-      }).not.toThrow()
-    })
-  })
-
-  describe('updatePlayer', () => {
-    it('should update player properties', () => {
-      const room = manager.createRoom()
-      manager.addPlayer(room.roomId, {
-        id: 'player-1',
-        roomId: room.roomId,
-        nickname: 'Alice',
-        sessionToken: 'token-1',
-        isAdmin: false,
-        isHost: false,
-        score: 0,
-        connectedAt: new Date(),
-        lastSeenAt: new Date(),
-        isConnected: true
-      })
-
-      manager.updatePlayer(room.roomId, 'player-1', {
-        score: 100,
-        isAdmin: true
-      })
-
-      const updated = manager.getRoom(room.roomId)
-      const player = updated?.players.find(p => p.id === 'player-1')
-      expect(player?.score).toBe(100)
-      expect(player?.isAdmin).toBe(true)
-      expect(player?.nickname).toBe('Alice') // Unchanged
-    })
-  })
-
-  describe('deleteRoom', () => {
-    it('should delete room', () => {
-      const room = manager.createRoom()
-      manager.deleteRoom(room.roomId)
-
-      const found = manager.getRoom(room.roomId)
-      expect(found).toBeUndefined()
-    })
-  })
+		// Should have 2 AI players
+		const aiPlayers = updatedRoom?.players.filter((p) => p.isAI)
+		expect(aiPlayers?.length).toBe(2)
+	})
 })

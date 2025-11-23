@@ -178,6 +178,7 @@ export function Player() {
 							<GameController
 								state={room.gameState}
 								playerId={currentPlayer.id}
+								players={room.players}
 								sendToServer={(action) => {
 									if (socket) {
 										socket.emit('game:action', action)
@@ -250,11 +251,14 @@ const styles = {
 	container: {
 		display: 'flex',
 		flexDirection: 'column' as const,
-		minHeight: '100vh',
+		height: '100vh',
+		width: '100vw',
+		overflow: 'hidden',
 		padding: 'var(--space-xl)',
 		fontFamily: 'var(--font-family)',
 		backgroundColor: 'var(--color-bg-dark)',
-		color: 'var(--color-text-primary)'
+		color: 'var(--color-text-primary)',
+		boxSizing: 'border-box' as const
 	},
 	header: {
 		textAlign: 'center' as const,
@@ -276,7 +280,9 @@ const styles = {
 		gap: 'var(--space-xl)',
 		maxWidth: '500px',
 		width: '100%',
-		margin: '0 auto'
+		margin: '0 auto',
+		overflowY: 'auto' as const,
+		overflowX: 'hidden' as const
 	},
 	waitingCard: {
 		padding: 'var(--space-3xl) var(--space-xl)',

@@ -59,7 +59,11 @@ export const connectionMachine = setup({
   states: {
     disconnected: {
       on: {
-        CONNECT: 'connecting'
+        CONNECT: 'connecting',
+        CONNECTED: {
+          target: 'connected',
+          actions: 'resetRetry'
+        }
       }
     },
     connecting: {
@@ -85,6 +89,10 @@ export const connectionMachine = setup({
     },
     reconnecting: {
       on: {
+        CONNECTED: {
+          target: 'connected',
+          actions: 'resetRetry'
+        },
         RETRY: 'connecting',
         CONNECT: 'connecting',
         GIVE_UP: 'disconnected'

@@ -1,41 +1,57 @@
 import { describe, it, expect } from 'vitest'
-import { createAIPlayer, assignConstraints, loadConstraints, shuffleConstraints } from './ai-player'
+import { createAIPlayer, createAIPlayers, loadConstraints, shuffleConstraints } from './ai-player'
 
 describe('AI Player', () => {
 	describe('createAIPlayer', () => {
-		it('should create AI player with ID and nickname', () => {
-			const ai = createAIPlayer(1)
+		it('should create AI player with constraint-based nickname', () => {
+			const ai = createAIPlayer(1, 'Foodie')
 
 			expect(ai.playerId).toBe('ai-1')
-			expect(ai.nickname).toBe('AI 1')
+			expect(ai.nickname).toBe('FoodieBot')
 			expect(ai.isAI).toBe(true)
-			expect(ai.generationConstraint).toBe('')
-			expect(ai.judgingConstraint).toBe('')
+			expect(ai.constraint).toBe('Foodie')
 		})
 
-		it('should create multiple AI players with unique IDs', () => {
-			const ai1 = createAIPlayer(1)
-			const ai2 = createAIPlayer(2)
-			const ai3 = createAIPlayer(3)
+		it('should handle multi-word constraints by using first word', () => {
+			const ai1 = createAIPlayer(1, "Pippin's word")
+			const ai2 = createAIPlayer(2, 'Pop culture')
+			const ai3 = createAIPlayer(3, 'The letter A')
 
-			expect(ai1.playerId).toBe('ai-1')
-			expect(ai2.playerId).toBe('ai-2')
-			expect(ai3.playerId).toBe('ai-3')
+			expect(ai1.nickname).toBe("Pippin'sBot")
+			expect(ai2.nickname).toBe('PopBot')
+			expect(ai3.nickname).toBe('TheBot')
+		})
+	})
 
-			expect(ai1.nickname).toBe('AI 1')
-			expect(ai2.nickname).toBe('AI 2')
-			expect(ai3.nickname).toBe('AI 3')
+	describe('createAIPlayers', () => {
+		it('should create multiple AI players with unique constraints', () => {
+			const constraints = ['Foodie', 'Cars', 'Animals']
+			const aiPlayers = createAIPlayers(3, constraints)
+
+			expect(aiPlayers.length).toBe(3)
+			expect(aiPlayers[0].nickname).toBe('FoodieBot')
+			expect(aiPlayers[0].constraint).toBe('Foodie')
+			expect(aiPlayers[1].nickname).toBe('CarsBot')
+			expect(aiPlayers[1].constraint).toBe('Cars')
+			expect(aiPlayers[2].nickname).toBe('AnimalsBot')
+			expect(aiPlayers[2].constraint).toBe('Animals')
+		})
+
+		it('should throw error if not enough constraints', () => {
+			const constraints = ['Foodie', 'Cars']
+			expect(() => createAIPlayers(3, constraints)).toThrow()
 		})
 	})
 
 	describe('loadConstraints', () => {
-		it('should load constraints from constraints.txt', () => {
+		it('should load constraints from assets/constraints.txt', () => {
 			const constraints = loadConstraints()
 
 			expect(constraints.length).toBeGreaterThan(0)
-			expect(constraints).toContain("Pippin's word")
-			expect(constraints).toContain('Foodie')
-			expect(constraints).toContain('Cars')
+			// Check for actual constraint content from assets/constraints.txt
+			expect(constraints.some((c) => c.includes('Pippin word'))).toBe(true)
+			expect(constraints.some((c) => c.includes('Pun'))).toBe(true)
+			expect(constraints.some((c) => c.includes('Saynomore'))).toBe(true)
 		})
 
 		it('should return array of non-empty strings', () => {
@@ -75,60 +91,4 @@ describe('AI Player', () => {
 		})
 	})
 
-	describe('assignConstraints', () => {
-		it('should assign 2 constraints per AI player', () => {
-			const ai1 = createAIPlayer(1)
-			const ai2 = createAIPlayer(2)
-			const ai3 = createAIPlayer(3)
-
-			const aiPlayers = [ai1, ai2, ai3]
-			const constraints = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-
-			assignConstraints(aiPlayers, constraints)
-
-			// Each AI should have 2 constraints
-			expect(ai1.generationConstraint).toBeTruthy()
-			expect(ai1.judgingConstraint).toBeTruthy()
-			expect(ai2.generationConstraint).toBeTruthy()
-			expect(ai2.judgingConstraint).toBeTruthy()
-			expect(ai3.generationConstraint).toBeTruthy()
-			expect(ai3.judgingConstraint).toBeTruthy()
-		})
-
-		it('should assign different constraints to each AI', () => {
-			const ai1 = createAIPlayer(1)
-			const ai2 = createAIPlayer(2)
-
-			const aiPlayers = [ai1, ai2]
-			const constraints = ['A', 'B', 'C', 'D']
-
-			assignConstraints(aiPlayers, constraints)
-
-			// AI 1 gets constraints 0 and 1
-			expect(ai1.generationConstraint).toBe('A')
-			expect(ai1.judgingConstraint).toBe('B')
-
-			// AI 2 gets constraints 2 and 3
-			expect(ai2.generationConstraint).toBe('C')
-			expect(ai2.judgingConstraint).toBe('D')
-		})
-
-		it('should handle 6 AI players', () => {
-			const aiPlayers = Array.from({ length: 6 }, (_, i) => createAIPlayer(i + 1))
-			const constraints = Array.from({ length: 20 }, (_, i) => `Constraint ${i + 1}`)
-
-			assignConstraints(aiPlayers, constraints)
-
-			// All 6 AI players should have constraints assigned
-			aiPlayers.forEach((ai) => {
-				expect(ai.generationConstraint).toBeTruthy()
-				expect(ai.judgingConstraint).toBeTruthy()
-			})
-
-			// All constraints should be unique
-			const allAssigned = aiPlayers.flatMap((ai) => [ai.generationConstraint, ai.judgingConstraint])
-			const unique = new Set(allAssigned)
-			expect(unique.size).toBe(12) // 6 AI × 2 constraints
-		})
-	})
 })

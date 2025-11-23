@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { Jumbotron } from './Jumbotron'
 import type { RoomState } from '@jkbox/shared'
 
@@ -16,8 +16,12 @@ vi.mock('../store/game-store', () => ({
 
 vi.mock('../lib/use-socket', () => ({
   useSocket: vi.fn(() => ({
-    socket: null,
-    isConnected: false
+    socket: {
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn()
+    },
+    isConnected: true
   }))
 }))
 
@@ -196,12 +200,12 @@ describe('Jumbotron', () => {
       }
       vi.mocked(useGameStore).mockReturnValue(mockStore as any)
 
-      render(<Jumbotron />)
+      await act(async () => {
+        render(<Jumbotron />)
+      })
 
       // Should show UnimplementedGameJumbotron for fake-facts
-      await waitFor(() => {
-        expect(screen.getByText(/Game Not Implemented Yet/i)).toBeInTheDocument()
-      })
+      expect(await screen.findByText(/Game Not Implemented Yet/i)).toBeInTheDocument()
       expect(screen.getByText(/Returning to lobby/i)).toBeInTheDocument()
     })
 

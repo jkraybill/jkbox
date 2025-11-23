@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Player } from './Player'
 
@@ -44,35 +44,58 @@ vi.mock('react-router-dom', async () => {
 describe('Player', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Mock fetch for LobbyVoting game fetching
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        games: [
+          {
+            id: 'fake-facts',
+            name: 'Fake Facts',
+            description: 'A test game',
+            minPlayers: 2,
+            maxPlayers: 8
+          }
+        ]
+      })
+    } as Response)
   })
 
-  it('should render player nickname', () => {
-    render(
-      <BrowserRouter>
-        <Player />
-      </BrowserRouter>
-    )
+  it('should render player nickname', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <Player />
+        </BrowserRouter>
+      )
+    })
 
     expect(screen.getByText(/Alice/)).toBeDefined()
   })
 
-  it('should show voting UI in lobby state', () => {
-    render(
-      <BrowserRouter>
-        <Player />
-      </BrowserRouter>
-    )
+  it('should show voting UI in lobby state', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <Player />
+        </BrowserRouter>
+      )
+    })
 
-    expect(screen.getByText(/Choose Your Game/i)).toBeDefined()
-    expect(screen.getByText(/Good to Go\?/i)).toBeDefined()
+    // findByText automatically waits for the element to appear
+    expect(await screen.findByText(/Choose Your Game/i)).toBeDefined()
+    expect(await screen.findByText(/Good to Go\?/i)).toBeDefined()
   })
 
-  it('should show connection status', () => {
-    render(
-      <BrowserRouter>
-        <Player />
-      </BrowserRouter>
-    )
+  it('should show connection status', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <Player />
+        </BrowserRouter>
+      )
+    })
 
     expect(screen.getByText(/connected/i)).toBeDefined()
   })

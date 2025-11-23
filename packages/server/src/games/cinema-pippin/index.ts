@@ -90,6 +90,8 @@ class CinemaPippinModule implements PluggableGameModule {
 			votes: Object.fromEntries(rawState.votes),
 			scores: Object.fromEntries(rawState.scores),
 			endGameVotes: Object.fromEntries(rawState.endGameVotes),
+			playerStatus: Object.fromEntries(rawState.playerStatus),
+			playerErrors: Object.fromEntries(rawState.playerErrors),
 			currentClip: {
 				clipNumber: currentClip.clipNumber,
 				videoUrl,
@@ -104,8 +106,18 @@ class CinemaPippinModule implements PluggableGameModule {
 	initialize(players: Player[], context: GameModuleContext): Promise<GameState> {
 		this.context = context
 
+		// Extract AI players from lobby (players with isAI: true)
+		const aiPlayers = players.filter((p) => p.isAI).map((p) => ({
+			playerId: p.id,
+			nickname: p.nickname,
+			constraint: p.aiConstraint || p.nickname.replace(/Bot$/, '') // Fallback to nickname
+		}))
+
+		// Get all player IDs (both human and AI)
 		const playerIds = players.map((p) => p.id)
-		this.game.initialize(playerIds)
+
+		// Initialize game with player IDs and AI player data
+		this.game.initialize(playerIds, aiPlayers)
 
 		return Promise.resolve(this.enrichStateForClient())
 	}
@@ -115,7 +127,14 @@ class CinemaPippinModule implements PluggableGameModule {
 		console.log('[CinemaPippinModule] Received action:', action)
 		this.game.handlePlayerAction(action.playerId, action)
 
-		return Promise.resolve(this.enrichStateForClient())
+		const enrichedState = this.enrichStateForClient()
+
+		// Log playerStatus to debug AI status issue
+		if (action.type === 'VIDEO_COMPLETE' || action.type === 'SUBMIT_ANSWER' || action.type === 'SUBMIT_VOTE') {
+			console.log('[CinemaPippinModule] Returning state with playerStatus:', enrichedState.playerStatus)
+		}
+
+		return Promise.resolve(enrichedState)
 	}
 
 	async loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {

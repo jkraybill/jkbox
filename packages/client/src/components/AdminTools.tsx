@@ -18,6 +18,7 @@ export function AdminTools() {
 	}
 
 	const aiGuesses = room.config?.aiGuesses ?? 1
+	const cinemaPippinAIPlayers = room.config?.cinemaPippinAIPlayers ?? 1
 
 	const handleBootPlayer = (playerId: string) => {
 		if (!socket) return
@@ -63,6 +64,17 @@ export function AdminTools() {
 		socket.emit('admin:update-config', message)
 	}
 
+	const handleCinemaPippinAIPlayersChange = (value: number) => {
+		if (!socket) return
+
+		const message: AdminUpdateConfigMessage = {
+			type: 'admin:update-config',
+			config: { cinemaPippinAIPlayers: value }
+		}
+
+		socket.emit('admin:update-config', message)
+	}
+
 	const handlePauseToggle = () => {
 		if (!socket) return
 
@@ -99,16 +111,69 @@ export function AdminTools() {
 						<label htmlFor="ai-guesses" style={styles.configLabel}>
 							AI Guesses
 						</label>
-						<input
-							id="ai-guesses"
-							type="number"
-							min="0"
-							max="5"
-							value={aiGuesses}
-							onChange={(e) => handleAiGuessesChange(parseInt(e.target.value, 10))}
-							style={styles.spinner}
-						/>
+						<div style={styles.spinnerContainer}>
+							<button
+								onClick={() => handleAiGuessesChange(Math.max(0, aiGuesses - 1))}
+								disabled={aiGuesses <= 0}
+								style={{
+									...styles.spinnerButton,
+									...(aiGuesses <= 0 ? styles.spinnerButtonDisabled : {})
+								}}
+								aria-label="Decrease AI guesses"
+							>
+								−
+							</button>
+							<div style={styles.spinnerValue}>{aiGuesses}</div>
+							<button
+								onClick={() => handleAiGuessesChange(Math.min(5, aiGuesses + 1))}
+								disabled={aiGuesses >= 5}
+								style={{
+									...styles.spinnerButton,
+									...(aiGuesses >= 5 ? styles.spinnerButtonDisabled : {})
+								}}
+								aria-label="Increase AI guesses"
+							>
+								+
+							</button>
+						</div>
 						<div style={styles.configHint}>Number of AI-generated fake answers (0-5)</div>
+					</div>
+					<div style={{ ...styles.configRow, marginTop: '16px' }}>
+						<label htmlFor="cinema-pippin-ai-players" style={styles.configLabel}>
+							Cinema Pippin AI Players
+						</label>
+						<div style={styles.spinnerContainer}>
+							<button
+								onClick={() =>
+									handleCinemaPippinAIPlayersChange(Math.max(0, cinemaPippinAIPlayers - 1))
+								}
+								disabled={cinemaPippinAIPlayers <= 0}
+								style={{
+									...styles.spinnerButton,
+									...(cinemaPippinAIPlayers <= 0 ? styles.spinnerButtonDisabled : {})
+								}}
+								aria-label="Decrease Cinema Pippin AI players"
+							>
+								−
+							</button>
+							<div style={styles.spinnerValue}>{cinemaPippinAIPlayers}</div>
+							<button
+								onClick={() =>
+									handleCinemaPippinAIPlayersChange(Math.min(5, cinemaPippinAIPlayers + 1))
+								}
+								disabled={cinemaPippinAIPlayers >= 5}
+								style={{
+									...styles.spinnerButton,
+									...(cinemaPippinAIPlayers >= 5 ? styles.spinnerButtonDisabled : {})
+								}}
+								aria-label="Increase Cinema Pippin AI players"
+							>
+								+
+							</button>
+						</div>
+						<div style={styles.configHint}>
+							Number of AI players for Cinema Pippin (0-5)
+						</div>
 					</div>
 				</div>
 
@@ -242,18 +307,45 @@ const styles = {
 		fontWeight: 'bold',
 		color: '#ffffff'
 	},
-	spinner: {
-		width: '100px',
-		padding: '8px 12px',
-		fontSize: '16px',
+	spinnerContainer: {
+		display: 'flex',
+		alignItems: 'center',
+		gap: '12px'
+	},
+	spinnerButton: {
+		width: '48px',
+		height: '48px',
+		padding: '0',
+		fontSize: '24px',
+		fontWeight: 'bold',
+		backgroundColor: '#3b82f6',
+		color: '#ffffff',
+		border: 'none',
+		borderRadius: '8px',
+		cursor: 'pointer',
+		transition: 'all 0.2s',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		touchAction: 'manipulation',
+		userSelect: 'none' as const,
+		WebkitTapHighlightColor: 'transparent'
+	},
+	spinnerButtonDisabled: {
+		opacity: 0.3,
+		cursor: 'not-allowed',
+		backgroundColor: '#666666'
+	},
+	spinnerValue: {
+		minWidth: '60px',
+		padding: '12px 20px',
+		fontSize: '20px',
+		fontWeight: 'bold',
 		backgroundColor: '#2a2a2a',
 		color: '#ffffff',
 		border: '2px solid #3a3a3a',
-		borderRadius: '6px',
-		outline: 'none',
-		appearance: 'none' as const,
-		MozAppearance: 'textfield' as const,
-		WebkitAppearance: 'none' as const
+		borderRadius: '8px',
+		textAlign: 'center' as const
 	},
 	configHint: {
 		fontSize: '12px',

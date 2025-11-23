@@ -93,7 +93,10 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 		}
 	})
 
-	const readyCount = playerStates.filter((p) => p.isReady).length
+	// Only count human players for ready count (AI players don't vote)
+	const humanPlayerStates = playerStates.filter((p) => !p.player.isAI)
+	const readyCount = humanPlayerStates.filter((p) => p.isReady).length
+	const totalHumans = humanPlayerStates.length
 	const allReady = votingState?.allReady ?? false
 
 	return (
@@ -115,7 +118,7 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 				<h1 style={styles.mainTitle}>Pippin's Playhouse</h1>
 				<h2 style={styles.title}>Vote for Next Game!</h2>
 				<div style={styles.subtitle}>
-					{readyCount}/{players.length} players ready
+					{readyCount}/{totalHumans} players ready
 					{allReady && ' - Starting soon! 🎉'}
 				</div>
 			</div>
@@ -165,13 +168,18 @@ export function JumbotronVoting({ players, roomId }: JumbotronVotingProps) {
 									...(hasVoted && !isReady && styles.playerCardVoted)
 								}}
 							>
-								<div style={styles.playerName}>{player.nickname}</div>
-								<div style={styles.playerStatus}>
-									{!hasVoted && <span style={styles.statusPending}>⏳ Voting...</span>}
-									{hasVoted && !isReady && <span style={styles.statusVoted}>✓ Voted</span>}
-									{isReady && <span style={styles.statusReady}>✓✓ Ready!</span>}
+								<div style={styles.playerName}>
+									{player.nickname}
+									{player.isAI && <span style={styles.aiBadge}>AI</span>}
 								</div>
-								{votedFor && (
+								{!player.isAI && (
+									<div style={styles.playerStatus}>
+										{!hasVoted && <span style={styles.statusPending}>⏳ Voting...</span>}
+										{hasVoted && !isReady && <span style={styles.statusVoted}>✓ Voted</span>}
+										{isReady && <span style={styles.statusReady}>✓✓ Ready!</span>}
+									</div>
+								)}
+								{!player.isAI && votedFor && (
 									<div style={styles.playerVote}>{gameNameLookup[votedFor] ?? votedFor}</div>
 								)}
 							</div>
@@ -350,7 +358,18 @@ const styles = {
 	playerName: {
 		fontSize: '2.5vh',
 		fontWeight: 'bold',
-		marginBottom: '0.5vh'
+		marginBottom: '0.5vh',
+		display: 'flex',
+		alignItems: 'center',
+		gap: '0.5vw'
+	},
+	aiBadge: {
+		fontSize: '1.5vh',
+		padding: '0.3vh 0.8vw',
+		backgroundColor: '#9C27B0',
+		color: '#fff',
+		borderRadius: 'var(--radius-md)',
+		fontWeight: 'bold'
 	},
 	playerStatus: {
 		fontSize: '2vh',

@@ -130,7 +130,7 @@ export function VideoPlayer({
 						color: '#fff',
 						padding: '10px 20px',
 						borderRadius: '4px',
-						fontSize: '24px',
+						fontSize: '48px',
 						textAlign: 'center',
 						maxWidth: '80%'
 					}}

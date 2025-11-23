@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { VideoPlayer } from './VideoPlayer'
 
 describe('VideoPlayer', () => {
@@ -57,16 +57,20 @@ describe('VideoPlayer', () => {
 
 		// Simulate video time update to 1 second (first subtitle)
 		const video = screen.getByTestId('video-player') as HTMLVideoElement
-		Object.defineProperty(video, 'currentTime', { value: 1.0, writable: true })
-		video.dispatchEvent(new Event('timeupdate'))
+		act(() => {
+			Object.defineProperty(video, 'currentTime', { value: 1.0, writable: true })
+			video.dispatchEvent(new Event('timeupdate'))
+		})
 
 		await waitFor(() => {
 			expect(screen.getByTestId('subtitle-text')).toHaveTextContent('First subtitle')
 		})
 
 		// Simulate video time update to 3 seconds (second subtitle)
-		Object.defineProperty(video, 'currentTime', { value: 3.0, writable: true })
-		video.dispatchEvent(new Event('timeupdate'))
+		act(() => {
+			Object.defineProperty(video, 'currentTime', { value: 3.0, writable: true })
+			video.dispatchEvent(new Event('timeupdate'))
+		})
 
 		await waitFor(() => {
 			expect(screen.getByTestId('subtitle-text')).toHaveTextContent('Second subtitle')
@@ -94,8 +98,10 @@ describe('VideoPlayer', () => {
 		)
 
 		const video = screen.getByTestId('video-player') as HTMLVideoElement
-		Object.defineProperty(video, 'currentTime', { value: 1.0, writable: true })
-		video.dispatchEvent(new Event('timeupdate'))
+		act(() => {
+			Object.defineProperty(video, 'currentTime', { value: 1.0, writable: true })
+			video.dispatchEvent(new Event('timeupdate'))
+		})
 
 		await waitFor(() => {
 			const subtitle = screen.getByTestId('subtitle-text')
@@ -135,7 +141,9 @@ describe('VideoPlayer', () => {
 		)
 
 		const video = screen.getByTestId('video-player') as HTMLVideoElement
-		video.dispatchEvent(new Event('ended'))
+		act(() => {
+			video.dispatchEvent(new Event('ended'))
+		})
 
 		await waitFor(() => {
 			expect(onComplete).toHaveBeenCalledTimes(1)
@@ -176,7 +184,9 @@ describe('VideoPlayer', () => {
 		expect(screen.getByTestId('preroll-overlay')).toBeInTheDocument()
 
 		// Fast-forward 2 seconds
-		await vi.advanceTimersByTimeAsync(2000)
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(2000)
+		})
 
 		expect(screen.queryByTestId('preroll-overlay')).not.toBeInTheDocument()
 
@@ -204,8 +214,10 @@ describe('VideoPlayer', () => {
 		)
 
 		const video = screen.getByTestId('video-player') as HTMLVideoElement
-		Object.defineProperty(video, 'currentTime', { value: 91.0, writable: true })
-		video.dispatchEvent(new Event('timeupdate'))
+		act(() => {
+			Object.defineProperty(video, 'currentTime', { value: 91.0, writable: true })
+			video.dispatchEvent(new Event('timeupdate'))
+		})
 
 		await waitFor(() => {
 			expect(screen.getByTestId('subtitle-text')).toHaveTextContent('Timestamp test')

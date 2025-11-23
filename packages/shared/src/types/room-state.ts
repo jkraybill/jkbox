@@ -11,6 +11,7 @@ import type { Player } from './player'
  */
 export interface RoomConfig {
 	aiGuesses: number // Number of AI-generated fake answers (0-5), default 1
+	cinemaPippinAIPlayers: number // Number of AI players for Cinema Pippin (0-5), default 1
 }
 
 /**

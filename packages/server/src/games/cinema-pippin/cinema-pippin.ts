@@ -4,13 +4,35 @@
 
 import type { GameModuleMetadata, GameModule } from '@jkbox/shared'
 import { loadFilms } from './film-loader'
-import type { CinemaPippinState, GamePhase, FilmData, ClipData } from './types'
+import type { CinemaPippinState, GamePhase, FilmData, ClipData, AIPlayerData } from './types'
+import {
+	createAIPlayers,
+	loadConstraints,
+	shuffleConstraints,
+	generateBatchAnswers,
+	generateAIAnswer,
+	generateAIVote,
+	type AIConfig
+} from './ai-player'
+import { getGlobalConfigStorage } from '../../storage/global-config-storage'
 
 export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	private state: CinemaPippinState
+	private aiConfig: AIConfig
+	private enableAI: boolean
+	private answerTimeoutTimer: NodeJS.Timeout | null = null
+	private votingTimeoutTimer: NodeJS.Timeout | null = null
+	private aiGenerationInProgress: boolean = false
+	private aiVotingInProgress: boolean = false
 
-	constructor() {
+	constructor(enableAI = false) {
 		this.state = this.createInitialState()
+		this.enableAI = enableAI || process.env.ENABLE_AI_PLAYERS === 'true'
+		this.aiConfig = {
+			ollamaEndpoint: process.env.OLLAMA_ENDPOINT || 'http://localhost:11434',
+			model: process.env.OLLAMA_MODEL || 'qwen-fast:latest',
+			temperature: 0.9
+		}
 	}
 
 	getMetadata(): GameModuleMetadata {
@@ -23,11 +45,60 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		}
 	}
 
-	initialize(playerIds: string[]): void {
+	initialize(playerIds: string[], aiPlayersFromLobby?: AIPlayerData[]): void {
 		// Load 3 random films
 		const films = loadFilms()
 
+		let aiPlayers: AIPlayerData[] = []
+
+		// Use AI players from lobby if provided, otherwise create from scratch
+		if (aiPlayersFromLobby && aiPlayersFromLobby.length > 0) {
+			aiPlayers = aiPlayersFromLobby
+			console.log(
+				`[CinemaPippinGame] Using ${aiPlayers.length} AI players from lobby:`,
+				aiPlayers.map((ai) => `${ai.nickname} (${ai.constraint})`).join(', ')
+			)
+		} else if (this.enableAI) {
+			// Fallback: Create AI players from global config (for tests)
+			const globalConfig = getGlobalConfigStorage()
+			const aiPlayerCount = globalConfig.getAIPlayerCount()
+
+			if (aiPlayerCount > 0) {
+				try {
+					// Load and shuffle constraints
+					const constraints = loadConstraints()
+					const shuffled = shuffleConstraints(constraints)
+
+					// Create AI players with constraints
+					const aiPlayerInstances = createAIPlayers(aiPlayerCount, shuffled)
+
+					// Convert to state format
+					aiPlayers.push(
+						...aiPlayerInstances.map((ai) => ({
+							playerId: ai.playerId,
+							nickname: ai.nickname,
+							constraint: ai.constraint
+						}))
+					)
+
+					console.log(
+						`[CinemaPippinGame] Created ${aiPlayerCount} AI players from scratch:`,
+						aiPlayers.map((ai) => `${ai.nickname} (${ai.constraint})`).join(', ')
+					)
+				} catch (error) {
+					console.warn('[CinemaPippinGame] Failed to initialize AI players:', error)
+					// Continue without AI players
+				}
+			}
+		}
+
 		// Initialize state
+		// If AI players from lobby: they're already in playerIds
+		// If created from scratch: need to add their IDs
+		const allPlayerIds = aiPlayersFromLobby && aiPlayersFromLobby.length > 0
+			? playerIds  // AI players already included in playerIds from lobby
+			: [...playerIds, ...aiPlayers.map((ai) => ai.playerId)]  // Add AI player IDs
+
 		this.state = {
 			phase: 'film_select',
 			films,
@@ -35,17 +106,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			currentClipIndex: 0,
 			keywords: [],
 			playerAnswers: new Map(),
-			houseAnswers: [],
+			houseAnswerQueue: [],
 			allAnswers: [],
 			currentAnswerIndex: 0,
 			votes: new Map(),
-			scores: new Map(playerIds.map((id) => [id, 0])),
+			scores: new Map(allPlayerIds.map((id) => [id, 0])),
 			clipWinners: [],
 			filmTitle: '',
 			endGameVotes: new Map(),
 			answerTimeout: 60,
-			houseAnswerCount: 1,
-			totalPlayers: playerIds.length
+			votingTimeout: 30,
+			totalPlayers: allPlayerIds.length,
+			aiPlayers,
+			playerStatus: new Map(allPlayerIds.map((id) => [id, {}])),
+			playerErrors: new Map()
 		}
 	}
 
@@ -76,6 +150,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 	clearAnswers(): void {
 		this.state.playerAnswers.clear()
+	}
+
+	clearVotes(): void {
+		this.state.votes.clear()
+		this.state.allAnswers = []
 	}
 
 	/**
@@ -211,6 +290,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 		if (this.state.currentClipIndex >= 3) {
 			// All 3 clips done, go to film title round
+			// Clear state from previous clip voting
+			this.clearAnswers()
+			this.clearVotes()
+			console.log('[CinemaPippinGame] Cleared state before film_title_collection')
+
 			this.state.phase = 'film_title_collection'
 		} else {
 			// Next clip
@@ -222,11 +306,21 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.state.currentFilmIndex++
 		this.state.currentClipIndex = 0
 
+		// Clear state from previous film
+		this.clearAnswers()
+		this.clearVotes()
+		console.log('[CinemaPippinGame] Cleared state before new film or final_scores')
+
 		if (this.state.currentFilmIndex >= 3) {
 			// All 3 films done
 			this.state.phase = 'final_scores'
 		} else {
-			// Next film
+			// Next film - reset player statuses for new film
+			for (const playerId of this.state.playerStatus.keys()) {
+				this.state.playerStatus.set(playerId, {})
+			}
+			console.log('[CinemaPippinGame] Reset player statuses for new film')
+
 			this.state.phase = 'clip_intro'
 		}
 	}
@@ -260,14 +354,77 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				if (this.state.phase === 'clip_playback') {
 					this.state.phase = 'answer_collection'
 					this.state.answerCollectionStartTime = Date.now()
+
+					// Clear previous clip's answers
+					this.clearAnswers()
+					console.log('[CinemaPippinGame] Cleared previous answers for new clip')
+
+					// Reset player statuses for answer submission
+					console.log('[CinemaPippinGame] Resetting player statuses for answer collection')
+					for (const playerId of this.state.playerStatus.keys()) {
+						this.state.playerStatus.set(playerId, {})
+						console.log(`  - Reset status for ${playerId}`)
+					}
+
+					// Pre-mark AI players as having submitted (before async generation)
+					// This ensures clients see AI players as "submitted" immediately
+					console.log('[CinemaPippinGame] Pre-marking AI player statuses...')
+					for (const aiPlayer of this.state.aiPlayers) {
+						// Add placeholder answer so auto-advance/timeout logic sees them as submitted
+						this.state.playerAnswers.set(aiPlayer.playerId, '...')
+
+						const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+						status.hasSubmittedAnswer = true
+						this.state.playerStatus.set(aiPlayer.playerId, status)
+						console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as submitted`)
+					}
+
 					console.log('[CinemaPippinGame] Advanced to answer_collection')
+					console.log(`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`)
+
+					// Start answer timeout timer
+					this.startAnswerTimeout()
+
+					// Trigger AI answer generation (async, don't await)
+					// Answers will be populated asynchronously, but status is already marked
+					console.log('[CinemaPippinGame] Triggering AI answer generation...')
+					void this.generateAIAnswers()
 				} else if (this.state.phase === 'voting_playback') {
 					// Advance to next answer or move to voting_collection
 					this.state.currentAnswerIndex++
 					if (this.state.currentAnswerIndex >= this.state.allAnswers.length) {
 						// All answers shown, move to voting
 						this.state.phase = 'voting_collection'
+						this.state.votingCollectionStartTime = Date.now()
+
+						// Reset player statuses for voting
+						for (const playerId of this.state.playerStatus.keys()) {
+							const status = this.state.playerStatus.get(playerId) || {}
+							status.hasVoted = false
+							this.state.playerStatus.set(playerId, status)
+						}
+
+						// Pre-mark AI players as having voted (before async generation)
+						// This ensures clients see AI players as "voted" immediately
+						console.log('[CinemaPippinGame] Pre-marking AI player voting statuses...')
+						for (const aiPlayer of this.state.aiPlayers) {
+							// Add placeholder vote so auto-advance logic sees them as voted
+							this.state.votes.set(aiPlayer.playerId, '...')
+
+							const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+							status.hasVoted = true
+							this.state.playerStatus.set(aiPlayer.playerId, status)
+							console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as voted`)
+						}
+
 						console.log('[CinemaPippinGame] All answers shown, advanced to voting_collection')
+
+						// Start voting timeout timer
+						this.startVotingTimeout()
+
+						// Trigger AI voting (async, don't await)
+						// Votes will be populated asynchronously, but status is already marked
+						void this.generateAIVotes()
 					} else {
 						// Stay in voting_playback, show next answer
 						console.log(
@@ -283,7 +440,47 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			case 'SUBMIT_ANSWER': {
 				// Handle answer submission
 				const { answer } = gameAction.payload as { answer: string }
-				this.state.playerAnswers.set(_playerId, answer)
+				const trimmedAnswer = answer.trim()
+
+				// Clear any previous errors for this player
+				this.state.playerErrors.delete(_playerId)
+
+				// For C1 (clip index 0), check for duplicate answers (case-insensitive)
+				if (this.state.currentClipIndex === 0) {
+					const normalizedAnswer = trimmedAnswer.toLowerCase()
+					const existingAnswers = Array.from(this.state.playerAnswers.entries())
+
+					// Check if any other player (human or AI) already submitted this answer
+					const isDuplicate = existingAnswers.some(
+						([playerId, existingAnswer]) =>
+							playerId !== _playerId && existingAnswer.toLowerCase() === normalizedAnswer
+					)
+
+					if (isDuplicate) {
+						// Set error for this player
+						this.state.playerErrors.set(_playerId, {
+							playerId: _playerId,
+							message: 'Someone else already answered that, try again!',
+							code: 'DUPLICATE_ANSWER'
+						})
+
+						console.log(
+							`[CinemaPippinGame] Player ${_playerId} submitted duplicate C1 answer: "${trimmedAnswer}"`
+						)
+
+						// Don't save the answer, return early
+						break
+					}
+				}
+
+				// Valid answer - save it
+				this.state.playerAnswers.set(_playerId, trimmedAnswer)
+
+				// Update player status
+				const status = this.state.playerStatus.get(_playerId) || {}
+				status.hasSubmittedAnswer = true
+				this.state.playerStatus.set(_playerId, status)
+
 				console.log(
 					'[CinemaPippinGame] Player',
 					_playerId,
@@ -294,34 +491,37 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					')'
 				)
 
-				// Auto-advance if all players have submitted
-				if (this.state.totalPlayers && this.state.playerAnswers.size >= this.state.totalPlayers) {
-					console.log('[CinemaPippinGame] All players submitted, advancing to voting_playback')
-
-					// Prepare answers for voting
-					const answers: typeof this.state.allAnswers = []
-
-					// Add all player answers
-					for (const [playerId, answerText] of this.state.playerAnswers.entries()) {
-						answers.push({
-							id: `player-${playerId}`,
-							text: answerText,
-							authorId: playerId,
-							votedBy: []
-						})
+				// Auto-advance if all active players have submitted
+				// Use scores.size instead of totalPlayers to handle disconnected players
+				const activePlayers = this.state.scores.size
+				if (activePlayers && this.state.playerAnswers.size >= activePlayers) {
+					// Check if AI generation is still in progress AND there are actual AI players
+					// (House answer generation doesn't block since it's just fallback for timeouts)
+					const hasAIPlayers = this.state.aiPlayers.length > 0
+					if (this.aiGenerationInProgress && hasAIPlayers) {
+						console.log(
+							'[CinemaPippinGame] All active players submitted (',
+							this.state.playerAnswers.size,
+							'/',
+							activePlayers,
+							'), but waiting for AI player answer generation to complete'
+						)
+						// Don't advance yet - generateAIAnswers will trigger advance when done
+						break
 					}
 
-					// TODO: Add house answers from precomputedAnswers
-					// For now, just shuffle player answers
-					this.state.allAnswers = answers.sort(() => Math.random() - 0.5)
-					this.state.currentAnswerIndex = 0
-					this.state.phase = 'voting_playback'
+					// Clear the timeout timer since all players submitted
+					this.clearAnswerTimeout()
 
 					console.log(
-						'[CinemaPippinGame] Prepared',
-						this.state.allAnswers.length,
-						'answers for voting'
+						'[CinemaPippinGame] All active players submitted (',
+						this.state.playerAnswers.size,
+						'/',
+						activePlayers,
+						'), advancing to voting_playback'
 					)
+
+					this.advanceToVotingPlayback()
 				}
 				break
 			}
@@ -335,6 +535,12 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 				const { answerId } = gameAction.payload as { answerId: string }
 				this.state.votes.set(_playerId, answerId)
+
+				// Update player status
+				const status = this.state.playerStatus.get(_playerId) || {}
+				status.hasVoted = true
+				this.state.playerStatus.set(_playerId, status)
+
 				console.log(
 					'[CinemaPippinGame] Player',
 					_playerId,
@@ -347,9 +553,34 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					')'
 				)
 
-				// Auto-advance if all players have voted
-				if (this.state.totalPlayers && this.state.votes.size >= this.state.totalPlayers) {
-					console.log('[CinemaPippinGame] All players voted, advancing to results_display')
+				// Auto-advance if all active players have voted
+				// Use scores.size instead of totalPlayers to handle disconnected players
+				const activePlayersVoting = this.state.scores.size
+				if (activePlayersVoting && this.state.votes.size >= activePlayersVoting) {
+					// Check if AI voting is still in progress AND there are actual AI players
+					const hasAIPlayers = this.state.aiPlayers.length > 0
+					if (this.aiVotingInProgress && hasAIPlayers) {
+						console.log(
+							'[CinemaPippinGame] All active players voted (',
+							this.state.votes.size,
+							'/',
+							activePlayersVoting,
+							'), but waiting for AI player voting to complete'
+						)
+						// Don't advance yet - generateAIVotes will trigger advance when done
+						break
+					}
+
+					// Clear the voting timeout timer since all players voted
+					this.clearVotingTimeout()
+
+					console.log(
+						'[CinemaPippinGame] All active players voted (',
+						this.state.votes.size,
+						'/',
+						activePlayersVoting,
+						'), advancing to results_display'
+					)
 
 					// Calculate scores before showing results
 					this.applyVoteScores()
@@ -415,6 +646,238 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		}
 	}
 
+	/**
+	 * Generate batch answers (AI + house) during answer_collection phase
+	 */
+	private async generateAIAnswers(): Promise<void> {
+		const clipNumber = (this.state.currentClipIndex + 1) as 1 | 2 | 3
+		const keyword = clipNumber === 1 ? 'blank' : this.state.keywords[0] || 'blank'
+
+		const aiConstraints = this.state.aiPlayers.map((ai) => ai.constraint)
+		const playerCount = this.state.scores.size
+
+		// ALWAYS block auto-advance during generation (for both AI players + house answers)
+		// The auto-advance check will only wait if there are actual AI players
+		this.aiGenerationInProgress = true
+		const hasAIPlayers = aiConstraints.length > 0
+		if (hasAIPlayers) {
+			console.log('[AI] Generation started for AI players, blocking auto-advance until complete')
+		} else {
+			console.log('[AI] Generation started for house answers only (fallback for timeouts)')
+		}
+
+		console.log(
+			`[AI] Generating batch answers: ${aiConstraints.length} AI + ${playerCount} house for clip ${clipNumber}...`
+		)
+		console.log(`[AI] AI Players:`, this.state.aiPlayers.map(ai => `${ai.nickname} (${ai.playerId})`))
+
+		try {
+			// Generate X AI + N house answers in one batch
+			const batchAnswers = await generateBatchAnswers(
+				this.aiConfig,
+				clipNumber,
+				keyword,
+				aiConstraints,
+				playerCount
+			)
+
+			console.log(`[AI] Batch generation returned ${batchAnswers.length} answers`)
+
+			// First X answers are for AI players (in randomized constraint order from batch generation)
+			// We need to map them back to the correct AI players
+			// Since batch generation randomizes, we'll assign in order
+			const aiAnswers = batchAnswers.slice(0, aiConstraints.length)
+			const houseAnswers = batchAnswers.slice(aiConstraints.length)
+
+			console.log(`[AI] Assigning ${aiAnswers.length} answers to AI players...`)
+
+			// Assign AI answers to AI players
+			this.state.aiPlayers.forEach((aiPlayer, index) => {
+				const answer = aiAnswers[index]
+				this.state.playerAnswers.set(aiPlayer.playerId, answer)
+
+				// Mark AI player as having submitted answer
+				const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+				status.hasSubmittedAnswer = true
+				this.state.playerStatus.set(aiPlayer.playerId, status)
+
+				console.log(`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${answer}" - Status marked: hasSubmittedAnswer=true`)
+			})
+
+			// Store house answers in queue
+			this.state.houseAnswerQueue = houseAnswers
+			console.log(`[AI] Generated ${houseAnswers.length} house answers for timeout fallback`)
+		} catch (error) {
+			console.error('[AI] Batch answer generation failed, using fallback:', error)
+			// Fallback: Load from answers.json files
+			try {
+				await this.loadFallbackAnswers(clipNumber)
+			} catch (fallbackError) {
+				console.error('[AI] Fallback answers also failed, leaving placeholders:', fallbackError)
+				// If fallback fails too, placeholders remain but we'll still auto-advance
+			}
+		} finally {
+			console.log(
+				`[AI] Submitted answers. Total: ${this.state.playerAnswers.size}/${this.state.scores.size}`
+			)
+
+			// Log final playerStatus for debugging
+			console.log('[AI] Final playerStatus after AI generation:')
+			for (const [playerId, status] of this.state.playerStatus.entries()) {
+				const playerName = this.state.aiPlayers.find(ai => ai.playerId === playerId)?.nickname || playerId
+				console.log(`  - ${playerName}: hasSubmittedAnswer=${status.hasSubmittedAnswer}, hasVoted=${status.hasVoted}`)
+			}
+
+			// Mark generation complete and check if we should auto-advance
+			this.aiGenerationInProgress = false
+			console.log('[AI] Generation complete, checking if auto-advance needed')
+
+			// Check if all players have now submitted (might have happened during generation)
+			const activePlayers = this.state.scores.size
+			if (this.state.phase === 'answer_collection' && activePlayers && this.state.playerAnswers.size >= activePlayers) {
+				console.log('[AI] All players submitted during generation, advancing now')
+				this.clearAnswerTimeout()
+				this.advanceToVotingPlayback()
+			}
+		}
+	}
+
+	/**
+	 * Load fallback answers from answers.json files when AI generation fails
+	 */
+	private async loadFallbackAnswers(clipNumber: 1 | 2 | 3): Promise<void> {
+		try {
+			const currentFilm = this.getCurrentFilm()
+			const currentClip = currentFilm.clips[this.state.currentClipIndex]
+
+			// Load answers.json from clip directory (same directory as the SRT file)
+			const path = await import('path')
+			const clipDir = path.dirname(currentClip.srtPath)
+			const answersPath = path.join(clipDir, 'answers.json')
+			const fs = await import('fs/promises')
+			const answersData = await fs.readFile(answersPath, 'utf-8')
+			const answersArray = JSON.parse(answersData) as string[][]
+
+			// answers.json is 2D array: outer index = clip number (0-2), inner = answers
+			const clipAnswers = answersArray[clipNumber - 1] || []
+
+			// Shuffle and take what we need
+			const shuffled = this.shuffleArray([...clipAnswers])
+			const aiCount = this.state.aiPlayers.length
+			const playerCount = this.state.scores.size
+
+			// Assign to AI players
+			this.state.aiPlayers.forEach((aiPlayer, index) => {
+				if (index < shuffled.length) {
+					const answer = shuffled[index]
+					this.state.playerAnswers.set(aiPlayer.playerId, answer)
+
+					// Mark AI player as having submitted answer
+					const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+					status.hasSubmittedAnswer = true
+					this.state.playerStatus.set(aiPlayer.playerId, status)
+
+					console.log(`[AI FALLBACK] ${aiPlayer.nickname}: "${answer}"`)
+				}
+			})
+
+			// Store rest as house answers
+			this.state.houseAnswerQueue = shuffled.slice(aiCount, aiCount + playerCount)
+			console.log(`[AI FALLBACK] Loaded ${this.state.houseAnswerQueue.length} house answers`)
+		} catch (error) {
+			console.error('[AI FALLBACK] Failed to load answers.json:', error)
+			// Last resort: Use generic placeholders
+			this.state.houseAnswerQueue = Array.from(
+				{ length: this.state.scores.size },
+				(_, i) => `answer ${i + 1}`
+			)
+		}
+	}
+
+	/**
+	 * Generate AI player votes during voting_collection phase
+	 */
+	private async generateAIVotes(): Promise<void> {
+		if (this.state.aiPlayers.length === 0) {
+			return
+		}
+
+		this.aiVotingInProgress = true
+		console.log(`[AI] Voting started, blocking auto-advance until complete`)
+		console.log(`[AI] Generating ${this.state.aiPlayers.length} AI votes...`)
+
+		// Prepare answers for voting
+		const answerList = this.state.allAnswers.map((a) => ({ id: a.id, text: a.text }))
+
+		// Generate all AI votes in parallel
+		const votePromises = this.state.aiPlayers.map(async (aiPlayer) => {
+			try {
+				const votedAnswerId = await generateAIVote(
+					this.aiConfig,
+					answerList,
+					aiPlayer.constraint
+				)
+
+				console.log(
+					`[AI] ${aiPlayer.nickname} (${aiPlayer.constraint}) voted for: ${votedAnswerId}`
+				)
+
+				// Submit the vote (simulate SUBMIT_VOTE action)
+				this.state.votes.set(aiPlayer.playerId, votedAnswerId)
+
+				// Mark AI player as having voted
+				const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+				status.hasVoted = true
+				this.state.playerStatus.set(aiPlayer.playerId, status)
+
+				// Update votedBy array
+				const answer = this.state.allAnswers.find((a) => a.id === votedAnswerId)
+				if (answer) {
+					answer.votedBy.push(aiPlayer.playerId)
+				}
+			} catch (error) {
+				console.error(`[AI] Failed to generate vote for ${aiPlayer.nickname}:`, error)
+			}
+		})
+
+		await Promise.all(votePromises)
+
+		// Mark voting complete
+		this.aiVotingInProgress = false
+		console.log('[AI] Voting complete, checking if auto-advance needed')
+		console.log(`[AI] Generated votes. Total votes: ${this.state.votes.size}/${this.state.scores.size}`)
+
+		// Check if all players (human + AI) have voted
+		const activePlayersVoting = this.state.scores.size
+		if (activePlayersVoting && this.state.votes.size >= activePlayersVoting) {
+			console.log('[AI] All players voted (including AI), advancing to results_display')
+
+			// Calculate scores before showing results
+			this.applyVoteScores()
+			console.log('[AI] Applied vote scores')
+
+			// Determine winner
+			const winner = this.calculateWinner()
+			if (winner) {
+				this.state.clipWinners.push(winner.text)
+
+				// If C1, save keyword for C2/C3 (indexed by film, not pushed)
+				if (this.state.currentClipIndex === 0) {
+					this.state.keywords[this.state.currentFilmIndex] = winner.text
+					console.log(
+						'[AI] Stored C1 winner as keyword:',
+						winner.text,
+						'for film',
+						this.state.currentFilmIndex
+					)
+				}
+			}
+
+			this.state.phase = 'results_display'
+			console.log('[AI] Advanced to results_display')
+		}
+	}
+
 	private createInitialState(): CinemaPippinState {
 		return {
 			phase: 'film_select',
@@ -423,7 +886,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			currentClipIndex: 0,
 			keywords: [],
 			playerAnswers: new Map(),
-			houseAnswers: [],
+			houseAnswerQueue: [],
 			allAnswers: [],
 			currentAnswerIndex: 0,
 			votes: new Map(),
@@ -432,7 +895,177 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			filmTitle: '',
 			endGameVotes: new Map(),
 			answerTimeout: 60,
-			houseAnswerCount: 1
+			votingTimeout: 30,
+			aiPlayers: [],
+			playerStatus: new Map(),
+			playerErrors: new Map()
 		}
+	}
+
+	/**
+	 * Fisher-Yates shuffle
+	 */
+	private shuffleArray<T>(array: T[]): T[] {
+		const shuffled = [...array]
+		for (let i = shuffled.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1))
+			;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+		}
+		return shuffled
+	}
+
+	/**
+	 * Start answer timeout timer
+	 */
+	private startAnswerTimeout(): void {
+		this.clearAnswerTimeout() // Clear any existing timer
+
+		const timeoutMs = this.state.answerTimeout * 1000
+		this.answerTimeoutTimer = setTimeout(() => {
+			this.handleAnswerTimeout()
+		}, timeoutMs)
+
+		console.log(`[CinemaPippinGame] Started answer timeout timer: ${this.state.answerTimeout}s`)
+	}
+
+	/**
+	 * Clear answer timeout timer
+	 */
+	private clearAnswerTimeout(): void {
+		if (this.answerTimeoutTimer) {
+			clearTimeout(this.answerTimeoutTimer)
+			this.answerTimeoutTimer = null
+		}
+	}
+
+	/**
+	 * Handle answer timeout - assign house answers to non-submitters
+	 */
+	private handleAnswerTimeout(): void {
+		console.log('[CinemaPippinGame] Answer timeout expired')
+
+		// Find players who haven't submitted
+		const nonSubmitters: string[] = []
+		for (const playerId of this.state.scores.keys()) {
+			if (!this.state.playerAnswers.has(playerId)) {
+				nonSubmitters.push(playerId)
+			}
+		}
+
+		if (nonSubmitters.length > 0) {
+			console.log(
+				`[CinemaPippinGame] Assigning house answers to ${nonSubmitters.length} non-submitters:`,
+				nonSubmitters
+			)
+
+			// Assign house answers to non-submitters
+			for (let i = 0; i < nonSubmitters.length; i++) {
+				const playerId = nonSubmitters[i]
+				const houseAnswer = this.state.houseAnswerQueue[i] || `answer ${i + 1}` // Fallback
+
+				this.state.playerAnswers.set(playerId, houseAnswer)
+
+				// Don't mark hasSubmittedAnswer as true - this lets us detect house answers later
+				// The player status remains with hasSubmittedAnswer: false/undefined
+
+				console.log(`[CinemaPippinGame] Assigned house answer to ${playerId}: "${houseAnswer}"`)
+			}
+		}
+
+		// Advance to voting playback
+		this.advanceToVotingPlayback()
+	}
+
+	/**
+	 * Advance to voting playback phase
+	 * Public to allow tests to skip AI generation wait
+	 */
+	advanceToVotingPlayback(): void {
+		// Clear votes from previous clip
+		this.clearVotes()
+		console.log('[CinemaPippinGame] Cleared votes and allAnswers for new voting round')
+
+		// Prepare answers for voting
+		const answers: typeof this.state.allAnswers = []
+
+		// Add all player answers (including house-assigned ones)
+		for (const [playerId, answerText] of this.state.playerAnswers.entries()) {
+			// Check if this was a house answer assigned due to timeout
+			const isHouseAnswer = !this.state.aiPlayers.some((ai) => ai.playerId === playerId) &&
+				!this.state.playerStatus.get(playerId)?.hasSubmittedAnswer
+
+			answers.push({
+				id: `player-${playerId}`,
+				text: answerText,
+				authorId: playerId,
+				isHouseAnswer,
+				houseAssignedTo: isHouseAnswer ? playerId : undefined,
+				votedBy: []
+			})
+		}
+
+		// Shuffle answers
+		this.state.allAnswers = this.shuffleArray(answers)
+		this.state.currentAnswerIndex = 0
+		this.state.phase = 'voting_playback'
+
+		console.log(
+			'[CinemaPippinGame] Prepared',
+			this.state.allAnswers.length,
+			'answers for voting'
+		)
+	}
+
+	/**
+	 * Start voting timeout timer
+	 */
+	private startVotingTimeout(): void {
+		this.clearVotingTimeout() // Clear any existing timer
+
+		const timeoutMs = this.state.votingTimeout * 1000
+		this.votingTimeoutTimer = setTimeout(() => {
+			this.handleVotingTimeout()
+		}, timeoutMs)
+
+		console.log(`[CinemaPippinGame] Started voting timeout timer: ${this.state.votingTimeout}s`)
+	}
+
+	/**
+	 * Clear voting timeout timer
+	 */
+	private clearVotingTimeout(): void {
+		if (this.votingTimeoutTimer) {
+			clearTimeout(this.votingTimeoutTimer)
+			this.votingTimeoutTimer = null
+		}
+	}
+
+	/**
+	 * Handle voting timeout - non-voters simply don't vote
+	 */
+	private handleVotingTimeout(): void {
+		console.log('[CinemaPippinGame] Voting timeout expired')
+
+		// Find players who haven't voted
+		const nonVoters: string[] = []
+		for (const playerId of this.state.scores.keys()) {
+			if (!this.state.votes.has(playerId)) {
+				nonVoters.push(playerId)
+			}
+		}
+
+		if (nonVoters.length > 0) {
+			console.log(
+				`[CinemaPippinGame] ${nonVoters.length} players did not vote:`,
+				nonVoters
+			)
+		}
+
+		// Calculate scores before showing results
+		this.applyVoteScores()
+		console.log('[CinemaPippinGame] Applied vote scores')
+
+		this.state.phase = 'results_display'
+		console.log('[CinemaPippinGame] Advanced to results_display (voting timeout)')
 	}
 }

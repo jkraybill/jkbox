@@ -10,14 +10,18 @@ import type {
 } from '@jkbox/shared'
 import { generateRoomCode } from './utils/room-code'
 import type { RoomStorage } from './storage/room-storage'
+import { getGlobalConfigStorage } from './storage/global-config-storage'
+import { loadConstraints, shuffleConstraints } from './games/cinema-pippin/ai-player'
 
 /**
  * Default room configuration
  * These are the starting values for all new rooms
  */
 function getDefaultConfig(): RoomConfig {
+	const globalConfig = getGlobalConfigStorage()
 	return {
-		aiGuesses: 1 // Default: 1 AI-generated fake answer per round
+		aiGuesses: 1, // Default: 1 AI-generated fake answer per round
+		cinemaPippinAIPlayers: globalConfig.getAIPlayerCount() // Default from global config
 	}
 }
 
@@ -270,11 +274,82 @@ export class RoomManager {
 			pauseState: getDefaultPauseState()
 		}
 
+		// Sync AI players based on config
+		this.syncAIPlayers(lobbyRoom)
+
 		this.rooms.set(room.roomId, lobbyRoom)
 		this.persistRoom(lobbyRoom)
 
 		console.log(`✅ Transitioned room ${room.roomId} from title → lobby`)
 		return lobbyRoom
+	}
+
+	/**
+	 * Sync AI players in lobby based on config
+	 * AI players are first-class players, created once in lobby and persisting through the game
+	 */
+	private syncAIPlayers(room: LobbyState): void {
+		const aiPlayerCount = room.config.cinemaPippinAIPlayers || 0
+
+		// Remove existing AI players
+		room.players = room.players.filter((p) => !p.isAI)
+
+		// Add new AI players
+		if (aiPlayerCount > 0) {
+			try {
+				const constraints = loadConstraints()
+				const shuffled = shuffleConstraints(constraints)
+
+				for (let i = 0; i < aiPlayerCount && i < shuffled.length; i++) {
+					const constraint = shuffled[i]
+					const firstWord = constraint.split(/\s+/)[0]
+					const nickname = `${firstWord}Bot`
+
+					const aiPlayer: Player = {
+						id: `ai-${i + 1}`,
+						roomId: room.roomId,
+						nickname,
+						sessionToken: `ai-token-${i + 1}`,
+						deviceId: `ai-device-${i + 1}`,
+						isAdmin: false,
+						isHost: false,
+						isAI: true,
+						aiConstraint: constraint,
+						score: 0,
+						connectedAt: new Date(),
+						lastSeenAt: new Date(),
+						isConnected: true
+					}
+
+					room.players.push(aiPlayer)
+					console.log(`[RoomManager] Created AI player: ${nickname} (${constraint})`)
+				}
+
+				console.log(`[RoomManager] Added ${aiPlayerCount} AI players to lobby`)
+			} catch (error) {
+				console.error('[RoomManager] Failed to load AI players:', error)
+				// Fallback: create generic AI players without constraints
+				for (let i = 0; i < aiPlayerCount; i++) {
+					const aiPlayer: Player = {
+						id: `ai-${i + 1}`,
+						roomId: room.roomId,
+						nickname: `AIBot${i + 1}`,
+						sessionToken: `ai-token-${i + 1}`,
+						deviceId: `ai-device-${i + 1}`,
+						isAdmin: false,
+						isHost: false,
+						isAI: true,
+						score: 0,
+						connectedAt: new Date(),
+						lastSeenAt: new Date(),
+						isConnected: true
+					}
+
+					room.players.push(aiPlayer)
+				}
+				console.log(`[RoomManager] Added ${aiPlayerCount} generic AI players (fallback)`)
+			}
+		}
 	}
 
 	/**
@@ -438,6 +513,11 @@ export class RoomManager {
 				...room.config,
 				...configUpdate
 			}
+		}
+
+		// If in lobby phase and AI player count changed, sync AI players
+		if (updatedRoom.phase === 'lobby' && configUpdate.cinemaPippinAIPlayers !== undefined) {
+			this.syncAIPlayers(updatedRoom as LobbyState)
 		}
 
 		this.rooms.set(roomId, updatedRoom)

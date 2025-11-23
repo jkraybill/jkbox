@@ -20,7 +20,9 @@ export interface FilmData {
 export interface Answer {
 	id: string
 	text: string
-	authorId: string // 'house' or player ID
+	authorId: string // player ID or 'house' for house answers
+	isHouseAnswer?: boolean // True if assigned from house pool due to timeout
+	houseAssignedTo?: string // Player ID who got this house answer (for attribution)
 	votedBy: string[]
 }
 
@@ -40,6 +42,23 @@ export type GamePhase =
 	| 'final_scores'
 	| 'end_game_vote'
 
+export interface AIPlayerData {
+	playerId: string
+	nickname: string
+	constraint: string // Single constraint for both generation and judging
+}
+
+export interface PlayerStatus {
+	hasSubmittedAnswer?: boolean
+	hasVoted?: boolean
+}
+
+export interface PlayerError {
+	playerId: string
+	message: string
+	code: string
+}
+
 export interface CinemaPippinState {
 	phase: GamePhase
 	films: FilmData[]
@@ -47,7 +66,7 @@ export interface CinemaPippinState {
 	currentClipIndex: number
 	keywords: string[] // One per film (C1 winner)
 	playerAnswers: Map<string, string>
-	houseAnswers: string[]
+	houseAnswerQueue: string[] // Pre-generated house answers for timeouts
 	allAnswers: Answer[]
 	currentAnswerIndex: number // Which answer is currently being shown in voting_playback
 	votes: Map<string, string> // playerId -> answerId
@@ -56,7 +75,11 @@ export interface CinemaPippinState {
 	filmTitle: string // Winning film title
 	endGameVotes: Map<string, 'lobby' | 'again'>
 	answerTimeout: number
-	houseAnswerCount: number
 	answerCollectionStartTime?: number // Timestamp when answer_collection started
+	votingCollectionStartTime?: number // Timestamp when voting_collection started
+	votingTimeout: number // Voting timeout in seconds (default 30)
 	totalPlayers?: number // Total number of players (for auto-advance check)
+	aiPlayers: AIPlayerData[] // AI players with their constraints
+	playerStatus: Map<string, PlayerStatus> // Track submission/voting status per player
+	playerErrors: Map<string, PlayerError> // Per-player error messages
 }

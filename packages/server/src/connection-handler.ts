@@ -119,6 +119,17 @@ export class ConnectionHandler {
 			console.log(`Granting admin access to player: ${nickname}`)
 		}
 
+		// Reject nicknames ending in "bot" (case-insensitive) - reserved for AI players
+		if (nickname.toLowerCase().endsWith('bot')) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'INVALID_NICKNAME',
+				message: 'Nicknames ending in "Bot" are reserved for AI players. Please choose a different nickname.'
+			})
+			console.log(`[JOIN] Rejected nickname "${nickname}" - ends with "bot"`)
+			return
+		}
+
 		// Check if this is a booted player rejoining with same nickname
 		const bootedPlayerKey = `${message.roomId}:${nickname}`
 		const bootedPlayer = this.bootedPlayers.get(bootedPlayerKey)
@@ -163,9 +174,9 @@ export class ConnectionHandler {
 		// Make socket join the Socket.io room
 		void socket.join(message.roomId)
 
-		// Add player to voting handler
+		// Add player to voting handler (AI players excluded from voting)
 		const votingHandler = this.getVotingHandler(message.roomId)
-		votingHandler.addPlayer(player.id)
+		votingHandler.addPlayer(player.id, player.isAI ?? false)
 
 		// Send join success with player and room state to the joining player
 		const updated = this.roomManager.getRoom(message.roomId)
@@ -290,13 +301,15 @@ export class ConnectionHandler {
 			lastSeenAt: new Date()
 		})
 
-		// Re-add player to voting handler (they may have been removed on disconnect)
-		const votingHandler = this.getVotingHandler(mapping.roomId)
-		votingHandler.addPlayer(mapping.playerId)
-
 		// Broadcast room state to all clients in the room
 		const updated = this.roomManager.getRoom(mapping.roomId)
+
 		if (updated) {
+			// Re-add player to voting handler (they may have been removed on disconnect)
+			const player = updated.players.find(p => p.id === mapping.playerId)
+			const votingHandler = this.getVotingHandler(mapping.roomId)
+			votingHandler.addPlayer(mapping.playerId, player?.isAI ?? false)
+
 			const roomStateMessage: RoomStateMessage = {
 				type: 'room:state',
 				state: updated
@@ -1009,7 +1022,7 @@ export class ConnectionHandler {
 			phase: 'title',
 			roomId,
 			players: [],
-			config: currentRoom?.config || { aiGuesses: 1 }
+			config: currentRoom?.config || { aiGuesses: 1, cinemaPippinAIPlayers: 1 }
 		}
 		this.roomManager.updateRoomState(roomId, titleRoom)
 
@@ -1024,7 +1037,7 @@ export class ConnectionHandler {
 	/**
 	 * Admin: Update room configuration (e.g., AI guesses setting)
 	 */
-	handleUpdateConfig(socket: Socket, message: AdminUpdateConfigMessage): void {
+	async handleUpdateConfig(socket: Socket, message: AdminUpdateConfigMessage): Promise<void> {
 		const mapping = this.socketToPlayer.get(socket.id)
 		if (!mapping) {
 			socket.emit('error', {
@@ -1048,6 +1061,16 @@ export class ConnectionHandler {
 		}
 
 		console.log(`Admin ${adminPlayer.nickname} updating config:`, message.config)
+
+		// If updating Cinema Pippin AI players, sync to global config
+		if (message.config.cinemaPippinAIPlayers !== undefined && message.config.cinemaPippinAIPlayers !== null) {
+			const { getGlobalConfigStorage } = await import('./storage/global-config-storage')
+			const globalConfig = getGlobalConfigStorage()
+			globalConfig.setAIPlayerCount(message.config.cinemaPippinAIPlayers)
+			console.log(
+				`[Global Config] Updated Cinema Pippin AI players to ${message.config.cinemaPippinAIPlayers}`
+			)
+		}
 
 		// Update config in room manager
 		const updatedRoom = this.roomManager.updateRoomConfig(mapping.roomId, message.config)

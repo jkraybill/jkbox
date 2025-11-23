@@ -5,6 +5,7 @@ export interface AnswerInputProps {
 	timeRemaining: number
 	onSubmit: (answer: string) => void
 	submitted: boolean
+	error?: { message: string; code: string }
 }
 
 const ACT_LABELS = {
@@ -13,16 +14,24 @@ const ACT_LABELS = {
 	3: 'Act III'
 }
 
-export function AnswerInput({ clipNumber, timeRemaining, onSubmit, submitted }: AnswerInputProps) {
+export function AnswerInput({
+	clipNumber,
+	timeRemaining,
+	onSubmit,
+	submitted,
+	error
+}: AnswerInputProps) {
 	const [answer, setAnswer] = useState('')
 	const isC1 = clipNumber === 1
 
 	// Auto-submit when time reaches 0
+	// Only depends on timeRemaining to avoid triggering on every keystroke
 	useEffect(() => {
 		if (timeRemaining === 0 && !submitted && answer.trim()) {
 			onSubmit(answer.trim())
 		}
-	}, [timeRemaining, submitted, answer, onSubmit])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [timeRemaining])
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value
@@ -87,6 +96,8 @@ export function AnswerInput({ clipNumber, timeRemaining, onSubmit, submitted }: 
 			>
 				{submitted ? 'Submitted ✓' : 'Submit'}
 			</button>
+
+			{error && <p style={styles.error}>{error.message}</p>}
 
 			{submitted && (
 				<p style={styles.confirmation}>Answer submitted! Waiting for other players...</p>
@@ -169,5 +180,12 @@ const styles = {
 		color: '#4CAF50',
 		textAlign: 'center' as const,
 		margin: 0
+	},
+	error: {
+		fontSize: '16px',
+		color: '#ff4444',
+		textAlign: 'center' as const,
+		margin: 0,
+		fontWeight: 'bold' as const
 	}
 }

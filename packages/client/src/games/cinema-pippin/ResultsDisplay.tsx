@@ -4,7 +4,8 @@
  * with animations for reveals and score updates
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import type { Player } from '@jkbox/shared'
 
 interface Answer {
 	id: string
@@ -21,6 +22,7 @@ interface ResultEntry {
 
 interface ResultsDisplayProps {
 	sortedResults: ResultEntry[]
+	players: Player[]
 	scores?: Record<string, number> // For future use (displaying updated scores)
 	onComplete: () => void
 }
@@ -33,10 +35,27 @@ enum DisplayState {
 	Complete
 }
 
-export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProps) {
+export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDisplayProps) {
 	const [currentIndex, setCurrentIndex] = useState(0)
 	const [displayState, setDisplayState] = useState<DisplayState>(DisplayState.ShowAnswer)
 	const [animatingScore, setAnimatingScore] = useState(0)
+
+	// Create player ID to nickname mapping
+	const playerNicknames = useMemo(() => {
+		const map = new Map<string, string>()
+		for (const player of players) {
+			map.set(player.id, player.nickname)
+		}
+		return map
+	}, [players])
+
+	// Helper to get display name for a player ID
+	const getPlayerName = (playerId: string): string => {
+		if (playerId === 'house') {
+			return '🤖 AI'
+		}
+		return playerNicknames.get(playerId) || playerId
+	}
 
 	const currentResult = sortedResults[currentIndex]
 	const isLastResult = currentIndex === sortedResults.length - 1
@@ -138,7 +157,7 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 				<div style={styles.answerCard}>
 					<p style={styles.answerText}>"{winner.answer.text}"</p>
 					<p style={styles.authorText}>
-						{winner.answer.authorId === 'house' ? '🤖 AI' : `👤 ${winner.answer.authorId}`}
+						{winner.answer.authorId === 'house' ? '🤖 AI' : `👤 ${getPlayerName(winner.answer.authorId)}`}
 					</p>
 					<p style={styles.voteCount}>
 						{winner.voteCount} {winner.voteCount === 1 ? 'vote' : 'votes'}
@@ -165,10 +184,12 @@ export function ResultsDisplay({ sortedResults, onComplete }: ResultsDisplayProp
 							by{' '}
 							{currentResult.answer.authorId === 'house'
 								? '🤖 AI'
-								: `👤 ${currentResult.answer.authorId}`}
+								: `👤 ${getPlayerName(currentResult.answer.authorId)}`}
 						</p>
 
-						<p style={styles.votersText}>Voted by: {currentResult.voters.join(', ')}</p>
+						<p style={styles.votersText}>
+							Voted by: {currentResult.voters.map(id => getPlayerName(id)).join(', ')}
+						</p>
 
 						{displayState === DisplayState.ShowScoreAnimation && (
 							<p style={styles.scoreText}>

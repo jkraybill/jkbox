@@ -9,12 +9,17 @@ export class VotingHandler {
   private votes: Map<string, GameVote> = new Map()
   private readyStates: Map<string, PlayerReadyState> = new Map()
   private playerIds: Set<string> = new Set()
+  private aiPlayerIds: Set<string> = new Set()
 
   /**
    * Add a player to tracking (for allReady calculation)
+   * AI players are tracked separately and excluded from voting requirements
    */
-  addPlayer(playerId: string): void {
+  addPlayer(playerId: string, isAI: boolean = false): void {
     this.playerIds.add(playerId)
+    if (isAI) {
+      this.aiPlayerIds.add(playerId)
+    }
   }
 
   /**
@@ -85,6 +90,7 @@ export class VotingHandler {
     this.votes.delete(playerId)
     this.readyStates.delete(playerId)
     this.playerIds.delete(playerId)
+    this.aiPlayerIds.delete(playerId)
   }
 
   /**
@@ -97,16 +103,21 @@ export class VotingHandler {
   }
 
   /**
-   * Compute if all players have voted + toggled ready
+   * Compute if all HUMAN players have voted + toggled ready
+   * AI players are excluded from voting requirements
+   * Requires at least 1 human player to be ready
    */
   private computeAllReady(): boolean {
-    // If no players, not ready
-    if (this.playerIds.size === 0) {
+    // Get human players only (exclude AI)
+    const humanPlayerIds = Array.from(this.playerIds).filter(id => !this.aiPlayerIds.has(id))
+
+    // Must have at least 1 human player
+    if (humanPlayerIds.length === 0) {
       return false
     }
 
-    // All tracked players must have voted + be ready
-    for (const playerId of this.playerIds) {
+    // All human players must have voted + be ready
+    for (const playerId of humanPlayerIds) {
       const readyState = this.readyStates.get(playerId)
       if (!readyState || !readyState.hasVoted || !readyState.isReady) {
         return false

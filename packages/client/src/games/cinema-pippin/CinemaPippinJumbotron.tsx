@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react'
-import type { JumbotronProps } from '@jkbox/shared'
+import type { JumbotronProps, Player } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
 import { ResultsDisplay } from './ResultsDisplay'
@@ -22,6 +22,11 @@ interface ResultEntry {
 	voters: string[]
 }
 
+interface PlayerStatus {
+	hasSubmittedAnswer?: boolean
+	hasVoted?: boolean
+}
+
 interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
@@ -32,9 +37,98 @@ interface CinemaPippinGameState {
 	}
 	sortedResults?: ResultEntry[]
 	scores?: Record<string, number>
+	playerStatus?: Record<string, PlayerStatus>
 }
 
-export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
+// Helper component to display player status
+function PlayerStatusList({
+	playerStatus,
+	scores,
+	players,
+	mode
+}: {
+	playerStatus?: Record<string, PlayerStatus>
+	scores?: Record<string, number>
+	players: Player[]
+	mode: 'answering' | 'voting'
+}) {
+	if (!playerStatus || !scores) {
+		return null
+	}
+
+	const playerIds = Object.keys(scores)
+
+	// Create player ID to nickname mapping
+	const playerNicknames = new Map<string, string>()
+	for (const player of players) {
+		playerNicknames.set(player.id, player.nickname)
+	}
+
+	return (
+		<div style={statusStyles.container}>
+			{playerIds.map((playerId) => {
+				const status = playerStatus[playerId]
+				const isComplete =
+					mode === 'answering' ? status?.hasSubmittedAnswer : status?.hasVoted
+				const playerName = playerNicknames.get(playerId) || playerId
+
+				return (
+					<div
+						key={playerId}
+						style={{
+							...statusStyles.player,
+							...(isComplete ? statusStyles.playerComplete : statusStyles.playerIncomplete)
+						}}
+					>
+						<span style={statusStyles.playerName}>{playerName}</span>
+						<span style={statusStyles.status}>
+							{isComplete
+								? mode === 'answering'
+									? '✓ Answered'
+									: '✓ Voted'
+								: mode === 'answering'
+									? 'Answering...'
+									: 'Voting...'}
+						</span>
+					</div>
+				)
+			})}
+		</div>
+	)
+}
+
+const statusStyles = {
+	container: {
+		display: 'flex',
+		flexDirection: 'column' as const,
+		gap: '10px',
+		marginTop: '30px',
+		maxWidth: '600px'
+	},
+	player: {
+		display: 'flex',
+		justifyContent: 'space-between',
+		padding: '12px 20px',
+		borderRadius: '8px',
+		fontSize: '18px'
+	},
+	playerComplete: {
+		backgroundColor: 'rgba(76, 175, 80, 0.2)',
+		borderLeft: '4px solid #4CAF50'
+	},
+	playerIncomplete: {
+		backgroundColor: 'rgba(255, 255, 255, 0.1)',
+		borderLeft: '4px solid #666'
+	},
+	playerName: {
+		fontWeight: 'bold' as const
+	},
+	status: {
+		opacity: 0.8
+	}
+}
+
+export function CinemaPippinJumbotron({ state, players, sendToServer }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
 
 	// Auto-advance from film_select to clip_intro after 2 seconds
@@ -211,6 +305,12 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 					<div style={styles.container}>
 						<h1 style={styles.title}>Submit Your Answer!</h1>
 						<p style={styles.subtitle}>Players are writing their answers...</p>
+						<PlayerStatusList
+							playerStatus={gameState.playerStatus}
+							scores={gameState.scores}
+					players={players}
+							mode="answering"
+						/>
 					</div>
 				)
 
@@ -242,6 +342,12 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 					<div style={styles.container}>
 						<h1 style={styles.title}>Vote for the Funniest!</h1>
 						<p style={styles.subtitle}>Players are voting...</p>
+						<PlayerStatusList
+							playerStatus={gameState.playerStatus}
+							scores={gameState.scores}
+					players={players}
+							mode="voting"
+						/>
 					</div>
 				)
 
@@ -251,6 +357,7 @@ export function CinemaPippinJumbotron({ state, sendToServer }: JumbotronProps) {
 						<ResultsDisplay
 							sortedResults={gameState.sortedResults}
 							scores={gameState.scores}
+							players={players}
 							onComplete={() => {
 								// Results animation complete, no action needed
 								// Auto-advance will be handled by timer

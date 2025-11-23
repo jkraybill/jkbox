@@ -169,4 +169,90 @@ describe('VotingHandler', () => {
 			expect(state.selectedGame).toBeNull()
 		})
 	})
+
+	describe('AI Player Voting Exclusion', () => {
+		it('should allow adding AI players separately from human players', () => {
+			handler.addPlayer('human-1', false)
+			handler.addPlayer('ai-1', true)
+			handler.addPlayer('human-2', false)
+
+			// Only human players need to vote
+			handler.submitVote('human-1', 'fake-facts')
+			handler.toggleReady('human-1', true)
+
+			// Should not be ready - human-2 hasn't voted yet
+			let state = handler.getVotingState()
+			expect(state.allReady).toBe(false)
+
+			// Now human-2 votes and is ready
+			handler.submitVote('human-2', 'fake-facts')
+			handler.toggleReady('human-2', true)
+
+			// Should be ready - all humans are ready, AI doesn't matter
+			state = handler.getVotingState()
+			expect(state.allReady).toBe(true)
+		})
+
+		it('should exclude AI players from allReady calculation', () => {
+			handler.addPlayer('human-1', false)
+			handler.addPlayer('ai-1', true)
+			handler.addPlayer('ai-2', true)
+
+			// Only human votes and is ready
+			handler.submitVote('human-1', 'fake-facts')
+			handler.toggleReady('human-1', true)
+
+			// Should be ready - AI players don't need to vote
+			const state = handler.getVotingState()
+			expect(state.allReady).toBe(true)
+		})
+
+		it('should require at least 1 human player to be ready', () => {
+			handler.addPlayer('ai-1', true)
+			handler.addPlayer('ai-2', true)
+
+			// No humans - should not be ready
+			const state = handler.getVotingState()
+			expect(state.allReady).toBe(false)
+		})
+
+		it('should not require AI players to vote even if they do vote', () => {
+			handler.addPlayer('human-1', false)
+			handler.addPlayer('ai-1', true)
+
+			// AI votes (shouldn't happen in practice, but test the behavior)
+			handler.submitVote('ai-1', 'fake-facts')
+			handler.toggleReady('ai-1', true)
+
+			// Human hasn't voted - should not be ready
+			let state = handler.getVotingState()
+			expect(state.allReady).toBe(false)
+
+			// Human votes and is ready - now should be ready
+			handler.submitVote('human-1', 'cinema-pippin')
+			handler.toggleReady('human-1', true)
+
+			state = handler.getVotingState()
+			expect(state.allReady).toBe(true)
+		})
+
+		it('should remove AI players from tracking on removePlayer', () => {
+			handler.addPlayer('human-1', false)
+			handler.addPlayer('ai-1', true)
+
+			handler.submitVote('human-1', 'fake-facts')
+			handler.toggleReady('human-1', true)
+
+			// Should be ready
+			let state = handler.getVotingState()
+			expect(state.allReady).toBe(true)
+
+			// Remove AI player
+			handler.removePlayer('ai-1')
+
+			// Should still be ready
+			state = handler.getVotingState()
+			expect(state.allReady).toBe(true)
+		})
+	})
 })
