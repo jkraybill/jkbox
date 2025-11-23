@@ -87,12 +87,16 @@ export function loadClipsFromSequence(filmName: string, sequenceNumber: number):
 export function loadFilms(): FilmData[] {
 	const availableFilms = getAvailableFilms()
 
-	if (availableFilms.length < 3) {
-		throw new Error(`Not enough films available (need 3, found ${availableFilms.length})`)
+	// Exclude films with known issues
+	const excludedFilms = ['le-samourai-1967-rm4k-1080p-bluray-x265-hevc-flac-sartre']
+	const validFilms = availableFilms.filter((film) => !excludedFilms.includes(film))
+
+	if (validFilms.length < 3) {
+		throw new Error(`Not enough films available (need 3, found ${validFilms.length})`)
 	}
 
 	// Shuffle and take 3
-	const shuffled = [...availableFilms].sort(() => Math.random() - 0.5)
+	const shuffled = [...validFilms].sort(() => Math.random() - 0.5)
 	const selectedFilms = shuffled.slice(0, 3)
 
 	// Load clips for each film
