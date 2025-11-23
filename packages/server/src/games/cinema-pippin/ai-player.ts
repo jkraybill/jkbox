@@ -237,7 +237,8 @@ export async function generateBatchAnswers(
 	aiConstraints: string[], // AI player constraints
 	additionalCount: number, // Number of additional house answers to generate
 	questionSrt?: string, // Optional SRT text of the question for context
-	previousClips?: Array<{ srtText: string; winningAnswer: string; keyword: string }> // Previous clips for context
+	previousClips?: Array<{ srtText: string; winningAnswer: string; keyword: string }>, // Previous clips for context
+	srtPath?: string // Path to SRT file (for saving answers to answers.json)
 ): Promise<string[]> {
 	const isC1 = clipNumber === 1
 	const wordCount = isC1 ? 1 : clipNumber === 2 ? 4 : 3
@@ -412,10 +413,67 @@ export async function generateBatchAnswers(
 			return cleaned
 		})
 
+		// Append successful answers to answers.json for future use
+		if (srtPath && cleanedAnswers.length > 0) {
+			await appendToAnswersJSON(clipNumber, srtPath, cleanedAnswers)
+		}
+
 		return cleanedAnswers
 	} catch (error) {
 		console.error('[Batch Answer Generation] Failed:', error)
 		throw error
+	}
+}
+
+/**
+ * Append successful AI answers to answers.json for future fallback use
+ */
+async function appendToAnswersJSON(
+	clipNumber: ClipNumber,
+	srtPath: string,
+	newAnswers: string[]
+): Promise<void> {
+	try {
+		const path = await import('path')
+		const clipDir = path.dirname(srtPath)
+		const answersPath = path.join(clipDir, 'answers.json')
+
+		// Load existing answers.json
+		let answersData: { answers: string[][] }
+		try {
+			const fileContent = fs.readFileSync(answersPath, 'utf-8')
+			answersData = JSON.parse(fileContent) as { answers: string[][] }
+		} catch (error) {
+			// If file doesn't exist or is invalid, create new structure
+			console.log(`[AI] answers.json not found or invalid, creating new one`)
+			answersData = { answers: [[], [], []] }
+		}
+
+		// Ensure we have the right structure
+		if (!answersData.answers || !Array.isArray(answersData.answers)) {
+			answersData.answers = [[], [], []]
+		}
+
+		// Ensure each clip has an array
+		for (let i = 0; i < 3; i++) {
+			if (!Array.isArray(answersData.answers[i])) {
+				answersData.answers[i] = []
+			}
+		}
+
+		// Append new answers to the appropriate clip index (clipNumber is 1-indexed)
+		const clipIndex = clipNumber - 1
+		answersData.answers[clipIndex].push(...newAnswers)
+
+		// Write back to file with pretty formatting
+		fs.writeFileSync(answersPath, JSON.stringify(answersData, null, 2), 'utf-8')
+
+		console.log(
+			`[AI] ✓ Appended ${newAnswers.length} answers to answers.json for clip ${clipNumber}. Total now: ${answersData.answers[clipIndex].length}`
+		)
+	} catch (error) {
+		console.error('[AI] Failed to append to answers.json (non-fatal):', error)
+		// Don't throw - this is a nice-to-have feature
 	}
 }
 

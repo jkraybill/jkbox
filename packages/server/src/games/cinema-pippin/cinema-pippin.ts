@@ -717,7 +717,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				aiConstraints,
 				playerCount,
 				questionSrt,
-				previousClips
+				previousClips,
+				currentClip.srtPath
 			)
 
 			console.log(`[AI] Batch generation returned ${batchAnswers.length} answers`)
