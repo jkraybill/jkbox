@@ -10,7 +10,6 @@ import {
 	loadConstraints,
 	shuffleConstraints,
 	generateBatchAnswers,
-	generateAIAnswer,
 	generateAIVote,
 	type AIConfig
 } from './ai-player'
@@ -24,6 +23,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	private votingTimeoutTimer: NodeJS.Timeout | null = null
 	private aiGenerationInProgress: boolean = false
 	private aiVotingInProgress: boolean = false
+	private stateChangeCallback?: () => void
 
 	constructor(enableAI = false) {
 		this.state = this.createInitialState()
@@ -33,6 +33,13 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			model: process.env.OLLAMA_MODEL || 'qwen-fast:latest',
 			temperature: 0.9
 		}
+	}
+
+	/**
+	 * Set callback for async state changes (e.g., AI generation completing)
+	 */
+	setStateChangeCallback(callback: () => void): void {
+		this.stateChangeCallback = callback
 	}
 
 	getMetadata(): GameModuleMetadata {
@@ -95,9 +102,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Initialize state
 		// If AI players from lobby: they're already in playerIds
 		// If created from scratch: need to add their IDs
-		const allPlayerIds = aiPlayersFromLobby && aiPlayersFromLobby.length > 0
-			? playerIds  // AI players already included in playerIds from lobby
-			: [...playerIds, ...aiPlayers.map((ai) => ai.playerId)]  // Add AI player IDs
+		const allPlayerIds =
+			aiPlayersFromLobby && aiPlayersFromLobby.length > 0
+				? playerIds // AI players already included in playerIds from lobby
+				: [...playerIds, ...aiPlayers.map((ai) => ai.playerId)] // Add AI player IDs
 
 		this.state = {
 			phase: 'film_select',
@@ -380,7 +388,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					}
 
 					console.log('[CinemaPippinGame] Advanced to answer_collection')
-					console.log(`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`)
+					console.log(
+						`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`
+					)
 
 					// Start answer timeout timer
 					this.startAnswerTimeout()
@@ -669,7 +679,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		console.log(
 			`[AI] Generating batch answers: ${aiConstraints.length} AI + ${playerCount} house for clip ${clipNumber}...`
 		)
-		console.log(`[AI] AI Players:`, this.state.aiPlayers.map(ai => `${ai.nickname} (${ai.playerId})`))
+		console.log(
+			`[AI] AI Players:`,
+			this.state.aiPlayers.map((ai) => `${ai.nickname} (${ai.playerId})`)
+		)
 
 		try {
 			// Generate X AI + N house answers in one batch
@@ -701,7 +714,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				status.hasSubmittedAnswer = true
 				this.state.playerStatus.set(aiPlayer.playerId, status)
 
-				console.log(`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${answer}" - Status marked: hasSubmittedAnswer=true`)
+				console.log(
+					`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${answer}" - Status marked: hasSubmittedAnswer=true`
+				)
 			})
 
 			// Store house answers in queue
@@ -724,8 +739,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			// Log final playerStatus for debugging
 			console.log('[AI] Final playerStatus after AI generation:')
 			for (const [playerId, status] of this.state.playerStatus.entries()) {
-				const playerName = this.state.aiPlayers.find(ai => ai.playerId === playerId)?.nickname || playerId
-				console.log(`  - ${playerName}: hasSubmittedAnswer=${status.hasSubmittedAnswer}, hasVoted=${status.hasVoted}`)
+				const playerName =
+					this.state.aiPlayers.find((ai) => ai.playerId === playerId)?.nickname || playerId
+				console.log(
+					`  - ${playerName}: hasSubmittedAnswer=${status.hasSubmittedAnswer}, hasVoted=${status.hasVoted}`
+				)
 			}
 
 			// Mark generation complete and check if we should auto-advance
@@ -734,10 +752,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			// Check if all players have now submitted (might have happened during generation)
 			const activePlayers = this.state.scores.size
-			if (this.state.phase === 'answer_collection' && activePlayers && this.state.playerAnswers.size >= activePlayers) {
+			if (
+				this.state.phase === 'answer_collection' &&
+				activePlayers &&
+				this.state.playerAnswers.size >= activePlayers
+			) {
 				console.log('[AI] All players submitted during generation, advancing now')
 				this.clearAnswerTimeout()
 				this.advanceToVotingPlayback()
+
+				// Notify module of state change so it can broadcast to clients
+				if (this.stateChangeCallback) {
+					console.log('[AI] Triggering state change callback to broadcast update')
+					this.stateChangeCallback()
+				}
 			}
 		}
 	}
@@ -812,11 +840,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Generate all AI votes in parallel
 		const votePromises = this.state.aiPlayers.map(async (aiPlayer) => {
 			try {
-				const votedAnswerId = await generateAIVote(
-					this.aiConfig,
-					answerList,
-					aiPlayer.constraint
-				)
+				const votedAnswerId = await generateAIVote(this.aiConfig, answerList, aiPlayer.constraint)
 
 				console.log(
 					`[AI] ${aiPlayer.nickname} (${aiPlayer.constraint}) voted for: ${votedAnswerId}`
@@ -845,7 +869,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Mark voting complete
 		this.aiVotingInProgress = false
 		console.log('[AI] Voting complete, checking if auto-advance needed')
-		console.log(`[AI] Generated votes. Total votes: ${this.state.votes.size}/${this.state.scores.size}`)
+		console.log(
+			`[AI] Generated votes. Total votes: ${this.state.votes.size}/${this.state.scores.size}`
+		)
 
 		// Check if all players (human + AI) have voted
 		const activePlayersVoting = this.state.scores.size
@@ -875,6 +901,12 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			this.state.phase = 'results_display'
 			console.log('[AI] Advanced to results_display')
+
+			// Notify module of state change so it can broadcast to clients
+			if (this.stateChangeCallback) {
+				console.log('[AI] Triggering state change callback to broadcast update')
+				this.stateChangeCallback()
+			}
 		}
 	}
 
@@ -991,7 +1023,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Add all player answers (including house-assigned ones)
 		for (const [playerId, answerText] of this.state.playerAnswers.entries()) {
 			// Check if this was a house answer assigned due to timeout
-			const isHouseAnswer = !this.state.aiPlayers.some((ai) => ai.playerId === playerId) &&
+			const isHouseAnswer =
+				!this.state.aiPlayers.some((ai) => ai.playerId === playerId) &&
 				!this.state.playerStatus.get(playerId)?.hasSubmittedAnswer
 
 			answers.push({
@@ -1009,11 +1042,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.state.currentAnswerIndex = 0
 		this.state.phase = 'voting_playback'
 
-		console.log(
-			'[CinemaPippinGame] Prepared',
-			this.state.allAnswers.length,
-			'answers for voting'
-		)
+		console.log('[CinemaPippinGame] Prepared', this.state.allAnswers.length, 'answers for voting')
 	}
 
 	/**
@@ -1055,10 +1084,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		}
 
 		if (nonVoters.length > 0) {
-			console.log(
-				`[CinemaPippinGame] ${nonVoters.length} players did not vote:`,
-				nonVoters
-			)
+			console.log(`[CinemaPippinGame] ${nonVoters.length} players did not vote:`, nonVoters)
 		}
 
 		// Calculate scores before showing results

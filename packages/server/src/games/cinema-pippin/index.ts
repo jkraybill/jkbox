@@ -26,9 +26,26 @@ class CinemaPippinModule implements PluggableGameModule {
 
 	private game: CinemaPippinGame
 	private context?: GameModuleContext
+	private stateChangeCallback?: (state: GameState) => void
 
 	constructor() {
 		this.game = new CinemaPippinGame()
+
+		// Wire up async state change notifications
+		this.game.setStateChangeCallback(() => {
+			if (this.stateChangeCallback) {
+				console.log('[CinemaPippinModule] Async state change detected, notifying subscriber')
+				this.stateChangeCallback(this.enrichStateForClient())
+			}
+		})
+	}
+
+	/**
+	 * Subscribe to async state changes (e.g., AI generation completing)
+	 * Connection handler uses this to broadcast updates to clients
+	 */
+	onStateChange(callback: (state: GameState) => void): void {
+		this.stateChangeCallback = callback
 	}
 
 	/**
@@ -107,11 +124,13 @@ class CinemaPippinModule implements PluggableGameModule {
 		this.context = context
 
 		// Extract AI players from lobby (players with isAI: true)
-		const aiPlayers = players.filter((p) => p.isAI).map((p) => ({
-			playerId: p.id,
-			nickname: p.nickname,
-			constraint: p.aiConstraint || p.nickname.replace(/Bot$/, '') // Fallback to nickname
-		}))
+		const aiPlayers = players
+			.filter((p) => p.isAI)
+			.map((p) => ({
+				playerId: p.id,
+				nickname: p.nickname,
+				constraint: (p.aiConstraint as string | undefined) || p.nickname.replace(/Bot$/, '') // Fallback to nickname
+			}))
 
 		// Get all player IDs (both human and AI)
 		const playerIds = players.map((p) => p.id)
@@ -130,8 +149,15 @@ class CinemaPippinModule implements PluggableGameModule {
 		const enrichedState = this.enrichStateForClient()
 
 		// Log playerStatus to debug AI status issue
-		if (action.type === 'VIDEO_COMPLETE' || action.type === 'SUBMIT_ANSWER' || action.type === 'SUBMIT_VOTE') {
-			console.log('[CinemaPippinModule] Returning state with playerStatus:', enrichedState.playerStatus)
+		if (
+			action.type === 'VIDEO_COMPLETE' ||
+			action.type === 'SUBMIT_ANSWER' ||
+			action.type === 'SUBMIT_VOTE'
+		) {
+			console.log(
+				'[CinemaPippinModule] Returning state with playerStatus:',
+				enrichedState.playerStatus
+			)
 		}
 
 		return Promise.resolve(enrichedState)

@@ -22,7 +22,9 @@ import type {
 	CountdownState,
 	LobbyState,
 	PlayingState,
-	TitleState
+	TitleState,
+	GameAction,
+	GameState
 } from '@jkbox/shared'
 import { RoomManager } from './room-manager'
 import { VotingHandler } from './voting-handler'
@@ -124,7 +126,8 @@ export class ConnectionHandler {
 			socket.emit('error', {
 				type: 'error',
 				code: 'INVALID_NICKNAME',
-				message: 'Nicknames ending in "Bot" are reserved for AI players. Please choose a different nickname.'
+				message:
+					'Nicknames ending in "Bot" are reserved for AI players. Please choose a different nickname.'
 			})
 			console.log(`[JOIN] Rejected nickname "${nickname}" - ends with "bot"`)
 			return
@@ -306,7 +309,7 @@ export class ConnectionHandler {
 
 		if (updated) {
 			// Re-add player to voting handler (they may have been removed on disconnect)
-			const player = updated.players.find(p => p.id === mapping.playerId)
+			const player = updated.players.find((p) => p.id === mapping.playerId)
 			const votingHandler = this.getVotingHandler(mapping.roomId)
 			votingHandler.addPlayer(mapping.playerId, player?.isAI ?? false)
 
@@ -598,6 +601,36 @@ export class ConnectionHandler {
 
 		// Store host for this room
 		this.gameHosts.set(roomId, gameHost)
+
+		// Subscribe to async state changes (e.g., AI completing in background)
+		// When state changes, broadcast to all clients in the room
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		if ('onStateChange' in gameHost.module && typeof gameHost.module.onStateChange === 'function') {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+			gameHost.module.onStateChange((updatedState: GameState) => {
+				console.log(
+					`[ConnectionHandler] Async state change in room ${roomId}, broadcasting to clients`
+				)
+
+				// Update room manager with new game state
+				const room = this.roomManager.getRoom(roomId)
+				if (room && room.phase === 'playing') {
+					const updatedRoom: PlayingState = {
+						...room,
+						gameState: updatedState
+					}
+					this.roomManager.updateRoomState(roomId, updatedRoom)
+
+					// Broadcast to all clients
+					const stateMessage: RoomStateMessage = {
+						type: 'room:state',
+						state: updatedRoom
+					}
+					this.io.to(roomId).emit('room:state', stateMessage)
+				}
+			})
+			console.log(`[ConnectionHandler] Subscribed to async state changes for room ${roomId}`)
+		}
 
 		// Initialize game (FSM boundary crossed - game owns state now)
 		const gameState = await gameHost.initialize()
@@ -1063,7 +1096,10 @@ export class ConnectionHandler {
 		console.log(`Admin ${adminPlayer.nickname} updating config:`, message.config)
 
 		// If updating Cinema Pippin AI players, sync to global config
-		if (message.config.cinemaPippinAIPlayers !== undefined && message.config.cinemaPippinAIPlayers !== null) {
+		if (
+			message.config.cinemaPippinAIPlayers !== undefined &&
+			message.config.cinemaPippinAIPlayers !== null
+		) {
 			const { getGlobalConfigStorage } = await import('./storage/global-config-storage')
 			const globalConfig = getGlobalConfigStorage()
 			globalConfig.setAIPlayerCount(message.config.cinemaPippinAIPlayers)
@@ -1122,11 +1158,7 @@ export class ConnectionHandler {
 		}
 
 		// Only pause during countdown, playing, or results phases
-		if (
-			room.phase !== 'countdown' &&
-			room.phase !== 'playing' &&
-			room.phase !== 'results'
-		) {
+		if (room.phase !== 'countdown' && room.phase !== 'playing' && room.phase !== 'results') {
 			socket.emit('error', {
 				type: 'error',
 				code: 'INVALID_PHASE',
@@ -1292,7 +1324,7 @@ export class ConnectionHandler {
 	/**
 	 * Handle game action from player or jumbotron
 	 */
-	async handleGameAction(_socket: Socket, action: any): Promise<void> {
+	async handleGameAction(_socket: Socket, action: GameAction): Promise<void> {
 		console.log('[ConnectionHandler] Received game:action:', action)
 
 		// Get room ID from socket mapping or action
@@ -1326,10 +1358,13 @@ export class ConnectionHandler {
 
 		// Forward action to game host
 		try {
-			const newGameState = await gameHost.handleAction(action)
+			const newGameState: GameState = await gameHost.handleAction(action)
 
 			// Update room with new game state
-			const updatedRoom = this.roomManager.updateGameState(roomId, newGameState)
+			const updatedRoom = this.roomManager.updateGameState(
+				roomId,
+				newGameState
+			) as PlayingState | null
 			if (updatedRoom) {
 				// Broadcast updated state to all clients
 				const stateMessage: RoomStateMessage = {
