@@ -146,6 +146,87 @@ export function createAIPlayers(count: number, constraints: string[]): AIPlayer[
 }
 
 /**
+ * Process SRT text: remove timestamp lines, keep subtitle numbers
+ */
+function processSrtText(srtText: string): string {
+	const lines = srtText.split('\n')
+	const processed: string[] = []
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i]?.trim() || ''
+
+		// Skip empty lines
+		if (!line) {
+			continue
+		}
+
+		// Skip timestamp lines (format: 00:00:01,000 --> 00:00:05,460)
+		if (line.includes('-->')) {
+			continue
+		}
+
+		// This is either a subtitle number or subtitle text
+		processed.push(line)
+	}
+
+	return processed.join('\n')
+}
+
+/**
+ * Build enhanced SRT context including previous clips with merged keywords
+ */
+function buildSrtContext(
+	currentSrtText: string,
+	previousClipSrts: Array<{ srtText: string; winningAnswer: string; keyword: string }>,
+	currentKeyword: string
+): string {
+	let subtitleCounter = 1
+	const allSegments: string[] = []
+
+	// Add previous clips with merged answers
+	for (const prevClip of previousClipSrts) {
+		// Process SRT and replace [keyword] with winning answer
+		const processed = processSrtText(prevClip.srtText)
+		const mergedText = processed.replace(/\[keyword\]/gi, prevClip.keyword)
+
+		// Re-number subtitles
+		const lines = mergedText.split('\n')
+		const renumbered: string[] = []
+
+		for (const line of lines) {
+			// If line is just a number, replace with new counter
+			if (/^\d+$/.test(line.trim())) {
+				renumbered.push(String(subtitleCounter++))
+			} else {
+				renumbered.push(line)
+			}
+		}
+
+		allSegments.push(renumbered.join('\n'))
+	}
+
+	// Add current clip with [keyword] placeholder or merged keyword
+	const currentProcessed = processSrtText(currentSrtText)
+	const currentMerged = currentProcessed.replace(/\[keyword\]/gi, currentKeyword)
+
+	// Re-number current clip subtitles
+	const currentLines = currentMerged.split('\n')
+	const currentRenumbered: string[] = []
+
+	for (const line of currentLines) {
+		if (/^\d+$/.test(line.trim())) {
+			currentRenumbered.push(String(subtitleCounter++))
+		} else {
+			currentRenumbered.push(line)
+		}
+	}
+
+	allSegments.push(currentRenumbered.join('\n'))
+
+	return allSegments.join('\n\n')
+}
+
+/**
  * Generate batch answers (X AI + N house) for a given clip
  * Returns array of X+N answers in randomized order
  */
@@ -155,7 +236,8 @@ export async function generateBatchAnswers(
 	keyword: string,
 	aiConstraints: string[], // AI player constraints
 	additionalCount: number, // Number of additional house answers to generate
-	questionSrt?: string // Optional SRT text of the question for context
+	questionSrt?: string, // Optional SRT text of the question for context
+	previousClips?: Array<{ srtText: string; winningAnswer: string; keyword: string }> // Previous clips for context
 ): Promise<string[]> {
 	const isC1 = clipNumber === 1
 	const wordCount = isC1 ? 1 : clipNumber === 2 ? 4 : 3
@@ -176,9 +258,14 @@ export async function generateBatchAnswers(
 		return match ? match[1].trim() : constraint.split(/\s+/)[0]
 	}
 
-	const constraint1 = randomizedConstraints[0] ? getConstraintTitle(randomizedConstraints[0]) : ''
-	const constraint2 = randomizedConstraints[1] ? getConstraintTitle(randomizedConstraints[1]) : ''
-	const constraint3 = randomizedConstraints[2] ? getConstraintTitle(randomizedConstraints[2]) : ''
+	const constraint1 = randomizedConstraints[0] ? getConstraintTitle(randomizedConstraints[0] ?? '') : ''
+	const constraint2 = randomizedConstraints[1] ? getConstraintTitle(randomizedConstraints[1] ?? '') : ''
+	const constraint3 = randomizedConstraints[2] ? getConstraintTitle(randomizedConstraints[2] ?? '') : ''
+
+	// Build enhanced SRT context (with previous clips if T > 1)
+	const enhancedSrt = questionSrt
+		? buildSrtContext(questionSrt, previousClips || [], keyword)
+		: ''
 
 	// Build system prompt from template
 	const systemPrompt = getPrompt('batch-generation-system.md', {
@@ -196,7 +283,7 @@ export async function generateBatchAnswers(
 	const userPrompt = isC1
 		? getPrompt('batch-generation-user-c1.md', {
 				NUM_CONSTRAINTS: combinedConstraints.length,
-				QUESTION_SRT: questionSrt || '',
+				QUESTION_SRT: enhancedSrt,
 				CONSTRAINT_1: constraint1,
 				CONSTRAINT_2: constraint2,
 				CONSTRAINT_3: constraint3
@@ -206,7 +293,7 @@ export async function generateBatchAnswers(
 				WORD_COUNT: wordCount,
 				CLIP_NUMBER: clipNumber,
 				KEYWORD: keyword,
-				QUESTION_SRT: questionSrt || '',
+				QUESTION_SRT: enhancedSrt,
 				CONSTRAINT_1: constraint1,
 				CONSTRAINT_2: constraint2,
 				CONSTRAINT_3: constraint3
@@ -278,20 +365,37 @@ export async function generateBatchAnswers(
 			})
 		}
 
-		// Parse JSON response
-		const jsonMatch = rawResponse.match(/\[[\s\S]*\]/)
+		// Parse JSON response - expecting a map/object format
+		// Try to extract JSON object from response
+		const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
 		if (!jsonMatch) {
-			throw new Error('Failed to parse JSON array from response')
+			throw new Error('Failed to parse JSON object from response')
 		}
 
-		const answers = JSON.parse(jsonMatch[0]) as string[]
+		const answerMap = JSON.parse(jsonMatch[0]) as Record<string, string>
 
-		if (answers.length !== combinedConstraints.length) {
-			throw new Error(`Expected ${combinedConstraints.length} answers, got ${answers.length}`)
+		// Extract constraint titles from randomizedConstraints for validation
+		const expectedTitles = randomizedConstraints.map(c => getConstraintTitle(c))
+
+		// Validate that all expected constraint titles are present in the map
+		const mapKeys = Object.keys(answerMap)
+		const missingKeys = expectedTitles.filter(title => !mapKeys.includes(title))
+
+		if (missingKeys.length > 0) {
+			throw new Error(`Missing constraint keys in response: ${missingKeys.join(', ')}`)
 		}
+
+		// Map answers back to the order of randomizedConstraints
+		const orderedAnswers = expectedTitles.map(title => {
+			const answer = answerMap[title]
+			if (!answer) {
+				throw new Error(`No answer found for constraint: ${title}`)
+			}
+			return answer
+		})
 
 		// Clean up answers
-		const cleanedAnswers = answers.map((answer) => {
+		const cleanedAnswers = orderedAnswers.map((answer) => {
 			let cleaned = answer.trim()
 			cleaned = cleaned.replace(/^["']|["']$/g, '') // Remove quotes
 

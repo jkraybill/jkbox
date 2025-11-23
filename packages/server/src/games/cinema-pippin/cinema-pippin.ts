@@ -671,6 +671,25 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		const currentClip = this.getCurrentClip()
 		const questionSrt = fs.readFileSync(currentClip.srtPath, 'utf-8')
 
+		// Build previous clips context (for T > 1)
+		const previousClips: Array<{ srtText: string; winningAnswer: string; keyword: string }> = []
+		const currentFilm = this.getCurrentFilm()
+
+		for (let i = 0; i < this.state.currentClipIndex; i++) {
+			const prevClip = currentFilm.clips[i]
+			if (!prevClip) continue
+
+			const prevSrt = fs.readFileSync(prevClip.srtPath, 'utf-8')
+			const prevWinningAnswer = this.state.clipWinners[i] || ''
+			const prevKeyword = this.state.keywords[0] || 'blank'
+
+			previousClips.push({
+				srtText: prevSrt,
+				winningAnswer: prevWinningAnswer,
+				keyword: prevKeyword
+			})
+		}
+
 		// ALWAYS block auto-advance during generation (for both AI players + house answers)
 		// The auto-advance check will only wait if there are actual AI players
 		this.aiGenerationInProgress = true
@@ -697,7 +716,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				keyword,
 				aiConstraints,
 				playerCount,
-				questionSrt
+				questionSrt,
+				previousClips
 			)
 
 			console.log(`[AI] Batch generation returned ${batchAnswers.length} answers`)
