@@ -34,9 +34,6 @@ export function Join() {
 			setSessionToken(message.player.sessionToken)
 			setRoom(message.state)
 
-			// Save nickname to cookie (90-day expiration)
-			saveNickname(message.player.nickname)
-
 			// Navigate to player view
 			navigate(`/play/${roomId}`)
 		}
@@ -65,6 +62,10 @@ export function Join() {
 
 		setIsJoining(true)
 		setError(null)
+
+		// Save nickname to cookie BEFORE sending to server
+		// This preserves the trailing ~ for admin users, since the server strips it
+		saveNickname(nickname.trim())
 
 		// Send join message with persistent device ID
 		const deviceId = getDeviceId()
