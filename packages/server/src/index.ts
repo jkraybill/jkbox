@@ -1,4 +1,21 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+// Get current file's directory in ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Load .env from project root (3 levels up: src -> server -> packages -> root)
+const envPath = join(__dirname, '../../../.env')
+const result = config({ path: envPath })
+if (result.error) {
+	console.error(`[ENV] Failed to load .env from ${envPath}:`, result.error)
+} else {
+	console.log(`[ENV] ✓ Loaded environment variables from ${envPath}`)
+	console.log(`[ENV] ANTHROPIC_API_KEY is ${process.env.ANTHROPIC_API_KEY ? 'SET' : 'NOT SET'}`)
+}
+
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
