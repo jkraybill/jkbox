@@ -211,16 +211,19 @@ export function Player() {
 				</div>
 			</div>
 
-			<div style={styles.footer}>
-				<div style={styles.statusRow}>
-					<span>Connection:</span>
-					{isConnected ? (
-						<span style={styles.statusConnected}>● Connected</span>
-					) : (
-						<span style={styles.statusDisconnected}>● Reconnecting...</span>
-					)}
+			{/* Hide connection status during gameplay */}
+			{room?.phase === 'lobby' && (
+				<div style={styles.footer}>
+					<div style={styles.statusRow}>
+						<span>Connection:</span>
+						{isConnected ? (
+							<span style={styles.statusConnected}>● Connected</span>
+						) : (
+							<span style={styles.statusDisconnected}>● Reconnecting...</span>
+						)}
+					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Pippin corner mascot (smaller for mobile) */}
 			{!countdown && <Pippin variant="corner" />}
@@ -276,11 +279,8 @@ const styles = {
 		display: 'flex',
 		flexDirection: 'column' as const,
 		gap: 'var(--space-xl)',
-		maxWidth: '500px',
 		width: '100%',
-		margin: '0 auto',
-		overflow: 'hidden',
-		padding: 'var(--space-md)'
+		overflow: 'hidden'
 	},
 	waitingCard: {
 		padding: 'var(--space-3xl) var(--space-xl)',

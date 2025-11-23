@@ -202,18 +202,20 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 const styles = {
 	fullscreen: {
 		minHeight: '100vh',
+		width: '100%',
 		backgroundColor: '#0a0a0a',
 		color: '#fff',
 		display: 'flex',
 		flexDirection: 'column' as const,
 		alignItems: 'center',
 		justifyContent: 'center',
-		padding: '20px'
+		padding: 0
 	},
 	container: {
 		width: '100%',
 		maxWidth: '600px',
-		textAlign: 'center' as const
+		textAlign: 'center' as const,
+		padding: '20px'
 	},
 	title: {
 		fontSize: '32px',
