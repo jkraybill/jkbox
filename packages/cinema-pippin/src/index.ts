@@ -3,4 +3,4 @@
  * Exported for use in server-side game logic
  */
 
-export { replaceBlankedText, splitLongLine } from './blanking-utils.js'
+export { replaceBlankedText, splitLongLine, extendLastFrameTimestamp } from './blanking-utils.js'

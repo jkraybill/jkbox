@@ -127,6 +127,65 @@ export function splitLongLine(text: string): string {
 	return text.substring(0, midpoint).trim() + '\n' + text.substring(midpoint).trim()
 }
 
+/**
+ * Convert SRT timestamp (HH:MM:SS,mmm) to seconds
+ */
+function srtTimeToSeconds(timestamp: string): number {
+	const [time, ms] = timestamp.split(',')
+	const [hours, minutes, seconds] = time.split(':').map(Number)
+	return hours * 3600 + minutes * 60 + seconds + parseInt(ms) / 1000
+}
+
+/**
+ * Convert seconds to SRT timestamp (HH:MM:SS,mmm)
+ */
+function secondsToSrtTime(totalSeconds: number): string {
+	const hours = Math.floor(totalSeconds / 3600)
+	const minutes = Math.floor((totalSeconds % 3600) / 60)
+	const seconds = Math.floor(totalSeconds % 60)
+	const milliseconds = Math.round((totalSeconds % 1) * 1000)
+
+	return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(milliseconds).padStart(3, '0')}`
+}
+
+/**
+ * Extend the last subtitle frame timestamp by specified seconds
+ * Used to keep player answers visible longer
+ *
+ * @param srtContent - SRT file content
+ * @param extensionSeconds - How many seconds to add to end timestamp (default 2.0)
+ * @returns Modified SRT content with extended last frame
+ */
+export function extendLastFrameTimestamp(
+	srtContent: string,
+	extensionSeconds: number = 2.0
+): string {
+	const frames = srtContent.trim().split(/\n\n+/)
+
+	if (frames.length === 0) {
+		return srtContent
+	}
+
+	const lastFrame = frames[frames.length - 1]
+	const lastFrameLines = lastFrame.split('\n')
+
+	// Second line should be the timestamp
+	if (lastFrameLines[1] && lastFrameLines[1].includes('-->')) {
+		lastFrameLines[1] = lastFrameLines[1].replace(
+			/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/,
+			(_match, start: string, end: string) => {
+				const endSeconds = srtTimeToSeconds(end)
+				const newEnd = endSeconds + extensionSeconds
+				return `${start} --> ${secondsToSrtTime(newEnd)}`
+			}
+		)
+	}
+
+	// Reconstruct the SRT with modified last frame
+	frames[frames.length - 1] = lastFrameLines.join('\n')
+	return frames.join('\n\n')
+}
+
 export function replaceBlankedText(sceneText: string, replacement: string): string {
 	// Match any sequence of underscores with optional spaces between them
 	// This pattern matches both:

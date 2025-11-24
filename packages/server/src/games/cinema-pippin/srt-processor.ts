@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'fs'
 import { replaceKeywordPreservingCasing } from './casing-utils'
-import { replaceBlankedText, splitLongLine } from '@jkbox/cinema-pippin'
+import { replaceBlankedText, splitLongLine, extendLastFrameTimestamp } from '@jkbox/cinema-pippin'
 
 export interface Subtitle {
 	index: number
@@ -62,7 +62,10 @@ export function mergeSRT(subtitles: Subtitle[], answer: string): Subtitle[] {
 		.join('\n\n')
 
 	// Replace blanks with answer (handles line splitting automatically)
-	const replacedText = replaceBlankedText(srtText, answer)
+	let replacedText = replaceBlankedText(srtText, answer)
+
+	// Extend the last subtitle by 2 seconds to ensure player answers stay visible
+	replacedText = extendLastFrameTimestamp(replacedText, 2.0)
 
 	// Parse back to subtitle objects
 	const blocks = replacedText.trim().split(/\n\n+/)
