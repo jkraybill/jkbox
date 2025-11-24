@@ -388,6 +388,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Clear state from previous film
 		this.clearAnswers()
 		this.clearVotes()
+		// CRITICAL: Clear clipWinners to prevent keyword pollution between films
+		// Bug: Without this, Film 2's C2/C3 would use Film 1's C1 winner as keyword
+		this.state.clipWinners = []
 		console.log('[CinemaPippinGame] Cleared state before new film or final_scores')
 
 		if (this.state.currentFilmIndex >= 3) {
