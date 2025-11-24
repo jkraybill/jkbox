@@ -729,7 +729,8 @@ export async function generateAIAnswer(
 export async function generateAIVote(
 	config: AIConfig,
 	answers: Array<{ id: string; text: string }>,
-	judgingConstraint: string
+	judgingConstraint: string,
+	questionSrt?: string
 ): Promise<string> {
 	if (answers.length === 0) {
 		throw new Error('No answers to vote on')
@@ -739,7 +740,14 @@ export async function generateAIVote(
 		return answers[0].id
 	}
 
-	const ollama = new Ollama({ host: config.ollamaEndpoint })
+	// Use Claude for voting (consistent with answer generation)
+	if (!process.env.ANTHROPIC_API_KEY) {
+		console.warn('[AI Vote] ANTHROPIC_API_KEY not set, falling back to random choice')
+		return answers[Math.floor(Math.random() * answers.length)].id
+	}
+
+	const claudeModel = 'claude-sonnet-4-5-20250929'
+	const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 	const systemPrompt = getPrompt('judging-system.md')
 
@@ -748,56 +756,69 @@ export async function generateAIVote(
 	const userPrompt = getPrompt('judging-user.md', {
 		NUM_ANSWERS: answers.length,
 		JUDGING_CONSTRAINT: judgingConstraint,
-		ANSWERS_LIST: answerList
+		ANSWERS_LIST: answerList,
+		QUESTION_SRT: questionSrt || '(context not available)'
 	})
 
 	// Log the prompt
 	const fullPrompt = `SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`
 	logAIConversation('prompt', fullPrompt, {
-		model: config.model,
+		model: claudeModel,
 		judgingConstraint,
 		numAnswers: answers.length,
-		temperature: 0.3,
-		endpoint: config.ollamaEndpoint
+		temperature: 0.3
 	})
 
-	const response = await ollama.generate({
-		model: config.model,
-		system: systemPrompt,
-		prompt: userPrompt,
-		options: {
+	try {
+		const message: Anthropic.Message = await anthropic.messages.create({
+			model: claudeModel,
+			max_tokens: 20,
 			temperature: 0.3, // Lower temp for more consistent judging
-			num_predict: 10
-		}
-	})
+			system: systemPrompt,
+			messages: [{ role: 'user', content: userPrompt }]
+		})
 
-	// Log the response with token counts
-	logAIConversation('response', response.response, {
-		model: config.model,
-		inputTokens: response.prompt_eval_count || 0,
-		outputTokens: response.eval_count || 0,
-		totalTokens: (response.prompt_eval_count || 0) + (response.eval_count || 0),
-		timing: {
-			totalDuration: response.total_duration,
-			loadDuration: response.load_duration
+		const content = message.content[0]
+		if (content.type !== 'text') {
+			throw new Error('Expected text response from Claude')
 		}
-	})
+		const rawResponse = (content as { type: 'text'; text: string }).text
 
-	// Parse the number from response
-	const match = response.response.match(/\d+/)
-	if (!match) {
-		// Fallback to random if parsing fails
-		console.warn('[AI Vote] Failed to parse vote response, choosing randomly')
+		// Calculate cost
+		calculateClaudeCost(
+			claudeModel,
+			message.usage?.input_tokens ?? 0,
+			message.usage?.output_tokens ?? 0
+		)
+
+		// Log the response with token counts
+		logAIConversation('response', rawResponse, {
+			model: claudeModel,
+			inputTokens: message.usage?.input_tokens ?? 0,
+			outputTokens: message.usage?.output_tokens ?? 0,
+			totalTokens: (message.usage?.input_tokens ?? 0) + (message.usage?.output_tokens ?? 0)
+		})
+
+		// Parse the number from response
+		const match = rawResponse.match(/\d+/)
+		if (!match) {
+			// Fallback to random if parsing fails
+			console.warn('[AI Vote] Failed to parse vote response, choosing randomly')
+			return answers[Math.floor(Math.random() * answers.length)].id
+		}
+
+		const choiceIndex = parseInt(match[0]) - 1
+
+		// Validate choice is in range
+		if (choiceIndex < 0 || choiceIndex >= answers.length) {
+			console.warn('[AI Vote] Choice out of range, choosing randomly')
+			return answers[Math.floor(Math.random() * answers.length)].id
+		}
+
+		return answers[choiceIndex].id
+	} catch (error) {
+		console.error('[AI Vote] Failed to generate vote via Claude:', error)
+		// Fallback to random on error
 		return answers[Math.floor(Math.random() * answers.length)].id
 	}
-
-	const choiceIndex = parseInt(match[0]) - 1
-
-	// Validate choice is in range
-	if (choiceIndex < 0 || choiceIndex >= answers.length) {
-		console.warn('[AI Vote] Choice out of range, choosing randomly')
-		return answers[Math.floor(Math.random() * answers.length)].id
-	}
-
-	return answers[choiceIndex].id
 }
