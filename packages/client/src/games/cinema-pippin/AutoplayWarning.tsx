@@ -13,40 +13,38 @@ export function AutoplayWarning() {
 		// Test if unmuted autoplay is allowed
 		const testAutoplay = async () => {
 			try {
-				// Create a tiny test video (1 frame black video, base64 encoded)
-				const video = document.createElement('video')
-				video.src =
-					'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAu1tZGF0AAACrQYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAA'
-				video.muted = false // Test UNMUTED autoplay
-				video.volume = 0.01 // Very low volume for the test
+				// Create a test audio context to check autoplay policy
+				// Audio contexts are simpler and more reliable than video elements for this test
+				const AudioContextClass =
+					window.AudioContext ||
+					(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+				if (!AudioContextClass) {
+					console.warn('[AutoplayWarning] AudioContext not supported')
+					setShowWarning(false)
+					return
+				}
+				const audioContext = new AudioContextClass()
 
-				console.log('[AutoplayWarning] Testing unmuted autoplay...')
-				console.log('[AutoplayWarning] Video readyState:', video.readyState)
+				console.log('[AutoplayWarning] Testing unmuted autoplay via AudioContext...')
+				console.log('[AutoplayWarning] AudioContext state:', audioContext.state)
 
-				// Try to play unmuted
-				await video.play()
-
-				// If we got here, unmuted autoplay works! Chrome flag is active.
-				console.log('[AutoplayWarning] ✅ Unmuted autoplay SUCCESS - Chrome flag detected')
-				setShowWarning(false)
+				// In Chrome, if autoplay is blocked, audioContext.state will be 'suspended'
+				// If --autoplay-policy=no-user-gesture-required is set, it will be 'running'
+				if (audioContext.state === 'running') {
+					console.log('[AutoplayWarning] ✅ Unmuted autoplay SUCCESS - Chrome flag detected')
+					setShowWarning(false)
+				} else {
+					console.warn('[AutoplayWarning] ⚠️ AudioContext suspended - Chrome flag likely missing')
+					setShowWarning(true)
+				}
 
 				// Clean up
-				video.pause()
-				video.remove()
+				await audioContext.close()
 			} catch (error) {
-				// Unmuted autoplay failed - Chrome flag is NOT active
-				console.error('[AutoplayWarning] ❌ Unmuted autoplay FAILED - Chrome flag missing')
+				// If AudioContext fails, fall back to assuming autoplay is blocked
+				console.error('[AutoplayWarning] ❌ AudioContext test failed')
 				console.error('[AutoplayWarning] Error details:', error)
-
-				// Check if error is specifically a NotAllowedError (autoplay policy block)
-				if (error instanceof Error && error.name === 'NotAllowedError') {
-					console.error('[AutoplayWarning] NotAllowedError: Autoplay policy is blocking playback')
-					setShowWarning(true)
-				} else {
-					// Some other error (maybe video data issue) - don't show warning
-					console.error('[AutoplayWarning] Non-policy error, not showing warning')
-					setShowWarning(false)
-				}
+				setShowWarning(true)
 			}
 		}
 
