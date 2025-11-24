@@ -12,9 +12,9 @@ Hair -- this punchline should be hair-related and related to things like redhead
 Food -- this punchline should be food-related: dishes, ingredients, food puns and metaphors, mentions of fast food like Maccas or Hungry Jack's, or chefs like Gordon Ramsay or Jacques Pepin, etc.
 Geo -- this punchline should be geography-related.
 Horny -- this punchline should be 'horny' and invoking sexual activity, content, contact, etc.
-Onomatopoeia -- this punchline should contain a funny onomatopeia term. "Moo", "baaa", "bang", "whizz" etc
-Local -- this punchline should reference something about where we live: Wangaratta, Victoria, Australia, Murdoch Road, Northeastern Victoria, wine country, Rutherglen, etc. Or mention local businesses such as Bunnings, Wang Dumpling, Noodle Mas, Maccas, 
-Car -- this punchline should refer to car-related topics.
+Noisy -- this punchline should contain a funny onomatopeia term. "Moo", "baaa", "bang", "whizz", "shlurp", "waakaa" etc
+Local -- this punchline should reference something about where we live: Wangaratta, Victoria, Australia, Murdoch Road, Northeastern Victoria, wine country, Rutherglen, etc. Or mention local businesses such as Bunnings, Wang Dumpling, Noodle Mas, Maccas, the Wang Club, Hungry Jack's, etc.
+Car -- this punchline should refer to car-related topics, car terms or metaphors, references to car makes and models, etc.
 Zoo -- this punchline should be animal-related. Bestiality is allowed.
 Quote -- this punchline should be derivative of well-known quotes or catchphrases from TV and movies and pop culture.
 Money -- this punchline should be related to money, wealth, being poor, gold, etc.
@@ -30,3 +30,42 @@ Stupid -- this punchline should make fun of stupidity, refer to people or charac
 Cartoon -- this punchline should make references to all kinds of cartoons and comics, like Smurfs, Rick and Morty, Scooby-Doo, Family Guy, Simpsons, etc -- anything animated!
 Straight -- this punchline should just be dry and factual and does not necessarily need to be funny.
 Banya -- this punchline should try to incorporate references to things that dissolve in milk: Milo, Ovaltine, Hershey's chocolate, Moccona, sugar, etc.
+Dadjoke -- this punchline should be a groan-worthy dad joke with a cheesy setup, obvious wordplay, and maximum "ugh... but I laughed" energy.
+Deadpan -- this punchline should be completely flat, dry, understated, and delivered like it’s reading out tax law while still being absurdly funny. Along the lines of Steven Wright or Mitch Hedberg.
+Dark -- this punchline should flirt with dark humour (death, bad luck, existential dread) while avoiding self-harm references.
+Stoner -- this punchline should sound like it was thought up at 2am by a very high person connecting unrelated ideas in a surprisingly profound and hilarious way. Food/munchies references, weed euphemisms or strain names, jokes about bongs and joints, etc are all encouraged, but mostly very high ideas and "shower thoughts".
+Professor -- this punchline should mimic an over-cited academic paper, with references, "therefore", and needlessly complex jargon applied to something dumb.
+Corpo -- this punchline should sound like a corporate email or PowerPoint slide, full of buzzwords, synergy, KPIs, and "circling back" nonsense.
+TechBro -- this punchline should sound like a Silicon Valley tech bro trying to "disrupt" something incredibly mundane or over-promise a huge "transformative" pitch with startups, VCs, and NFTs.
+Boomer -- this punchline should sound like a confused Facebook boomer post: wrong emoji use, weird capitalisation, misunderstanding of technology.
+Larrikin -- this punchline should have classic Aussie larrikin energy: cheeky, irreverent, pub banter, references to footy, yobbos, snag sangas, and taking the piss or drinking the piss etc.
+Nice -- this punchline should be unexpectedly sweet, supportive, and heartwarming, turning the joke into a feel-good moment without losing humour.
+Nihilist -- this punchline should lean into “nothing matters, the universe is chaos” but in a funny, shrugging, self-aware way. Like Nietzsche after hitting the bong.
+Motivational -- this punchline should sound like an over-the-top motivational speaker turning even a humiliating failure into an inspirational TED Talk.
+Humphrey -- this punchline should sound like a hyper-positive kids’ show host explaining something ridiculous in bright, bouncy, G-rated language.
+Sarcasm -- this punchline should drip with sarcasm, backhanded compliments, and "oh sure, that’ll work out great" energy with max sarcasm and sarcastic humor.
+Meta -- this punchline should break the fourth wall, comment on the joke itself, the AI, the persona system, playing this game in JK and Mannie's living room, or the absurdity of writing punchlines.
+Overexplainer -- this punchline should explain itself in tedious detail, including why it's funny, killing the joke but somehow making it funnier.
+Law -- this punchline should sound like a smug lawyer cross-examining reality, with legal jargon, loopholes, and "technically..." energy.
+Sportscast -- this punchline should sound like a breathless sports commentator describing the situation like a grand final-deciding play, using lots of sporting terms and sport-related humor.
+Scifi -- this punchline should lean into science fiction tropes: spaceships, time travel, aliens, parallel universes, technobabble, The Matrix, etc. Link jokes to sci-fi references/books/movies/etc.
+DnD -- this punchline should sound like it's being told by a dodgy wizard or drunk adventurer in a fantasy tavern full of dragons and quests, with max humor related to Dungeons and Dragons / LOTR type topics.
+Noir -- this punchline should sound like a hardboiled detective monologue in a smoky alley, full of metaphors and moody, noir-ish cynicism.
+Oldtimer -- this punchline should sound like an old-timer ranting about how everything was better/worse in their day, with exaggerated nostalgia.
+Conspiracy -- this punchline should sound like a slightly unhinged conspiracy theorist connecting totally unrelated events into a grand "they" plot. UFOs, deep state, illuminati, the oligarchy, Big Tobacco, etc.
+Roastmaster -- this punchline should be a playful but brutal roast of a character in the scene, focusing on their choices, style, or logic.
+Literal -- this punchline should take a figurative phrase or metaphor way too literally, causing absurd misinterpretations.
+Infomercial -- this punchline should sound like a late-night infomercial voiceover, complete with over-the-top benefits, "but wait there's more", "free set of steak knives", etc.
+Helpdesk -- this punchline should sound like a dead-eyed IT helpdesk agent walking someone through an obviously stupid "have you tried rebooting?" or "close the browser" moment.
+Podcast -- this punchline should parody true crime podcasts and docos, treating trivial nonsense like a serious, brooding investigation while still making great jokes about dumb crime details and facts.
+Snob -- this punchline should sound like a pretentious wine or coffee snob giving tasting notes on something in the scene that absolutely does not deserve it.
+Emo -- this punchline should sound like an emo/goth teenager writing in their diary, melodramatic and over-the-top about minor inconveniences.
+Slapstick -- this punchline should lean into physical comedy: people slipping, bonking, crashing, pratfalls, all described vividly and cartoonishly.
+Everything -- this punchline should cram in as many different references and images as possible, as if throwing the whole kitchen sink into the gag.
+Nerd -- this punchline should sound like a stats nerd trying to compute odds and EV of absurd life choices, playing mind games with numbers, references to Pi or E=mc2, etc, complete with fractions and percentages.
+HR -- this punchline should sound like a human resources memo gently but firmly describing something horrifically inappropriate in sterile HR language.
+Terse -- this punchline should use as few words as possible (even one word) while still being funny in context.
+Drama -- this punchline should treat the tiniest mishap as a full-blown soap opera moment, with melodrama and emotional overreaction. Everything is a big deal.
+Chef -- this punchline should sound like a cooking show host turning the situation into a recipe, with measurements and instructions for disaster, or food/ingredient references etc.
+Horoscope -- this punchline should be phrased like a horoscope or astrology reading that creepily (and hilariously) fits the current situation. Star signs, Chinese Zodiac, numerology, superstitions, etc.
+Spock -- this punchline should approach the situation with cold, Spock-like logic, missing the emotional point but landing a nerdy laugh.

@@ -58,8 +58,12 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		state = game.getState()
 		expect(state.phase).toBe('results_display')
 
-		// C1 Results → C2
+		// C1 Results → Scoreboard → C2
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 		expect(state.phase).toBe('clip_intro')
 		expect(state.currentClipIndex).toBe(1) // Now on C2
@@ -92,8 +96,12 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 			payload: { answerId: 'player-player2' }
 		})
 
-		// C2 Results → C3
+		// C2 Results → Scoreboard → C3
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 		expect(state.phase).toBe('clip_intro')
 		expect(state.currentClipIndex).toBe(2) // Now on C3
@@ -130,9 +138,13 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		expect(state.phase).toBe('results_display')
 		expect(state.currentClipIndex).toBe(2) // Still C3
 
-		// ⭐ CRITICAL: After Act 3 results → Film Title Collection
-		console.log('\n🏆 === TITLE CHALLENGE ===')
+		// ⭐ CRITICAL: After Act 3 results → Scoreboard → Film Title Collection
+		console.log('\n🏆 === SCOREBOARD → TITLE CHALLENGE ===')
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 
 		expect(state.phase).toBe('film_title_collection')

@@ -526,7 +526,7 @@ describe('Cinema Pippin Phase Transitions', () => {
 	})
 
 	describe('RESULTS_COMPLETE action', () => {
-		it('should advance to next clip when results complete', () => {
+		it('should advance to scoreboard_transition when results complete', () => {
 			game.initialize(['player1'])
 			const state = game.getState()
 			state.phase = 'results_display'
@@ -535,19 +535,32 @@ describe('Cinema Pippin Phase Transitions', () => {
 
 			game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
 
+			// Should advance to scoreboard_transition
+			expect(game.getPhase()).toBe('scoreboard_transition')
+		})
+
+		it('should advance to next clip after scoreboard', () => {
+			game.initialize(['player1'])
+			const state = game.getState()
+			state.phase = 'scoreboard_transition'
+			state.currentClipIndex = 0
+			game.setState(state)
+
+			game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
+
 			// Should advance to clip_intro for next clip
 			expect(game.getPhase()).toBe('clip_intro')
 			expect(game.getState().currentClipIndex).toBe(1)
 		})
 
-		it('should advance to film_title_collection after third clip', () => {
+		it('should advance to film_title_collection after third clip scoreboard', () => {
 			game.initialize(['player1'])
 			const state = game.getState()
-			state.phase = 'results_display'
+			state.phase = 'scoreboard_transition'
 			state.currentClipIndex = 2 // Third clip (0-indexed)
 			game.setState(state)
 
-			game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+			game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 
 			expect(game.getPhase()).toBe('film_title_collection')
 		})

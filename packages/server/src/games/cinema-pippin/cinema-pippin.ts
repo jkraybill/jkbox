@@ -121,6 +121,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			currentAnswerIndex: 0,
 			votes: new Map(),
 			scores: new Map(allPlayerIds.map((id) => [id, 0])),
+			scoresBeforeRound: new Map(allPlayerIds.map((id) => [id, 0])),
+			voteCountsThisRound: new Map(),
 			clipWinners: [],
 			filmTitle: '',
 			endGameVotes: new Map(),
@@ -264,10 +266,48 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	}
 
 	/**
+	 * Get points per vote based on current film (1/2/3)
+	 */
+	getPointsPerVote(): number {
+		return this.state.currentFilmIndex + 1 // Film 1 = 1pt, Film 2 = 2pts, Film 3 = 3pts
+	}
+
+	/**
+	 * Prepare scoreboard transition data (capture scores before applying votes)
+	 * and calculate vote counts per player
+	 */
+	prepareScoreboardTransition(): void {
+		// Save current scores (before this round)
+		this.state.scoresBeforeRound = new Map(this.state.scores)
+
+		// Count votes for each answer -> player
+		const voteCountsPerPlayer = new Map<string, number>()
+		const voteCounts = new Map<string, number>()
+
+		for (const [, answerId] of this.state.votes) {
+			voteCounts.set(answerId, (voteCounts.get(answerId) || 0) + 1)
+		}
+
+		// Map vote counts to players
+		for (const answer of this.state.allAnswers) {
+			const voteCount = voteCounts.get(answer.id) || 0
+			if (voteCount > 0 && answer.authorId !== 'house') {
+				voteCountsPerPlayer.set(answer.authorId, voteCount)
+			}
+		}
+
+		this.state.voteCountsThisRound = voteCountsPerPlayer
+		console.log('[CinemaPippinGame] Prepared scoreboard transition data')
+		console.log('[CinemaPippinGame] Vote counts:', Array.from(voteCountsPerPlayer.entries()))
+	}
+
+	/**
 	 * Apply vote scores to player scores
-	 * Each vote a player's answer receives = 1 point
+	 * Points per vote depend on current film (1/2/3)
 	 */
 	applyVoteScores(): void {
+		const pointsPerVote = this.getPointsPerVote()
+
 		// Count votes for each answer
 		const voteCounts = new Map<string, number>()
 		for (const [, answerId] of this.state.votes) {
@@ -279,9 +319,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			const voteCount = voteCounts.get(answer.id) || 0
 			if (voteCount > 0 && answer.authorId !== 'house') {
 				const currentScore = this.state.scores.get(answer.authorId) || 0
-				this.state.scores.set(answer.authorId, currentScore + voteCount)
+				this.state.scores.set(answer.authorId, currentScore + voteCount * pointsPerVote)
 			}
 		}
+
+		console.log(`[CinemaPippinGame] Applied vote scores (${pointsPerVote} pts/vote)`)
 	}
 
 	advancePhase(): void {
@@ -615,6 +657,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 						'), advancing to results'
 					)
 
+					// Prepare scoreboard transition data (save scores BEFORE applying votes)
+					this.prepareScoreboardTransition()
+
 					// Calculate scores before showing results
 					this.applyVoteScores()
 					console.log('[CinemaPippinGame] Applied vote scores')
@@ -658,9 +703,17 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 						}
 					}
 
-					// Advance to next clip
+					// Transition to scoreboard animation
+					this.state.phase = 'scoreboard_transition'
+					console.log('[CinemaPippinGame] Results complete, advancing to scoreboard_transition')
+				}
+				break
+
+			case 'SCOREBOARD_COMPLETE':
+				if (this.state.phase === 'scoreboard_transition') {
+					// Advance to next clip after scoreboard animation
 					this.advanceToNextClip()
-					console.log('[CinemaPippinGame] Results complete, advanced to', this.state.phase)
+					console.log('[CinemaPippinGame] Scoreboard complete, advanced to', this.state.phase)
 				}
 				break
 
@@ -1071,12 +1124,14 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		console.log(`[AI] Voting started, blocking auto-advance until complete`)
 		console.log(`[AI] Generating ${this.state.aiPlayers.length} AI votes...`)
 
-		// Prepare answers for voting
-		const answerList = this.state.allAnswers.map((a) => ({ id: a.id, text: a.text }))
-
 		// Generate all AI votes in parallel (but with staggered UI updates)
 		const votePromises = this.state.aiPlayers.map(async (aiPlayer) => {
 			try {
+				// Filter out this AI player's own answer (can't vote for yourself!)
+				const answerList = this.state.allAnswers
+					.filter((a) => a.authorId !== aiPlayer.playerId)
+					.map((a) => ({ id: a.id, text: a.text }))
+
 				// Generate the vote (happens instantly with Claude)
 				const votedAnswerId = await generateAIVote(this.aiConfig, answerList, aiPlayer.constraint)
 

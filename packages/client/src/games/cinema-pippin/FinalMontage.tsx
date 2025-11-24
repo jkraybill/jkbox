@@ -3,7 +3,7 @@
  * Plays all 3 clips sequentially with winning answers merged into subtitles
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { VideoPlayer, Subtitle } from './VideoPlayer'
 
 interface ClipData {
@@ -20,6 +20,15 @@ interface FinalMontageProps {
 
 export function FinalMontage({ filmTitle, clips, onComplete }: FinalMontageProps) {
 	const [currentClipIndex, setCurrentClipIndex] = useState(0)
+	const [showTitleCard, setShowTitleCard] = useState(true)
+
+	// Auto-hide title card after 3 seconds
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setShowTitleCard(false)
+		}, 3000)
+		return () => clearTimeout(timer)
+	}, [])
 
 	const handleVideoComplete = () => {
 		if (currentClipIndex < clips.length - 1) {
@@ -41,15 +50,17 @@ export function FinalMontage({ filmTitle, clips, onComplete }: FinalMontageProps
 		)
 	}
 
+	// Show full-screen title card for 3 seconds before starting playback
+	if (showTitleCard && currentClipIndex === 0) {
+		return (
+			<div style={styles.titleCardContainer}>
+				<h1 style={styles.titleCardText}>{filmTitle}</h1>
+			</div>
+		)
+	}
+
 	return (
 		<div style={{ width: '100%', height: '100%' }}>
-			{/* Show film title before first clip */}
-			{currentClipIndex === 0 && (
-				<div style={styles.titleOverlay}>
-					<h1 style={styles.filmTitle}>{filmTitle}</h1>
-				</div>
-			)}
-
 			<VideoPlayer
 				key={`montage-clip-${currentClipIndex}`}
 				videoUrl={currentClip.videoUrl}
@@ -57,8 +68,6 @@ export function FinalMontage({ filmTitle, clips, onComplete }: FinalMontageProps
 				onComplete={handleVideoComplete}
 				fadeInDuration={currentClipIndex === 0 ? 2000 : 1000}
 				fadeOutDuration={1000}
-				preRollText={`Act ${currentClip.clipNumber}`}
-				preRollDuration={1500}
 				isPaused={false}
 			/>
 		</div>
@@ -78,22 +87,21 @@ const styles = {
 		fontSize: '48px',
 		color: '#fff'
 	},
-	titleOverlay: {
-		position: 'absolute' as const,
-		top: 0,
-		left: 0,
-		right: 0,
-		padding: '40px',
-		textAlign: 'center' as const,
-		zIndex: 1000,
-		background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)',
-		pointerEvents: 'none' as const
+	titleCardContainer: {
+		width: '100%',
+		height: '100%',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: '#000'
 	},
-	filmTitle: {
-		fontSize: '64px',
+	titleCardText: {
+		fontSize: '72px',
 		fontWeight: 'bold' as const,
 		color: '#FFD700',
-		textShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
-		margin: 0
+		textShadow: '0 0 30px rgba(255, 215, 0, 0.6)',
+		margin: 0,
+		padding: '0 60px',
+		textAlign: 'center' as const
 	}
 }

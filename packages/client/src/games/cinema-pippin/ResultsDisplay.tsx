@@ -100,11 +100,11 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 				break
 
 			case DisplayState.ShowVoters:
-				// Reveal one voter at a time (500ms each)
+				// Reveal one voter at a time (1000ms each)
 				if (revealedVoters.length < shuffledVoters.length) {
 					timer = setTimeout(() => {
 						setRevealedVoters([...revealedVoters, shuffledVoters[revealedVoters.length] as string])
-					}, 500)
+					}, 1000)
 				} else {
 					// All voters revealed, show author and score
 					setDisplayState(DisplayState.ShowAuthorAndScore)
@@ -112,7 +112,7 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 				break
 
 			case DisplayState.ShowAuthorAndScore:
-				// Show author + points for 1.5 seconds
+				// Show author + points for 3 seconds
 				timer = setTimeout(() => {
 					if (isLastResult) {
 						setDisplayState(DisplayState.ShowWinner)
@@ -121,7 +121,7 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 						setCurrentIndex(currentIndex + 1)
 						setDisplayState(DisplayState.ShowAnswer)
 					}
-				}, 1500)
+				}, 3000)
 				break
 
 			case DisplayState.ShowWinner:

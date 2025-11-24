@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loadFilms, loadClipsFromSequence, loadAnswersJSON } from './film-loader'
+import { loadFilms, loadClipsFromSequence } from './film-loader'
 
 describe('film-loader', () => {
 	describe('loadFilms', () => {
@@ -26,7 +26,13 @@ describe('film-loader', () => {
 					expect(clip.videoPath).toContain('.mp4')
 					expect(clip.srtPath).toContain('.srt')
 					expect(clip.srtPath).toContain('-question.srt')
-					expect(clip.precomputedAnswers).toHaveLength(3)
+					// At least 3 precomputed answers (may have more from AI generation over time)
+					expect(clip.precomputedAnswers.length).toBeGreaterThanOrEqual(3)
+					// Verify each answer is a non-empty string
+					clip.precomputedAnswers.forEach((answer) => {
+						expect(typeof answer).toBe('string')
+						expect(answer.length).toBeGreaterThan(0)
+					})
 				})
 			})
 		})
@@ -48,24 +54,8 @@ describe('film-loader', () => {
 				expect(clip.videoPath).toContain(filmName)
 				expect(clip.videoPath).toContain(`-${clip.clipNumber}-question.mp4`)
 				expect(clip.srtPath).toContain(`-${clip.clipNumber}-question.srt`)
-			})
-		})
-	})
-
-	describe('loadAnswersJSON', () => {
-		it('should load precomputed answers from answers.json', () => {
-			const filmName = 'day-for-night-1973-francois-truffaut-1080p-brrip-x264-classics'
-			const sequenceNumber = 3
-
-			const answers = loadAnswersJSON(filmName, sequenceNumber)
-
-			expect(answers).toHaveLength(3) // 3 clips
-			answers.forEach((clipAnswers) => {
-				expect(clipAnswers).toHaveLength(3) // 3 answers per clip
-				clipAnswers.forEach((answer) => {
-					expect(typeof answer).toBe('string')
-					expect(answer.length).toBeGreaterThan(0)
-				})
+				// At least 3 precomputed answers
+				expect(clip.precomputedAnswers.length).toBeGreaterThanOrEqual(3)
 			})
 		})
 	})

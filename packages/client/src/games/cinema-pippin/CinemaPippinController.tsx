@@ -24,11 +24,14 @@ interface PlayerError {
 interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
+	currentFilmIndex?: number
 	answerTimeout?: number
 	answerCollectionStartTime?: number
 	playerAnswers?: Map<string, string> | Record<string, string>
 	allAnswers?: Answer[]
 	playerErrors?: Map<string, PlayerError> | Record<string, PlayerError>
+	scoresBeforeRound?: Map<string, number> | Record<string, number>
+	voteCountsThisRound?: Map<string, number> | Record<string, number>
 }
 
 export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {

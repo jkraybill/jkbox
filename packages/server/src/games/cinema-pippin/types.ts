@@ -34,6 +34,7 @@ export type GamePhase =
 	| 'voting_playback'
 	| 'voting_collection'
 	| 'results_display'
+	| 'scoreboard_transition'
 	| 'film_title_collection'
 	| 'film_title_voting'
 	| 'film_title_results'
@@ -71,6 +72,8 @@ export interface CinemaPippinState {
 	currentAnswerIndex: number // Which answer is currently being shown in voting_playback
 	votes: Map<string, string> // playerId -> answerId
 	scores: Map<string, number>
+	scoresBeforeRound: Map<string, number> // Scores before current round (for scoreboard transition)
+	voteCountsThisRound: Map<string, number> // How many votes each player got this round
 	clipWinners: string[] // Winning answer per clip
 	filmTitle: string // Winning film title
 	endGameVotes: Map<string, 'lobby' | 'again'>

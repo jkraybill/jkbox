@@ -9,6 +9,7 @@ import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
 import { ResultsDisplay } from './ResultsDisplay'
 import { FinalMontage } from './FinalMontage'
+import { ScoreboardTransition } from './ScoreboardTransition'
 
 interface Answer {
 	id: string
@@ -31,6 +32,7 @@ interface PlayerStatus {
 interface CinemaPippinGameState {
 	phase: string
 	currentClipIndex?: number
+	currentFilmIndex?: number
 	currentClip?: {
 		clipNumber: 1 | 2 | 3
 		videoUrl: string
@@ -39,6 +41,8 @@ interface CinemaPippinGameState {
 	allAnswers?: Answer[]
 	sortedResults?: ResultEntry[]
 	scores?: Record<string, number>
+	scoresBeforeRound?: Map<string, number> | Record<string, number>
+	voteCountsThisRound?: Map<string, number> | Record<string, number>
 	playerStatus?: Record<string, PlayerStatus>
 	filmTitle?: string
 	montageClips?: Array<{
@@ -367,6 +371,53 @@ export function CinemaPippinJumbotron({
 					<div style={styles.container}>
 						<h1 style={styles.title}>Results</h1>
 						<p style={styles.subtitle}>Calculating scores...</p>
+					</div>
+				)
+
+			case 'scoreboard_transition':
+				if (
+					gameState.scoresBeforeRound &&
+					gameState.voteCountsThisRound &&
+					gameState.currentFilmIndex !== undefined
+				) {
+					// Convert scores to Map
+					let scoresMap: Map<string, number>
+					if (gameState.scoresBeforeRound instanceof Map) {
+						scoresMap = gameState.scoresBeforeRound
+					} else {
+						scoresMap = new Map(Object.entries(gameState.scoresBeforeRound))
+					}
+
+					// Convert vote counts to Map
+					let voteCountsMap: Map<string, number>
+					if (gameState.voteCountsThisRound instanceof Map) {
+						voteCountsMap = gameState.voteCountsThisRound
+					} else {
+						voteCountsMap = new Map(Object.entries(gameState.voteCountsThisRound))
+					}
+
+					const pointsPerVote = gameState.currentFilmIndex
+
+					return (
+						<ScoreboardTransition
+							players={players}
+							currentScores={scoresMap}
+							voteCounts={voteCountsMap}
+							pointsPerVote={pointsPerVote}
+							onComplete={() => {
+								sendToServer({
+									playerId: 'jumbotron',
+									type: 'SCOREBOARD_COMPLETE',
+									payload: {}
+								})
+							}}
+						/>
+					)
+				}
+				return (
+					<div style={styles.container}>
+						<h1 style={styles.title}>Scoreboard</h1>
+						<p style={styles.subtitle}>Loading...</p>
 					</div>
 				)
 

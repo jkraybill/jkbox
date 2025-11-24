@@ -84,8 +84,12 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.phase).toBe('results_display') // Auto-advanced
 		expect(state.votes.size).toBe(3) // 2 humans + 1 AI
 
-		// Results → Next clip
+		// Results → Scoreboard → Next clip
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 		expect(state.phase).toBe('clip_intro')
 		expect(state.currentClipIndex).toBe(1) // Now on C2
@@ -148,8 +152,12 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.phase).toBe('results_display')
 		expect(state.votes.size).toBe(3) // Verify all votes counted
 
-		// Results → Next clip
+		// Results → Scoreboard → Next clip
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 		expect(state.phase).toBe('clip_intro')
 		expect(state.currentClipIndex).toBe(2) // Now on C3
@@ -207,9 +215,13 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.phase).toBe('results_display')
 		expect(state.votes.size).toBe(3) // Verify all votes counted
 
-		// CRITICAL: After Act 3 → Film Title Collection
-		console.log('\n=== AFTER ACT 3 → FILM TITLE ===')
+		// CRITICAL: After Act 3 → Scoreboard → Film Title Collection
+		console.log('\n=== AFTER ACT 3 → SCOREBOARD → FILM TITLE ===')
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
+		state = game.getState()
+		expect(state.phase).toBe('scoreboard_transition')
+
+		game.handlePlayerAction('jumbotron', { type: 'SCOREBOARD_COMPLETE', payload: {} })
 		state = game.getState()
 
 		expect(state.phase).toBe('film_title_collection')

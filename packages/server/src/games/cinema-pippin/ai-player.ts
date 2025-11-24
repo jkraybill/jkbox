@@ -402,8 +402,10 @@ export async function generateBatchAnswers(
 			throw new Error(`Missing constraint keys in response: ${missingKeys.join(', ')}`)
 		}
 
-		// Map answers back to the order of randomizedConstraints
-		const orderedAnswers = expectedTitles.map((title) => {
+		// Map answers back to the ORIGINAL order of combinedConstraints (aiConstraints + houseConstraints)
+		// NOT randomizedConstraints! The caller expects them in the order they sent aiConstraints.
+		const originalConstraintTitles = combinedConstraints.map(getConstraintTitle)
+		const orderedAnswers = originalConstraintTitles.map((title) => {
 			const answer = answerMap[title]
 			if (!answer) {
 				throw new Error(`No answer found for constraint: ${title}`)
@@ -599,8 +601,10 @@ export async function generateBatchFilmTitles(
 			throw new Error(`Missing constraint keys in response: ${missingKeys.join(', ')}`)
 		}
 
-		// Map film titles back to the order of randomizedConstraints
-		const orderedTitles = expectedTitles.map((title) => {
+		// Map film titles back to the ORIGINAL order of combinedConstraints (aiConstraints + houseConstraints)
+		// NOT randomizedConstraints! The caller expects them in the order they sent aiConstraints.
+		const originalConstraintTitles = combinedConstraints.map(getConstraintTitle)
+		const orderedTitles = originalConstraintTitles.map((title) => {
 			const filmTitle = titleMap[title]
 			if (!filmTitle) {
 				throw new Error(`Missing film title for constraint: ${title}`)
