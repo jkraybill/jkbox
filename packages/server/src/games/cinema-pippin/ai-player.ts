@@ -327,7 +327,7 @@ export async function generateBatchAnswers(
 		}
 
 		{
-			const claudeModel = 'claude-haiku-4-5-20251001'
+			const claudeModel = 'claude-sonnet-4-5-20250929'
 			console.log(`[AI] Using Claude API (${claudeModel}) for generation...`)
 			const anthropic = new Anthropic({
 				apiKey: process.env.ANTHROPIC_API_KEY
@@ -343,7 +343,7 @@ export async function generateBatchAnswers(
 				temperature: config.temperature
 			})
 
-			// Using Claude 3.5 Sonnet - excellent quality for party game punchlines
+			// Using Claude Sonnet 4.5 - excellent quality for party game punchlines
 			const message: Anthropic.Message = await anthropic.messages.create({
 				model: claudeModel,
 				max_tokens: isC1 ? 256 : 1024,
@@ -545,7 +545,7 @@ export async function generateBatchFilmTitles(
 		} else {
 			// Use Claude
 			const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-			const claudeModel = 'claude-3-5-sonnet-20241022'
+			const claudeModel = 'claude-sonnet-4-5-20250929'
 
 			const message: Anthropic.Message = await anthropic.messages.create({
 				model: claudeModel,
