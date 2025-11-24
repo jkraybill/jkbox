@@ -329,3 +329,7 @@ Journal entries reference HC outcomes:
 ### Session 4 (2025-11-24) - jkbox
 
 [2025-11-24 02:55 UTC] Session 4✓. C2/C3 AI prompt fix (keywords[0]→clipWinners[0]), video height 100vh→90vh, admin pause→pauses videos. pauseState plumbed through JumbotronProps→VideoPlayer isPaused✓. TypeScript safety: previousPausedRef, JSDOM guards. T:287/287✓. C:6195e5d,cb66e23,1b187a8. Pattern: Pause state changes only (not mount)→prevents autoPlay conflict. JKLES: 10/10 (ACK incoming).
+
+### Session 5 (2025-11-24) - jkbox
+
+[2025-11-24 03:06 UTC] Session 5✓. SRT merge fix: keywords[i] not [0], [keyword]→C1 winner always, blanks→prev winners✓. Autoplay: explicit play()+mute→unmute trick, playsInline+preload✓. Final scores leaderboard (crown for winner), end_game_vote→5s timer→context.complete()→lobby✓. Empty playerAnswers guards+logging. Test cleanup (roomId, Player.test). T:729/729✓. C:1168668. Pattern: Mute-unmute bypasses autoplay policies. Multi-film flow verified (3 films→final_scores→lobby). JKLES: ∅ (technical session).
