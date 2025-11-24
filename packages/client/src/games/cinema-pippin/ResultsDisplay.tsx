@@ -106,8 +106,10 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 						setRevealedVoters([...revealedVoters, shuffledVoters[revealedVoters.length] as string])
 					}, 1000)
 				} else {
-					// All voters revealed, show author and score
-					setDisplayState(DisplayState.ShowAuthorAndScore)
+					// All voters revealed, wait 1.5x delay (1500ms) before showing author
+					timer = setTimeout(() => {
+						setDisplayState(DisplayState.ShowAuthorAndScore)
+					}, 1500)
 				}
 				break
 
