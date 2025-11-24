@@ -461,26 +461,13 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 							this.state.playerStatus.set(playerId, status)
 						}
 
-						// Pre-mark AI players as having voted (before async generation)
-						// This ensures clients see AI players as "voted" immediately
-						console.log('[CinemaPippinGame] Pre-marking AI player voting statuses...')
-						for (const aiPlayer of this.state.aiPlayers) {
-							// Add placeholder vote so auto-advance logic sees them as voted
-							this.state.votes.set(aiPlayer.playerId, '...')
-
-							const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
-							status.hasVoted = true
-							this.state.playerStatus.set(aiPlayer.playerId, status)
-							console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as voted`)
-						}
-
 						console.log('[CinemaPippinGame] All answers shown, advanced to voting_collection')
 
 						// Start voting timeout timer
 						this.startVotingTimeout()
 
 						// Trigger AI voting (async, don't await)
-						// Votes will be populated asynchronously, but status is already marked
+						// AI players will be marked as voted after their responses come back (with staggered delays)
 						void this.generateAIVotes()
 					} else {
 						// Stay in voting_playback, show next answer
@@ -1077,14 +1064,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Prepare answers for voting
 		const answerList = this.state.allAnswers.map((a) => ({ id: a.id, text: a.text }))
 
-		// Generate all AI votes in parallel
+		// Generate all AI votes in parallel (but with staggered UI updates)
 		const votePromises = this.state.aiPlayers.map(async (aiPlayer) => {
 			try {
+				// Generate the vote (happens instantly with Claude)
 				const votedAnswerId = await generateAIVote(this.aiConfig, answerList, aiPlayer.constraint)
 
 				console.log(
 					`[AI] ${aiPlayer.nickname} (${aiPlayer.constraint}) voted for: ${votedAnswerId}`
 				)
+
+				// Wait random delay (0-1500ms) before showing as "voted"
+				const delay = Math.floor(Math.random() * 1500)
+				console.log(`[AI] Delaying ${aiPlayer.nickname} vote UI update by ${delay}ms`)
+				await new Promise((resolve) => setTimeout(resolve, delay))
 
 				// Submit the vote (simulate SUBMIT_VOTE action)
 				this.state.votes.set(aiPlayer.playerId, votedAnswerId)
@@ -1098,6 +1091,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				const answer = this.state.allAnswers.find((a) => a.id === votedAnswerId)
 				if (answer) {
 					answer.votedBy.push(aiPlayer.playerId)
+				}
+
+				// Trigger state update to broadcast this AI vote to clients
+				if (this.stateChangeCallback) {
+					this.stateChangeCallback()
 				}
 			} catch (error) {
 				console.error(`[AI] Failed to generate vote for ${aiPlayer.nickname}:`, error)
@@ -1362,17 +1360,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			this.state.playerStatus.set(playerId, status)
 		}
 
-		// Pre-mark AI players as having voted and trigger async voting
-		console.log('[CinemaPippinGame] Pre-marking AI player voting statuses...')
-		for (const aiPlayer of this.state.aiPlayers) {
-			this.state.votes.set(aiPlayer.playerId, '...')
-			const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
-			status.hasVoted = true
-			this.state.playerStatus.set(aiPlayer.playerId, status)
-			console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as voted`)
-		}
-
 		// Trigger AI voting (async)
+		// AI players will be marked as voted after their responses come back (with staggered delays)
 		void this.generateAIVotes()
 	}
 
