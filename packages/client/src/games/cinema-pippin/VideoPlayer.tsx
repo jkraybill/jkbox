@@ -180,32 +180,44 @@ export function VideoPlayer({
 				preload="auto"
 				style={{
 					width: '100%',
-					height: 'calc(100% - 4em)',
+					height: '85%',
 					objectFit: 'contain'
 				}}
 			/>
 
+			{/* Subtitle zone: 15% of height at bottom, subtitles top-aligned within zone */}
 			{currentSubtitle && (
 				<div
 					data-testid="subtitle-text"
 					style={{
 						position: 'absolute',
-						bottom: 'calc(10% - 0.5em)',
+						top: '85%',
 						left: '50%',
 						transform: 'translateX(-50%)',
-						backgroundColor: 'rgba(0, 0, 0, 0.8)',
-						color: '#fff',
-						padding: '10px 20px',
-						borderRadius: '4px',
-						fontSize: '51px',
-						textAlign: 'center',
-						maxWidth: '95%',
-						whiteSpace: 'nowrap'
+						width: '90%',
+						height: '15%',
+						display: 'flex',
+						alignItems: 'flex-start',
+						justifyContent: 'center',
+						paddingTop: '1vh'
 					}}
-					dangerouslySetInnerHTML={{
-						__html: currentSubtitle.text.replace(/\n/g, '<br />')
-					}}
-				/>
+				>
+					<div
+						style={{
+							backgroundColor: 'rgba(0, 0, 0, 0.8)',
+							color: '#fff',
+							padding: '0.8vh 2vw',
+							borderRadius: '4px',
+							fontSize: '3.5vw',
+							textAlign: 'center',
+							maxWidth: '100%',
+							lineHeight: '1.3'
+						}}
+						dangerouslySetInnerHTML={{
+							__html: currentSubtitle.text.replace(/\n/g, '<br />')
+						}}
+					/>
+				</div>
 			)}
 
 			{showPreRoll && preRollText && (
