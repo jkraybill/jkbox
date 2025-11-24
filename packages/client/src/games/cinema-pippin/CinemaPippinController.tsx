@@ -53,7 +53,7 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 
 	// Countdown timer - sync with server timestamp
 	useEffect(() => {
-		if (gameState.phase !== 'answer_collection') {
+		if (gameState.phase !== 'answer_collection' && gameState.phase !== 'film_title_collection') {
 			return
 		}
 
