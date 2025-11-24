@@ -1262,15 +1262,33 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.clearVotes()
 		console.log('[CinemaPippinGame] Cleared votes and allAnswers for new voting round')
 
-		console.log('[CinemaPippinGame] playerAnswers.size:', this.state.playerAnswers.size)
+		console.log(
+			'[CinemaPippinGame] Film',
+			this.state.currentFilmIndex + 1,
+			'Clip',
+			this.state.currentClipIndex + 1,
+			'- playerAnswers.size:',
+			this.state.playerAnswers.size
+		)
 		console.log('[CinemaPippinGame] playerAnswers:', Array.from(this.state.playerAnswers.entries()))
+		console.log('[CinemaPippinGame] playerStatus:', Array.from(this.state.playerStatus.entries()))
 
 		// Guard against empty playerAnswers
 		if (this.state.playerAnswers.size === 0) {
 			console.error('[CinemaPippinGame] ERROR: No player answers to create voting round from!')
+			console.error(
+				'[CinemaPippinGame] Film',
+				this.state.currentFilmIndex + 1,
+				'Clip',
+				this.state.currentClipIndex + 1
+			)
 			console.error('[CinemaPippinGame] Current phase:', this.state.phase)
 			console.error('[CinemaPippinGame] scores.size:', this.state.scores.size)
 			console.error('[CinemaPippinGame] aiPlayers.length:', this.state.aiPlayers.length)
+			console.error(
+				'[CinemaPippinGame] houseAnswerQueue.length:',
+				this.state.houseAnswerQueue.length
+			)
 			// This is a critical bug - we should not be here with 0 answers
 			// Skip voting entirely and go to next clip
 			this.state.phase = 'results_display'
