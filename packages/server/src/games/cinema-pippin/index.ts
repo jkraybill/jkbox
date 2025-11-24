@@ -89,10 +89,8 @@ class CinemaPippinModule implements PluggableGameModule {
 			if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {
 				const currentAnswer = rawState.allAnswers[rawState.currentAnswerIndex]
 				if (currentAnswer) {
-					subtitles = subtitles.map((sub) => ({
-						...sub,
-						text: sub.text.replace(/_{2,}(\s+_{2,})*/g, currentAnswer.text)
-					}))
+					// Use mergeSRT to properly handle line splitting for long answers
+					subtitles = mergeSRT(subtitles, currentAnswer.text)
 				}
 			}
 
