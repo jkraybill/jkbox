@@ -1,154 +1,93 @@
 # Cinema Pippin Improvements - Session 2025-11-24
 
 ## Session Overview
-Implemented multiple UX improvements, AI player fixes, and a new animated scoreboard transition feature for Cinema Pippin.
+Continued work on Cinema Pippin game after previous session crash. Made 7 commits addressing multiple UX bugs and one critical state pollution bug.
 
-## Changes Implemented
+## Commits Made
 
-### 1. UX Improvements
-- **Removed vote counter** from voting results display (`ResultsDisplay.tsx`)
-- **Doubled delays** for better pacing:
-  - Voter reveal: 500ms → 1000ms (line 107)
-  - Author reveal: 1.5s → 3s (line 124)
-- **Removed Act 1/2/3 title cards** from final montage (`FinalMontage.tsx:71`)
-- **Added 3-second full-screen title card** before final montage playback
-  - Uses `useEffect` hook with 3-second timer
-  - Full-screen black background with golden title
-  - Automatically transitions to video playback
+### 1. Fix: Scoreboard now shows previous order and removes crown (f732f8f)
+- **Issue**: Scoreboard showed players sorted by current scores with crown icons
+- **Fix**: Modified ScoreboardTransition.tsx to show players in previous order initially, removed crown logic
+- **Files**: `packages/client/src/games/cinema-pippin/ScoreboardTransition.tsx`
 
-### 2. AI Player Fixes
-- **Prevent AI self-voting** (`cinema-pippin.ts:1077-1080`)
-  - AI players now filter out their own answers before voting
-  - Matches human player behavior (can't vote for yourself)
+### 2. Fix: Film title countdown timer now works correctly (5875f17)
+- **Issue**: Countdown timer for "name this movie" question reset to 60s on reload
+- **Root cause**: useEffect only ran for 'answer_collection' phase, not 'film_title_collection'
+- **Fix**: Updated condition in CinemaPippinController.tsx line 56 to include both phases
+- **Files**: `packages/client/src/games/cinema-pippin/CinemaPippinController.tsx`
 
-- **Fixed AI answer assignment bug** (`ai-player.ts:405-414, 604-614`)
-  - **Problem**: Answers were returned in randomized order but assigned by index
-  - **Solution**: Map answers back to original `aiConstraints` order
-  - Now correctly matches "Namedrop" → NamedropBot, "Saynomore" → SaynomoreBot, etc.
+### 3. UX: Add 1.5s delay between last voter and answer author (69db0bb)
+- **Issue**: No delay between last voter reveal and author reveal
+- **Fix**: Added 1500ms setTimeout in ResultsDisplay.tsx lines 108-112
+- **Files**: `packages/client/src/games/cinema-pippin/ResultsDisplay.tsx`
 
-### 3. Point System Implementation
-Implemented graduated point system based on film number:
-- **Film 1**: 1 point per vote (clips 1-3 + title)
-- **Film 2**: 2 points per vote (clips 1-3 + title)
-- **Film 3**: 3 points per vote (clips 1-3 + title)
+### 4. CRITICAL FIX: Clear clipWinners when advancing between films (7d0f32d)
+- **Issue**: Film 2's C2/C3 used Film 1's C1 winner as keyword (state pollution)
+- **Severity**: SHOWSTOPPER bug
+- **Root cause**: `clipWinners` array not cleared in `advanceToNextFilm()`
+- **Fix**: Added `this.state.clipWinners = []` in cinema-pippin.ts line 393
+- **Files**: `packages/server/src/games/cinema-pippin/cinema-pippin.ts`
+- **Tests**: Created `packages/server/src/games/cinema-pippin/state-isolation.test.ts` with 2 regression tests
 
-Implementation:
-- `getPointsPerVote()`: Returns `currentFilmIndex + 1`
-- `applyVoteScores()`: Multiplies vote count by points per vote
-- `prepareScoreboardTransition()`: Captures scores before round for animation
+### 5. Docs: Add state architecture and issue template (dc2a845)
+- **Created**: `docs/cinema-pippin-state-architecture.md` - Comprehensive state architecture documentation
+- **Created**: `.github/ISSUE_TEMPLATE/state-pollution-bug.md` - GitHub issue template
+- **Purpose**: Prevent future state pollution bugs, document 3 state scope levels (Game/Film/Clip)
 
-### 4. Scoreboard Transition Feature ⭐
+### 6. UX: Fix subtitle positioning to grow downward, not upward (1f8ced3)
+- **Issue**: Multi-line subtitles grew upward, pushing first line up
+- **Fix**: Complete restructure of VideoPlayer.tsx subtitle positioning
+  - Video height: 85% (was calc(100% - 4em))
+  - Subtitle zone: 15% at bottom, top-aligned within zone
+  - Used viewport units for responsive sizing (3.5vw font, 0.8vh/2vw padding)
+- **Files**: `packages/client/src/games/cinema-pippin/VideoPlayer.tsx`
 
-#### New Component: `ScoreboardTransition.tsx`
-Animated scoreboard that displays after voting results.
+### 7. Feature: Replace intro splash screens with unified film countdown (c89d769)
+- **Issue**: Three separate splash screens ("5", "selecting films", "get ready")
+- **Solution**: Single 5-second old-timey film countdown with rotating circle
+- **Created**: `packages/client/src/games/cinema-pippin/FilmCountdown.tsx`
+  - 5-4-3-2-1 countdown with rotating SVG line
+  - Old film grain and scratches effects
+- **Modified**: `packages/client/src/games/cinema-pippin/CinemaPippinJumbotron.tsx`
+  - Replaced film_select phase (2s) with FilmCountdown (5s)
+  - Replaced clip_intro phase (3s) with FilmCountdown (5s)
+- **Updated**: `packages/client/src/games/cinema-pippin/CinemaPippinJumbotron.test.tsx`
+  - Tests updated from 2s/3s to 6s (5s countdown + 1s final interval)
 
-**Flow**:
-1. Shows leaderboard with scores BEFORE current round (2-second pause)
-2. Builds randomized vote queue (e.g., `[2,1,1,3,2]`)
-3. Pops one element every 600ms
-4. Increments that player's score by `pointsPerVote`
-5. Re-sorts leaderboard dynamically
-6. Highlights animating player with green glow
-7. Shows final state for 1.5s before advancing
+## Test Status
+✅ All 730 tests passing
 
-**Visual Effects**:
-- Green highlight with glow effect on score-receiving player
-- Dynamic re-sorting as scores change
-- Crown emoji (👑) for first place
-- Golden color scheme (#FFD700)
-
-#### Game Flow Changes
-**Old**: `results_display → RESULTS_COMPLETE → clip_intro/film_title_collection`
-
-**New**: `results_display → RESULTS_COMPLETE → scoreboard_transition → SCOREBOARD_COMPLETE → clip_intro/film_title_collection`
-
-#### Server-Side Changes
-**Types** (`types.ts`):
-- Added `scoreboard_transition` phase
-- Added `scoresBeforeRound: Map<string, number>`
-- Added `voteCountsThisRound: Map<string, number>`
-
-**Game Logic** (`cinema-pippin.ts`):
-- `prepareScoreboardTransition()`: Captures pre-round state (line 279-302)
-- Modified `RESULTS_COMPLETE`: Transitions to scoreboard instead of advancing (line 707)
-- Added `SCOREBOARD_COMPLETE`: Advances after animation (line 712-718)
-- State initialization includes new fields (line 124-125)
-
-#### Client-Side Changes
-**Jumbotron** (`CinemaPippinJumbotron.tsx`):
-- Added `scoreboard_transition` case (line 374-418)
-- Converts Map/Record types for cross-platform compatibility
-- Sends `SCOREBOARD_COMPLETE` action when animation finishes
-
-**Type Definitions**:
-- Updated `CinemaPippinGameState` in both Jumbotron and Controller
-- Added `currentFilmIndex`, `scoresBeforeRound`, `voteCountsThisRound` fields
-
-### 5. Test Updates
-**Fixed Tests** (3 files):
-- `phase-transitions.test.ts`: 3 tests updated
-  - Expect `scoreboard_transition` after `RESULTS_COMPLETE`
-  - Added tests for `SCOREBOARD_COMPLETE` handler
-
-- `full-game-flow.test.ts`: 3 occurrences updated
-  - Added `SCOREBOARD_COMPLETE` calls after each `RESULTS_COMPLETE`
-
-- `complete-film-cycle.test.ts`: 3 occurrences updated
-  - Same pattern: Results → Scoreboard → Next phase
-
-**Updated Data Expectations**:
-- `film-loader.test.ts`: Changed from exactly 3 answers to ≥3
-  - Accounts for production data growth over time
-  - Validates each answer is non-empty string
-
-**Result**: All 113 tests passing ✅
+## Technical Concepts Covered
+- State scoping (Game/Film/Clip boundaries)
+- State pollution prevention
+- React useEffect for countdown timers
+- WebSocket state synchronization
+- SRT subtitle format and merging
+- CSS Flexbox with alignItems: flex-start
+- Viewport units (vw/vh) for responsive design
+- SVG animations
+- Vitest async timers (vi.advanceTimersByTimeAsync)
 
 ## Files Modified
+- `packages/client/src/games/cinema-pippin/ScoreboardTransition.tsx`
+- `packages/client/src/games/cinema-pippin/CinemaPippinController.tsx`
+- `packages/client/src/games/cinema-pippin/ResultsDisplay.tsx`
+- `packages/server/src/games/cinema-pippin/cinema-pippin.ts`
+- `packages/client/src/games/cinema-pippin/VideoPlayer.tsx`
+- `packages/client/src/games/cinema-pippin/CinemaPippinJumbotron.tsx`
+- `packages/client/src/games/cinema-pippin/CinemaPippinJumbotron.test.tsx`
 
-### Created
-- `packages/client/src/games/cinema-pippin/ScoreboardTransition.tsx` (207 lines)
+## Files Created
+- `packages/server/src/games/cinema-pippin/state-isolation.test.ts`
+- `docs/cinema-pippin-state-architecture.md`
+- `.github/ISSUE_TEMPLATE/state-pollution-bug.md`
+- `packages/client/src/games/cinema-pippin/FilmCountdown.tsx`
 
-### Modified
-- `packages/client/src/games/cinema-pippin/CinemaPippinJumbotron.tsx` (+51)
-- `packages/client/src/games/cinema-pippin/CinemaPippinController.tsx` (+3)
-- `packages/client/src/games/cinema-pippin/FinalMontage.tsx` (refactored)
-- `packages/client/src/games/cinema-pippin/ResultsDisplay.tsx` (+/-8)
-- `packages/server/src/games/cinema-pippin/cinema-pippin.ts` (+69)
-- `packages/server/src/games/cinema-pippin/ai-player.ts` (+12)
-- `packages/server/src/games/cinema-pippin/types.ts` (+3)
-- `packages/server/src/games/cinema-pippin/*.test.ts` (4 test files)
-- `assets/constraints.txt` (+47 - unrelated change)
+## Branch Status
+- Branch: master
+- Clean working tree
+- 7 commits ahead of origin/master
+- Ready for push when desired
 
-## Git Commit
-**Commit**: `cf36d1561fdeac7ab962d8ee9e387ecff86c5490`
-**Branch**: `master`
-**Files**: 13 changed, 472 insertions(+), 75 deletions(-)
-
-## Technical Highlights
-
-### React Hooks Usage
-- `useEffect` for title card timer with cleanup
-- `useState` for animation state management
-- Proper dependency arrays to prevent memory leaks
-
-### Type Safety
-- Handled Map vs Record serialization across WebSocket
-- Type assertions for client-side state conversions
-- Interface updates across multiple files
-
-### Animation Implementation
-- Queue-based vote animation (FIFO)
-- Fisher-Yates shuffle for randomization
-- Smooth transitions with CSS effects
-- Proper timing with setTimeout chains
-
-### Testing Strategy
-- Updated integration tests to include new phase
-- Maintained existing test coverage
-- Verified state cleanup between rounds
-
-## Session Stats
-- **Duration**: ~1.5 hours
-- **Tests**: 113/113 passing
-- **Code Quality**: Passed ESLint, Prettier, TypeScript
-- **Commits**: 1 comprehensive feature commit
+## Next Session Notes
+All requested features and fixes completed. System is stable with comprehensive test coverage. State architecture is now documented to prevent future pollution bugs.
