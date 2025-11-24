@@ -43,8 +43,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
 		state = game.getState()
 		expect(state.phase).toBe('answer_collection')
-		expect(state.playerAnswers.size).toBe(1) // Only AI pre-marked with placeholder
-		expect(state.playerAnswers.get('ai-1')).toBe('...')
+		expect(state.playerAnswers.size).toBe(0) // No pre-marking - AI answers come with staggered delays
 
 		// Submit human answers
 		game.handlePlayerAction('player1', { type: 'SUBMIT_ANSWER', payload: { answer: 'tacos' } })
@@ -56,9 +55,9 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		state = game.getState()
 		expect(state.phase).toBe('voting_playback') // Manually advanced
-		expect(state.playerAnswers.size).toBe(3) // 2 humans + 1 AI placeholder
+		expect(state.playerAnswers.size).toBe(2) // 2 humans (AI comes later with staggered delays)
 		expect(state.votes.size).toBe(0) // Votes cleared for new round
-		expect(state.allAnswers.length).toBe(3)
+		expect(state.allAnswers.length).toBe(2) // Only 2 answers since AI hasn't submitted yet (async delay)
 
 		// Voting playback → voting collection (manual advance for testing)
 		game.advancePhase() // In real game, this happens when all answers shown
@@ -105,7 +104,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.phase).toBe('answer_collection')
 
 		// CRITICAL: Answers should be cleared from C1
-		expect(state.playerAnswers.size).toBe(1) // Only AI placeholder
+		expect(state.playerAnswers.size).toBe(0) // No pre-marking - AI answers come with staggered delays
 		expect(state.playerAnswers.has('player1')).toBe(false)
 		expect(state.playerAnswers.has('player2')).toBe(false)
 
@@ -128,7 +127,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		state = game.getState()
 		expect(state.phase).toBe('voting_playback')
-		expect(state.allAnswers.length).toBe(3)
+		expect(state.allAnswers.length).toBe(2) // Only 2 answers since AI hasn't submitted yet (async delay)
 
 		// Complete voting (including AI)
 		game.advancePhase() // voting_playback → voting_collection
@@ -169,7 +168,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.phase).toBe('answer_collection')
 
 		// CRITICAL: Answers cleared from C2
-		expect(state.playerAnswers.size).toBe(1) // Only AI
+		expect(state.playerAnswers.size).toBe(0) // No pre-marking - AI answers come with staggered delays
 		expect(state.playerAnswers.has('player1')).toBe(false)
 		expect(state.playerAnswers.has('player2')).toBe(false)
 
@@ -217,9 +216,8 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.currentClipIndex).toBe(3)
 
 		// CRITICAL: State should be cleared before film title
-		// AI players are pre-marked with placeholders while generation happens
-		expect(state.playerAnswers.size).toBe(1) // 1 AI player pre-marked
-		expect(state.playerAnswers.get('ai-1')).toBe('...') // AI placeholder
+		// AI players not pre-marked anymore - answers come with staggered delays
+		expect(state.playerAnswers.size).toBe(0) // No pre-marking
 		expect(state.votes.size).toBe(0) // ⭐ Fixed!
 		expect(state.allAnswers.length).toBe(0) // ⭐ Fixed!
 

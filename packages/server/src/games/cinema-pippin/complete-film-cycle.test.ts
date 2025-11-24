@@ -139,9 +139,8 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		expect(state.currentClipIndex).toBe(3) // Incremented to 3
 		expect(state.currentFilmIndex).toBe(0) // Still Film 1
 
-		// CRITICAL: State should be cleared (except AI player placeholders)
-		expect(state.playerAnswers.size).toBe(1) // 1 AI player pre-marked
-		expect(state.playerAnswers.get('ai-1')).toBe('...') // AI placeholder
+		// CRITICAL: State should be cleared (AI players not pre-marked anymore)
+		expect(state.playerAnswers.size).toBe(0) // No pre-marking - AI answers come with staggered delays
 		expect(state.votes.size).toBe(0)
 		expect(state.allAnswers.length).toBe(0)
 		console.log('✅ State cleared after Act 3')

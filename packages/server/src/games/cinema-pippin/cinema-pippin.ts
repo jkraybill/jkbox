@@ -325,20 +325,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			this.state.phase = 'film_title_collection'
 			this.state.answerCollectionStartTime = Date.now()
 
-			// Pre-mark AI players as having submitted film titles (before async generation)
-			console.log('[CinemaPippinGame] Pre-marking AI player statuses for film titles...')
-			for (const aiPlayer of this.state.aiPlayers) {
-				this.state.playerAnswers.set(aiPlayer.playerId, '...')
-				const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
-				status.hasSubmittedAnswer = true
-				this.state.playerStatus.set(aiPlayer.playerId, status)
-				console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as submitted`)
-			}
-
 			// Start answer timeout timer
 			this.startAnswerTimeout()
 
 			// Trigger AI film title generation (async, don't await)
+			// AI players will be marked as submitted after their responses come back (with staggered delays)
 			console.log('[CinemaPippinGame] Triggering AI film title generation...')
 			void this.generateAIFilmTitles()
 		} else {
@@ -412,19 +403,6 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 						console.log(`  - Reset status for ${playerId}`)
 					}
 
-					// Pre-mark AI players as having submitted (before async generation)
-					// This ensures clients see AI players as "submitted" immediately
-					console.log('[CinemaPippinGame] Pre-marking AI player statuses...')
-					for (const aiPlayer of this.state.aiPlayers) {
-						// Add placeholder answer so auto-advance/timeout logic sees them as submitted
-						this.state.playerAnswers.set(aiPlayer.playerId, '...')
-
-						const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
-						status.hasSubmittedAnswer = true
-						this.state.playerStatus.set(aiPlayer.playerId, status)
-						console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as submitted`)
-					}
-
 					console.log('[CinemaPippinGame] Advanced to answer_collection')
 					console.log(
 						`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`
@@ -434,7 +412,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					this.startAnswerTimeout()
 
 					// Trigger AI answer generation (async, don't await)
-					// Answers will be populated asynchronously, but status is already marked
+					// AI players will be marked as submitted after their responses come back (with staggered delays)
 					console.log('[CinemaPippinGame] Triggering AI answer generation...')
 					void this.generateAIAnswers()
 				} else if (this.state.phase === 'voting_playback') {
@@ -801,11 +779,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			const aiAnswers = batchAnswers.slice(0, aiConstraints.length)
 			const houseAnswers = batchAnswers.slice(aiConstraints.length)
 
-			console.log(`[AI] Assigning ${aiAnswers.length} answers to AI players...`)
+			console.log(
+				`[AI] Assigning ${aiAnswers.length} answers to AI players with staggered delays...`
+			)
 
-			// Assign AI answers to AI players
-			this.state.aiPlayers.forEach((aiPlayer, index) => {
+			// Assign AI answers with staggered delays (like voting)
+			const assignmentPromises = this.state.aiPlayers.map(async (aiPlayer, index) => {
 				const answer = aiAnswers[index]
+
+				// Wait random delay (0-1500ms) before showing as "submitted"
+				const delay = Math.floor(Math.random() * 1500)
+				console.log(`[AI] Delaying ${aiPlayer.nickname} answer UI update by ${delay}ms`)
+				await new Promise((resolve) => setTimeout(resolve, delay))
+
+				// Assign answer
 				this.state.playerAnswers.set(aiPlayer.playerId, answer)
 
 				// Mark AI player as having submitted answer
@@ -816,7 +803,15 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				console.log(
 					`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${answer}" - Status marked: hasSubmittedAnswer=true`
 				)
+
+				// Trigger state update to broadcast this AI answer to clients
+				if (this.stateChangeCallback) {
+					this.stateChangeCallback()
+				}
 			})
+
+			// Wait for all AI assignments to complete
+			await Promise.all(assignmentPromises)
 
 			// Store house answers in queue
 			this.state.houseAnswerQueue = houseAnswers
@@ -916,11 +911,18 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			const aiTitles = batchTitles.slice(0, aiConstraints.length)
 			const houseTitles = batchTitles.slice(aiConstraints.length)
 
-			console.log(`[AI] Assigning ${aiTitles.length} titles to AI players...`)
+			console.log(`[AI] Assigning ${aiTitles.length} titles to AI players with staggered delays...`)
 
-			// Assign AI titles to AI players
-			this.state.aiPlayers.forEach((aiPlayer, index) => {
+			// Assign AI titles with staggered delays (like voting)
+			const assignmentPromises = this.state.aiPlayers.map(async (aiPlayer, index) => {
 				const title = aiTitles[index]
+
+				// Wait random delay (0-1500ms) before showing as "submitted"
+				const delay = Math.floor(Math.random() * 1500)
+				console.log(`[AI] Delaying ${aiPlayer.nickname} film title UI update by ${delay}ms`)
+				await new Promise((resolve) => setTimeout(resolve, delay))
+
+				// Assign title
 				this.state.playerAnswers.set(aiPlayer.playerId, title)
 
 				// Mark AI player as having submitted title
@@ -929,7 +931,15 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				this.state.playerStatus.set(aiPlayer.playerId, status)
 
 				console.log(`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${title}"`)
+
+				// Trigger state update to broadcast this AI title to clients
+				if (this.stateChangeCallback) {
+					this.stateChangeCallback()
+				}
 			})
+
+			// Wait for all AI assignments to complete
+			await Promise.all(assignmentPromises)
 
 			// Store house titles in queue
 			this.state.houseAnswerQueue = houseTitles
