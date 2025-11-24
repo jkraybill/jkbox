@@ -32,7 +32,7 @@ export function ScoreboardTransition({
 	pointsPerVote,
 	onComplete
 }: ScoreboardTransitionProps) {
-	// Convert to sorted array of player scores
+	// Convert to array of player scores in PREVIOUS round order (don't sort yet)
 	const [playerScores, setPlayerScores] = useState<PlayerScore[]>(() => {
 		return Array.from(currentScores.entries())
 			.map(([playerId, score]) => {
@@ -44,7 +44,7 @@ export function ScoreboardTransition({
 					isAnimating: false
 				}
 			})
-			.sort((a, b) => b.score - a.score)
+			.sort((a, b) => b.score - a.score) // Sort by PREVIOUS scores to show pre-round order
 	})
 
 	const [animationQueue, setAnimationQueue] = useState<string[]>([])
@@ -127,11 +127,10 @@ export function ScoreboardTransition({
 						key={entry.playerId}
 						style={{
 							...styles.scoreEntry,
-							...(index === 0 ? styles.firstPlace : {}),
 							...(entry.isAnimating ? styles.animating : {})
 						}}
 					>
-						<span style={styles.rank}>{index === 0 ? '👑' : `${index + 1}.`}</span>
+						<span style={styles.rank}>{index + 1}.</span>
 						<span style={styles.playerName}>{entry.nickname}</span>
 						<span style={styles.scoreValue}>{entry.score} pts</span>
 					</div>
@@ -177,10 +176,6 @@ const styles = {
 		color: '#fff',
 		transition: 'all 0.3s ease',
 		border: '2px solid transparent'
-	},
-	firstPlace: {
-		backgroundColor: 'rgba(255, 215, 0, 0.2)',
-		border: '2px solid #FFD700'
 	},
 	animating: {
 		backgroundColor: 'rgba(0, 255, 0, 0.3)',
