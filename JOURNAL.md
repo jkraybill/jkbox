@@ -252,6 +252,10 @@ Journal entries reference HC outcomes:
 
 [2025-11-15 03:30 UTC] Session 5✓. Fake Facts prompt optimization via iterative feedback. Reviewed 13 DB questions→identified failures (verb constraints, semantic violations, boring answers, cliches)→rebuilt prompts Δ. Upgraded Haiku→Sonnet 4.5 (12x cost, worth it). News of Weird scraper + new CLI tools. T:228/228✓. C:97c5a55 (recovered Session 6). Pattern: Manual quality review→distilled rules→forced sentence validation✓. JKLES: 10/10 (marble column impalement ACK joke).
 
+### Session Cont'd (2025-11-24)
+
+[2025-11-24 12:00 UTC] Cinema Pippin AI film titles✓. T:2✗→221✓. Batch generation prompt (3 act winners→titles). FinalMontage component, film voting UI. Test fix: AI placeholder pre-marking→expectations updated. Linting: PauseState type annotation (not just assertion)→ESLint happy. C:824fc07. Pattern: AI behavior change→test expectations need sync. Pre-commit hooks caught linting→proper fix better than bypass✓.
+
 ---
 
 ## Usage Notes
