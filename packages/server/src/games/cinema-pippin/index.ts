@@ -13,7 +13,7 @@ import type {
 	ControllerProps
 } from '@jkbox/shared'
 import { CinemaPippinGame } from './cinema-pippin'
-import { loadSRT, loadSRTWithKeywordReplacement, type Subtitle } from './srt-processor'
+import { loadSRT, loadSRTWithKeywordReplacement, mergeSRT, type Subtitle } from './srt-processor'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -137,10 +137,7 @@ class CinemaPippinModule implements PluggableGameModule {
 				}
 
 				// Merge winning answer into subtitles (replace blanks)
-				subtitles = subtitles.map((sub) => ({
-					...sub,
-					text: sub.text.replace(/_{2,}(\s+_{2,})*/g, winningAnswer)
-				}))
+				subtitles = mergeSRT(subtitles, winningAnswer)
 
 				// Convert filesystem path to web URL
 				const videoUrl = clip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')

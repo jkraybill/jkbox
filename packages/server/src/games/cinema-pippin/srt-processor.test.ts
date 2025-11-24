@@ -90,6 +90,23 @@ Line 3
 
 			expect(merged[0].text).toBe('I saw something weird yesterday.')
 		})
+
+		it('should handle blanks with single underscore in middle (regression test)', () => {
+			const subtitles = [
+				{
+					index: 1,
+					startTime: '00:00:15,160',
+					endTime: '00:00:19,280',
+					text: '____ _ ____ ____'
+				}
+			]
+
+			const merged = mergeSRT(subtitles, 'Notes of desperation.')
+
+			// Should replace entire blank pattern, not leave underscore in middle
+			expect(merged[0].text).toBe('Notes of desperation.')
+			expect(merged[0].text).not.toContain('_')
+		})
 	})
 
 	describe('replaceKeyword', () => {
