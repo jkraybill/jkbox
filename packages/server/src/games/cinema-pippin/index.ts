@@ -199,6 +199,12 @@ class CinemaPippinModule implements PluggableGameModule {
 
 		const enrichedState = this.enrichStateForClient()
 
+		// Check if game ended and should return to lobby
+		if (action.type === 'END_GAME_COMPLETE' && this.context) {
+			console.log('[CinemaPippinModule] Game complete, returning to lobby')
+			this.context.complete()
+		}
+
 		// Log playerStatus to debug AI status issue
 		if (
 			action.type === 'VIDEO_COMPLETE' ||

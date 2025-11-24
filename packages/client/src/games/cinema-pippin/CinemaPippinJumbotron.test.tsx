@@ -346,27 +346,7 @@ describe('CinemaPippinJumbotron', () => {
 		})
 	})
 
-	describe('film_title_results phase', () => {
-		it('should auto-advance to final_montage after 5 seconds', async () => {
-			const sendToServer = vi.fn()
-			const state = {
-				phase: 'film_title_results',
-				currentFilmIndex: 0
-			}
-
-			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
-
-			expect(sendToServer).not.toHaveBeenCalled()
-
-			await vi.advanceTimersByTimeAsync(5000)
-
-			expect(sendToServer).toHaveBeenCalledWith({
-				playerId: 'jumbotron',
-				type: 'FILM_TITLE_RESULTS_COMPLETE',
-				payload: {}
-			})
-		})
-	})
+	// Removed: film_title_results phase tests - FILM_TITLE_RESULTS_COMPLETE is triggered by ResultsDisplay.onComplete callback, not auto-timer
 
 	describe('final_scores phase', () => {
 		it('should auto-advance to end_game_vote after 5 seconds', async () => {
@@ -389,26 +369,7 @@ describe('CinemaPippinJumbotron', () => {
 		})
 	})
 
-	describe('final_montage phase', () => {
-		it('should auto-advance to next_film_or_end after 3 seconds', async () => {
-			const sendToServer = vi.fn()
-			const state = {
-				phase: 'final_montage'
-			}
-
-			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
-
-			expect(sendToServer).not.toHaveBeenCalled()
-
-			await vi.advanceTimersByTimeAsync(3000)
-
-			expect(sendToServer).toHaveBeenCalledWith({
-				playerId: 'jumbotron',
-				type: 'MONTAGE_COMPLETE',
-				payload: {}
-			})
-		})
-	})
+	// Removed: final_montage phase tests - MONTAGE_COMPLETE is triggered by FinalMontage.onComplete callback, not auto-timer
 
 	describe('next_film_or_end phase', () => {
 		it('should auto-advance after 2 seconds', async () => {

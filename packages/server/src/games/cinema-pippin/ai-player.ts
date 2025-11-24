@@ -189,9 +189,15 @@ function buildSrtContext(
 
 	// Add previous clips with merged answers
 	for (const prevClip of previousClipSrts) {
-		// Process SRT and replace [keyword] with winning answer
+		// Process SRT
 		const processed = processSrtText(prevClip.srtText)
-		const mergedText = processed.replace(/\[keyword\]/gi, prevClip.keyword)
+
+		// Replace [keyword] with C1 winner (keyword field)
+		let mergedText = processed.replace(/\[keyword\]/gi, prevClip.keyword)
+
+		// Replace blanks (groups of underscores) with this clip's winning answer
+		// Pattern matches: "_____" or "____ ____" etc.
+		mergedText = mergedText.replace(/_{3,}(?:\s+_{3,})*/g, prevClip.winningAnswer)
 
 		// Re-number subtitles
 		const lines = mergedText.split('\n')
@@ -209,8 +215,10 @@ function buildSrtContext(
 		allSegments.push(renumbered.join('\n'))
 	}
 
-	// Add current clip with [keyword] placeholder or merged keyword
+	// Add current clip with [keyword] replaced with C1 winner, blanks stay as blanks
 	const currentProcessed = processSrtText(currentSrtText)
+
+	// Replace [keyword] with C1 winner, leave blanks as-is
 	const currentMerged = currentProcessed.replace(/\[keyword\]/gi, currentKeyword)
 
 	// Re-number current clip subtitles

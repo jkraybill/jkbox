@@ -202,6 +202,23 @@ export function CinemaPippinJumbotron({
 		return () => clearTimeout(timer)
 	}, [gameState.phase, sendToServer])
 
+	// Auto-return to lobby from end_game_vote after 5 seconds
+	useEffect(() => {
+		if (gameState.phase !== 'end_game_vote') {
+			return
+		}
+
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'END_GAME_COMPLETE',
+				payload: {}
+			})
+		}, 5000)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, sendToServer])
+
 	// Final montage auto-advance is handled by FinalMontage component's onComplete callback
 	// (no timer needed here - plays all 3 clips sequentially)
 
@@ -439,18 +456,59 @@ export function CinemaPippinJumbotron({
 				)
 
 			case 'final_scores':
+				if (gameState.scores) {
+					// Convert scores Map/Object to sorted array
+					const scoresEntries = gameState.scores as Record<string, number> | Map<string, number>
+					const scoresArray =
+						scoresEntries instanceof Map
+							? Array.from(scoresEntries.entries())
+							: Object.entries(scoresEntries)
+
+					const sortedScores = scoresArray
+						.map(([playerId, score]) => {
+							const player = players.find((p) => p.id === playerId)
+							return {
+								playerId,
+								nickname: player?.nickname || 'Unknown',
+								score: score
+							}
+						})
+						.sort((a, b) => b.score - a.score) // Sort descending
+
+					return (
+						<div style={styles.container}>
+							<h1 style={styles.title}>🏆 Final Scores 🏆</h1>
+							<div style={styles.scoresContainer}>
+								{sortedScores.map((entry, index) => (
+									<div
+										key={entry.playerId}
+										style={{
+											...styles.scoreEntry,
+											...(index === 0 ? styles.winnerEntry : {})
+										}}
+									>
+										<span style={styles.rank}>{index === 0 ? '👑' : `${index + 1}.`}</span>
+										<span style={styles.playerName}>{entry.nickname}</span>
+										<span style={styles.scoreValue}>{entry.score} pts</span>
+									</div>
+								))}
+							</div>
+							<p style={styles.subtitle}>Thanks for playing!</p>
+						</div>
+					)
+				}
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Final Scores</h1>
-						<p style={styles.subtitle}>Game complete!</p>
+						<p style={styles.subtitle}>Calculating final scores...</p>
 					</div>
 				)
 
 			case 'end_game_vote':
 				return (
 					<div style={styles.container}>
-						<h1 style={styles.title}>Play Again?</h1>
-						<p style={styles.subtitle}>Vote to return to lobby or play another round</p>
+						<h1 style={styles.title}>Game Complete!</h1>
+						<p style={styles.subtitle}>Returning to lobby...</p>
 					</div>
 				)
 
@@ -518,5 +576,48 @@ const styles = {
 		fontSize: '20px',
 		flex: 1,
 		textAlign: 'left' as const
+	},
+	scoresContainer: {
+		display: 'flex',
+		flexDirection: 'column' as const,
+		gap: '20px',
+		padding: '40px',
+		maxWidth: '600px',
+		margin: '0 auto'
+	},
+	scoreEntry: {
+		display: 'flex',
+		alignItems: 'center',
+		gap: '20px',
+		backgroundColor: '#1a1a1a',
+		border: '2px solid #333',
+		borderRadius: '12px',
+		padding: '20px 30px',
+		fontSize: '24px',
+		transition: 'all 0.3s ease'
+	},
+	winnerEntry: {
+		backgroundColor: '#2a2a1a',
+		border: '3px solid #FFD700',
+		boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
+		fontSize: '28px'
+	},
+	rank: {
+		fontSize: '32px',
+		fontWeight: 'bold' as const,
+		minWidth: '50px',
+		textAlign: 'center' as const
+	},
+	playerName: {
+		flex: 1,
+		fontWeight: 'bold' as const,
+		textAlign: 'left' as const
+	},
+	scoreValue: {
+		fontSize: '28px',
+		fontWeight: 'bold' as const,
+		color: '#4CAF50',
+		minWidth: '100px',
+		textAlign: 'right' as const
 	}
 }

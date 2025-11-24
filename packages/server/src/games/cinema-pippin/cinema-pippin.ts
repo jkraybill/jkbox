@@ -428,6 +428,15 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					console.log('[CinemaPippinGame] Triggering AI answer generation...')
 					void this.generateAIAnswers()
 				} else if (this.state.phase === 'voting_playback') {
+					// Guard against empty allAnswers (skip voting if no answers)
+					if (this.state.allAnswers.length === 0) {
+						console.error('[CinemaPippinGame] ERROR: No answers to vote on! Skipping voting phase.')
+						// Skip to results with empty state
+						this.state.phase = 'results_display'
+						// No results to calculate if no answers
+						break
+					}
+
 					// Advance to next answer or move to voting_collection
 					this.state.currentAnswerIndex++
 					if (this.state.currentAnswerIndex >= this.state.allAnswers.length) {
@@ -687,6 +696,14 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				}
 				break
 
+			case 'END_GAME_COMPLETE':
+				if (this.state.phase === 'end_game_vote') {
+					// Module layer will call context.complete() to return to lobby
+					console.log('[CinemaPippinGame] End game complete, module will handle lobby transition')
+					// No phase change needed - module calls context.complete()
+				}
+				break
+
 			case 'MONTAGE_COMPLETE':
 				if (this.state.phase === 'final_montage') {
 					this.state.phase = 'next_film_or_end'
@@ -724,18 +741,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		const previousClips: Array<{ srtText: string; winningAnswer: string; keyword: string }> = []
 		const currentFilm = this.getCurrentFilm()
 
+		// C1 winner is always the "keyword" used in [keyword] placeholders
+		const c1Winner = this.state.clipWinners[0] || ''
+
 		for (let i = 0; i < this.state.currentClipIndex; i++) {
 			const prevClip = currentFilm.clips[i]
 			if (!prevClip) continue
 
 			const prevSrt = fs.readFileSync(prevClip.srtPath, 'utf-8')
 			const prevWinningAnswer = this.state.clipWinners[i] || ''
-			const prevKeyword = this.state.keywords[0] || 'blank'
 
 			previousClips.push({
 				srtText: prevSrt,
 				winningAnswer: prevWinningAnswer,
-				keyword: prevKeyword
+				keyword: c1Winner // Always use C1 winner for [keyword] replacement
 			})
 		}
 
@@ -1179,6 +1198,16 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	 */
 	private handleAnswerTimeout(): void {
 		console.log('[CinemaPippinGame] Answer timeout expired')
+		console.log('[CinemaPippinGame] scores.size:', this.state.scores.size)
+		console.log(
+			'[CinemaPippinGame] playerAnswers.size BEFORE timeout:',
+			this.state.playerAnswers.size
+		)
+		console.log(
+			'[CinemaPippinGame] playerAnswers BEFORE:',
+			Array.from(this.state.playerAnswers.entries())
+		)
+		console.log('[CinemaPippinGame] houseAnswerQueue.length:', this.state.houseAnswerQueue.length)
 
 		// Find players who haven't submitted
 		const nonSubmitters: string[] = []
@@ -1208,6 +1237,15 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			}
 		}
 
+		console.log(
+			'[CinemaPippinGame] playerAnswers.size AFTER timeout:',
+			this.state.playerAnswers.size
+		)
+		console.log(
+			'[CinemaPippinGame] playerAnswers AFTER:',
+			Array.from(this.state.playerAnswers.entries())
+		)
+
 		// Advance to voting playback
 		this.advanceToVotingPlayback()
 	}
@@ -1220,6 +1258,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Clear votes from previous clip
 		this.clearVotes()
 		console.log('[CinemaPippinGame] Cleared votes and allAnswers for new voting round')
+
+		console.log('[CinemaPippinGame] playerAnswers.size:', this.state.playerAnswers.size)
+		console.log('[CinemaPippinGame] playerAnswers:', Array.from(this.state.playerAnswers.entries()))
+
+		// Guard against empty playerAnswers
+		if (this.state.playerAnswers.size === 0) {
+			console.error('[CinemaPippinGame] ERROR: No player answers to create voting round from!')
+			console.error('[CinemaPippinGame] Current phase:', this.state.phase)
+			console.error('[CinemaPippinGame] scores.size:', this.state.scores.size)
+			console.error('[CinemaPippinGame] aiPlayers.length:', this.state.aiPlayers.length)
+			// This is a critical bug - we should not be here with 0 answers
+			// Skip voting entirely and go to next clip
+			this.state.phase = 'results_display'
+			// No results to calculate with 0 answers
+			return
+		}
 
 		// Prepare answers for voting
 		const answers: typeof this.state.allAnswers = []

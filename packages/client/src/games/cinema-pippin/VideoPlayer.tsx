@@ -52,6 +52,31 @@ export function VideoPlayer({
 	const [showPreRoll, setShowPreRoll] = useState(!!preRollText)
 	const previousPausedRef = useRef<boolean>(isPaused)
 
+	// Explicitly play video on mount (handles autoplay more reliably)
+	useEffect(() => {
+		const video = videoRef.current
+		if (!video) return
+
+		// Start muted to ensure autoplay works, then unmute immediately
+		video.muted = true
+
+		// Attempt to play the video
+		const playPromise = video.play()
+		if (playPromise !== undefined) {
+			playPromise
+				.then(() => {
+					// Unmute after successful autoplay
+					video.muted = false
+					console.log('[VideoPlayer] Autoplay started successfully and unmuted')
+				})
+				.catch((error) => {
+					console.error('[VideoPlayer] Autoplay failed:', error)
+					// Try to unmute anyway - with Chrome flag this shouldn't happen
+					video.muted = false
+				})
+		}
+	}, [videoUrl])
+
 	// Fade in on mount
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -136,6 +161,8 @@ export function VideoPlayer({
 				onTimeUpdate={handleTimeUpdate}
 				onEnded={handleEnded}
 				autoPlay
+				playsInline
+				preload="auto"
 				style={{
 					width: '100%',
 					height: 'calc(100% - 4em)',
