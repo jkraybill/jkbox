@@ -169,7 +169,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 	/**
 	 * Calculate winner from votes
-	 * Tie-breaking rules: most votes > human beats AI > random selection for tied humans
+	 * Tie-breaking rules:
+	 * 1. If all same type (all human OR all AI) → random from all
+	 * 2. If single human + bots → human wins
+	 * 3. If multiple humans + bots → random from humans only
 	 */
 	calculateWinner(): (typeof this.state.allAnswers)[number] | null {
 		if (this.state.allAnswers.length === 0) {
@@ -203,15 +206,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			return topAnswers[0]
 		}
 
-		// Tie-breaking: human answers beat AI answers
+		// Tie-breaking logic
 		const humanAnswers = topAnswers.filter((a) => a.authorId !== 'house')
-		if (humanAnswers.length > 0 && humanAnswers.length < topAnswers.length) {
-			// There are humans and AI tied - pick random human
-			return humanAnswers[Math.floor(Math.random() * humanAnswers.length)]
+		const aiAnswers = topAnswers.filter((a) => a.authorId === 'house')
+
+		// Case 1: All same type (all human OR all AI) → random from all
+		if (humanAnswers.length === 0 || aiAnswers.length === 0) {
+			return topAnswers[Math.floor(Math.random() * topAnswers.length)]
 		}
 
-		// All tied answers are same type (all human or all AI) - random selection
-		return topAnswers[Math.floor(Math.random() * topAnswers.length)]
+		// Case 2: Single human + bots → human wins
+		if (humanAnswers.length === 1) {
+			return humanAnswers[0]
+		}
+
+		// Case 3: Multiple humans + bots → random from humans only
+		return humanAnswers[Math.floor(Math.random() * humanAnswers.length)]
 	}
 
 	/**

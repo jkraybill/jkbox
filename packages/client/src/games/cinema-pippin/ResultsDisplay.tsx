@@ -247,10 +247,6 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 					</>
 				)}
 			</div>
-
-			<div style={styles.progress}>
-				{currentIndex + 1} / {sortedResults.length}
-			</div>
 		</div>
 	)
 }
