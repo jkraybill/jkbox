@@ -10,6 +10,7 @@ import type { Subtitle } from './VideoPlayer'
 import { ResultsDisplay } from './ResultsDisplay'
 import { FinalMontage } from './FinalMontage'
 import { ScoreboardTransition } from './ScoreboardTransition'
+import { AutoplayWarning } from './AutoplayWarning'
 
 interface Answer {
 	id: string
@@ -573,7 +574,12 @@ export function CinemaPippinJumbotron({
 		}
 	}
 
-	return <div style={styles.fullscreen}>{renderPhaseContent()}</div>
+	return (
+		<div style={styles.fullscreen}>
+			<AutoplayWarning />
+			{renderPhaseContent()}
+		</div>
+	)
 }
 
 const styles = {
