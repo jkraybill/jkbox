@@ -397,7 +397,7 @@ export function CinemaPippinJumbotron({
 						voteCountsMap = new Map(Object.entries(gameState.voteCountsThisRound))
 					}
 
-					const pointsPerVote = gameState.currentFilmIndex
+					const pointsPerVote = gameState.currentFilmIndex + 1
 
 					return (
 						<ScoreboardTransition
