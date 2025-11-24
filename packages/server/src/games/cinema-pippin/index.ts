@@ -157,6 +157,8 @@ class CinemaPippinModule implements PluggableGameModule {
 			playerAnswers: Object.fromEntries(rawState.playerAnswers),
 			votes: Object.fromEntries(rawState.votes),
 			scores: Object.fromEntries(rawState.scores),
+			scoresBeforeRound: Object.fromEntries(rawState.scoresBeforeRound),
+			voteCountsThisRound: Object.fromEntries(rawState.voteCountsThisRound),
 			endGameVotes: Object.fromEntries(rawState.endGameVotes),
 			playerStatus: Object.fromEntries(rawState.playerStatus),
 			playerErrors: Object.fromEntries(rawState.playerErrors),
