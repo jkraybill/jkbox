@@ -57,23 +57,38 @@ export function VideoPlayer({
 		const video = videoRef.current
 		if (!video) return
 
-		// Start muted to ensure autoplay works, then unmute immediately
+		// Start muted to ensure autoplay works
 		video.muted = true
 
-		// Attempt to play the video
-		const playPromise = video.play()
-		if (playPromise !== undefined) {
-			playPromise
-				.then(() => {
-					// Unmute after successful autoplay
-					video.muted = false
-					console.log('[VideoPlayer] Autoplay started successfully and unmuted')
-				})
-				.catch((error) => {
-					console.error('[VideoPlayer] Autoplay failed:', error)
-					// Try to unmute anyway - with Chrome flag this shouldn't happen
-					video.muted = false
-				})
+		// Wait for video to have enough data before attempting to play
+		const attemptPlay = () => {
+			const playPromise = video.play()
+			if (playPromise !== undefined) {
+				playPromise
+					.then(() => {
+						// Unmute after successful autoplay
+						video.muted = false
+						console.log('[VideoPlayer] Autoplay started successfully and unmuted')
+					})
+					.catch((error) => {
+						console.error('[VideoPlayer] Autoplay failed:', error)
+						// Try to unmute anyway - with Chrome flag this shouldn't happen
+						video.muted = false
+					})
+			}
+		}
+
+		// If video already has enough data, play immediately
+		if (video.readyState >= 3) {
+			// HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
+			attemptPlay()
+		} else {
+			// Otherwise wait for canplaythrough event
+			video.addEventListener('canplaythrough', attemptPlay, { once: true })
+		}
+
+		return () => {
+			video.removeEventListener('canplaythrough', attemptPlay)
 		}
 	}, [videoUrl])
 
