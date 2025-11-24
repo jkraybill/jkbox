@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'fs'
 import { replaceKeywordPreservingCasing } from './casing-utils'
-import { replaceBlankedText } from '@jkbox/cinema-pippin'
+import { replaceBlankedText, splitLongLine } from '@jkbox/cinema-pippin'
 
 export interface Subtitle {
 	index: number
@@ -35,11 +35,14 @@ export function parseSRT(srtContent: string): Subtitle[] {
 
 		const text = lines.slice(2).join('\n')
 
+		// Split long lines (>60 chars) for better subtitle display
+		const processedText = splitLongLine(text)
+
 		subtitles.push({
 			index,
 			startTime,
 			endTime,
-			text
+			text: processedText
 		})
 	}
 
@@ -54,9 +57,9 @@ export function parseSRT(srtContent: string): Subtitle[] {
  */
 export function mergeSRT(subtitles: Subtitle[], answer: string): Subtitle[] {
 	// Convert subtitles to SRT text format
-	const srtText = subtitles.map((sub) =>
-		`${sub.index}\n${sub.startTime} --> ${sub.endTime}\n${sub.text}`
-	).join('\n\n')
+	const srtText = subtitles
+		.map((sub) => `${sub.index}\n${sub.startTime} --> ${sub.endTime}\n${sub.text}`)
+		.join('\n\n')
 
 	// Replace blanks with answer (handles line splitting automatically)
 	const replacedText = replaceBlankedText(srtText, answer)
