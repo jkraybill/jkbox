@@ -11,6 +11,7 @@ import { ResultsDisplay } from './ResultsDisplay'
 import { FinalMontage } from './FinalMontage'
 import { ScoreboardTransition } from './ScoreboardTransition'
 import { AutoplayWarning } from './AutoplayWarning'
+import { FilmCountdown } from './FilmCountdown'
 
 interface Answer {
 	id: string
@@ -150,39 +151,11 @@ export function CinemaPippinJumbotron({
 	const typedPauseState: PauseState | undefined = pauseState
 	const isPaused: boolean = typedPauseState ? typedPauseState.isPaused : false
 
-	// Auto-advance from film_select to clip_intro after 2 seconds
-	useEffect(() => {
-		if (gameState.phase !== 'film_select') {
-			return
-		}
+	// Auto-advance from film_select handled by FilmCountdown component
+	// (5 second countdown, or longer if prep tasks take longer)
 
-		const timer = setTimeout(() => {
-			sendToServer({
-				playerId: 'jumbotron',
-				type: 'FILM_SELECT_COMPLETE',
-				payload: {}
-			})
-		}, 2000) // 2 second delay to show "Selecting films..."
-
-		return () => clearTimeout(timer)
-	}, [gameState.phase, sendToServer])
-
-	// Auto-advance from clip_intro to clip_playback after 3 seconds
-	useEffect(() => {
-		if (gameState.phase !== 'clip_intro') {
-			return
-		}
-
-		const timer = setTimeout(() => {
-			sendToServer({
-				playerId: 'jumbotron',
-				type: 'INTRO_COMPLETE',
-				payload: {}
-			})
-		}, 3000) // 3 second intro delay
-
-		return () => clearTimeout(timer)
-	}, [gameState.phase, sendToServer])
+	// Auto-advance from clip_intro handled by FilmCountdown component
+	// (5 second countdown, or longer if prep tasks take longer)
 
 	// Results display auto-advance is handled by ResultsDisplay component's onComplete callback
 	// (no timer needed here - variable duration based on number of answers/voters)
@@ -260,18 +233,30 @@ export function CinemaPippinJumbotron({
 		switch (gameState.phase) {
 			case 'film_select':
 				return (
-					<div style={styles.container}>
-						<h1 style={styles.title}>Cinema Pippin</h1>
-						<p style={styles.subtitle}>Selecting films...</p>
-					</div>
+					<FilmCountdown
+						duration={5000}
+						onComplete={() => {
+							sendToServer({
+								playerId: 'jumbotron',
+								type: 'FILM_SELECT_COMPLETE',
+								payload: {}
+							})
+						}}
+					/>
 				)
 
 			case 'clip_intro':
 				return (
-					<div style={styles.container}>
-						<h1 style={styles.title}>Get Ready!</h1>
-						<p style={styles.subtitle}>Next clip starting soon...</p>
-					</div>
+					<FilmCountdown
+						duration={5000}
+						onComplete={() => {
+							sendToServer({
+								playerId: 'jumbotron',
+								type: 'INTRO_COMPLETE',
+								payload: {}
+							})
+						}}
+					/>
 				)
 
 			case 'clip_playback':

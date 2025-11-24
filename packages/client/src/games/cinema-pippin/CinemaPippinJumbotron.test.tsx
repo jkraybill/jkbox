@@ -17,7 +17,7 @@ describe('CinemaPippinJumbotron', () => {
 	})
 
 	describe('film_select phase', () => {
-		it('should auto-advance to clip_intro after 2 seconds', async () => {
+		it('should auto-advance to clip_intro after 5 seconds (countdown)', async () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'film_select',
@@ -29,8 +29,8 @@ describe('CinemaPippinJumbotron', () => {
 			// Should not send immediately
 			expect(sendToServer).not.toHaveBeenCalled()
 
-			// Fast-forward 2 seconds
-			await vi.advanceTimersByTimeAsync(2000)
+			// Fast-forward 6 seconds (5s countdown + 1s final interval)
+			await vi.advanceTimersByTimeAsync(6000)
 
 			// Should send FILM_SELECT_COMPLETE event
 			expect(sendToServer).toHaveBeenCalledWith({
@@ -42,7 +42,7 @@ describe('CinemaPippinJumbotron', () => {
 	})
 
 	describe('clip_intro phase', () => {
-		it('should auto-advance to clip_playback after 3 seconds', async () => {
+		it('should auto-advance to clip_playback after 5 seconds (countdown)', async () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'clip_intro',
@@ -59,8 +59,8 @@ describe('CinemaPippinJumbotron', () => {
 			// Should not send immediately
 			expect(sendToServer).not.toHaveBeenCalled()
 
-			// Fast-forward 3 seconds
-			await vi.advanceTimersByTimeAsync(3000)
+			// Fast-forward 6 seconds (5s countdown + 1s final interval)
+			await vi.advanceTimersByTimeAsync(6000)
 
 			// Should send INTRO_COMPLETE event
 			expect(sendToServer).toHaveBeenCalledWith({
