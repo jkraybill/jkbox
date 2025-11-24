@@ -8,6 +8,7 @@ import type { JumbotronProps, Player, PauseState } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
 import { ResultsDisplay } from './ResultsDisplay'
+import { FinalMontage } from './FinalMontage'
 
 interface Answer {
 	id: string
@@ -35,9 +36,16 @@ interface CinemaPippinGameState {
 		videoUrl: string
 		subtitles: Subtitle[]
 	}
+	allAnswers?: Answer[]
 	sortedResults?: ResultEntry[]
 	scores?: Record<string, number>
 	playerStatus?: Record<string, PlayerStatus>
+	filmTitle?: string
+	montageClips?: Array<{
+		clipNumber: 1 | 2 | 3
+		videoUrl: string
+		subtitles: Subtitle[]
+	}>
 }
 
 // Helper component to display player status
@@ -134,7 +142,7 @@ export function CinemaPippinJumbotron({
 	pauseState
 }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
-	const typedPauseState = pauseState as PauseState | undefined
+	const typedPauseState: PauseState | undefined = pauseState
 	const isPaused: boolean = typedPauseState ? typedPauseState.isPaused : false
 
 	// Auto-advance from film_select to clip_intro after 2 seconds
@@ -171,39 +179,11 @@ export function CinemaPippinJumbotron({
 		return () => clearTimeout(timer)
 	}, [gameState.phase, sendToServer])
 
-	// Auto-advance from results_display after 5 seconds
-	useEffect(() => {
-		if (gameState.phase !== 'results_display') {
-			return
-		}
+	// Results display auto-advance is handled by ResultsDisplay component's onComplete callback
+	// (no timer needed here - variable duration based on number of answers/voters)
 
-		const timer = setTimeout(() => {
-			sendToServer({
-				playerId: 'jumbotron',
-				type: 'RESULTS_COMPLETE',
-				payload: {}
-			})
-		}, 5000)
-
-		return () => clearTimeout(timer)
-	}, [gameState.phase, sendToServer])
-
-	// Auto-advance from film_title_results after 5 seconds
-	useEffect(() => {
-		if (gameState.phase !== 'film_title_results') {
-			return
-		}
-
-		const timer = setTimeout(() => {
-			sendToServer({
-				playerId: 'jumbotron',
-				type: 'FILM_TITLE_RESULTS_COMPLETE',
-				payload: {}
-			})
-		}, 5000)
-
-		return () => clearTimeout(timer)
-	}, [gameState.phase, sendToServer])
+	// Film title results auto-advance is handled by ResultsDisplay component's onComplete callback
+	// (no timer needed here - variable duration based on number of titles/voters)
 
 	// Auto-advance from final_scores after 5 seconds
 	useEffect(() => {
@@ -222,22 +202,8 @@ export function CinemaPippinJumbotron({
 		return () => clearTimeout(timer)
 	}, [gameState.phase, sendToServer])
 
-	// Auto-advance from final_montage after 3 seconds
-	useEffect(() => {
-		if (gameState.phase !== 'final_montage') {
-			return
-		}
-
-		const timer = setTimeout(() => {
-			sendToServer({
-				playerId: 'jumbotron',
-				type: 'MONTAGE_COMPLETE',
-				payload: {}
-			})
-		}, 3000)
-
-		return () => clearTimeout(timer)
-	}, [gameState.phase, sendToServer])
+	// Final montage auto-advance is handled by FinalMontage component's onComplete callback
+	// (no timer needed here - plays all 3 clips sequentially)
 
 	// Auto-advance from next_film_or_end after 2 seconds
 	useEffect(() => {
@@ -371,8 +337,11 @@ export function CinemaPippinJumbotron({
 							scores={gameState.scores}
 							players={players}
 							onComplete={() => {
-								// Results animation complete, no action needed
-								// Auto-advance will be handled by timer
+								sendToServer({
+									playerId: 'jumbotron',
+									type: 'RESULTS_COMPLETE',
+									payload: {}
+								})
 							}}
 						/>
 					)
@@ -387,32 +356,78 @@ export function CinemaPippinJumbotron({
 			case 'film_title_collection':
 				return (
 					<div style={styles.container}>
-						<h1 style={styles.title}>Name This Film!</h1>
-						<p style={styles.subtitle}>Players are creating titles...</p>
+						<h1 style={styles.title}>Create a title for this movie!</h1>
+						<p style={styles.subtitle}>Players are submitting film titles...</p>
 					</div>
 				)
 
 			case 'film_title_voting':
+				if (gameState.allAnswers && gameState.allAnswers.length > 0) {
+					return (
+						<div style={styles.container}>
+							<h1 style={styles.title}>Vote for Best Title!</h1>
+							<div style={styles.answersGrid}>
+								{gameState.allAnswers.map((answer, index) => (
+									<div key={answer.id} style={styles.answerCard}>
+										<div style={styles.answerNumber}>{index + 1}</div>
+										<div style={styles.answerText}>"{answer.text}"</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)
+				}
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Vote for Best Title!</h1>
-						<p style={styles.subtitle}>Choose the funniest film title...</p>
+						<p style={styles.subtitle}>Loading titles...</p>
 					</div>
 				)
 
 			case 'film_title_results':
+				if (gameState.sortedResults && gameState.scores) {
+					return (
+						<ResultsDisplay
+							sortedResults={gameState.sortedResults}
+							scores={gameState.scores}
+							players={players}
+							onComplete={() => {
+								sendToServer({
+									playerId: 'jumbotron',
+									type: 'FILM_TITLE_RESULTS_COMPLETE',
+									payload: {}
+								})
+							}}
+						/>
+					)
+				}
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Film Title Winner!</h1>
-						<p style={styles.subtitle}>Results coming up...</p>
+						<p style={styles.subtitle}>Calculating votes...</p>
 					</div>
 				)
 
 			case 'final_montage':
+				if (gameState.montageClips && gameState.filmTitle) {
+					return (
+						<FinalMontage
+							filmTitle={gameState.filmTitle}
+							clips={gameState.montageClips}
+							onComplete={() => {
+								sendToServer({
+									playerId: 'jumbotron',
+									type: 'MONTAGE_COMPLETE',
+									payload: {}
+								})
+							}}
+						/>
+					)
+				}
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Final Montage</h1>
-						<p style={styles.subtitle}>Enjoy the highlights!</p>
+						<p style={styles.subtitle}>Loading clips...</p>
 					</div>
 				)
 
@@ -475,5 +490,33 @@ const styles = {
 	subtitle: {
 		fontSize: '24px',
 		opacity: 0.8
+	},
+	answersGrid: {
+		display: 'grid',
+		gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+		gap: '20px',
+		padding: '20px',
+		maxWidth: '1200px',
+		width: '100%'
+	},
+	answerCard: {
+		backgroundColor: '#1a1a1a',
+		border: '2px solid #333',
+		borderRadius: '8px',
+		padding: '20px',
+		display: 'flex',
+		alignItems: 'center',
+		gap: '15px'
+	},
+	answerNumber: {
+		fontSize: '32px',
+		fontWeight: 'bold' as const,
+		color: '#4CAF50',
+		minWidth: '40px'
+	},
+	answerText: {
+		fontSize: '20px',
+		flex: 1,
+		textAlign: 'left' as const
 	}
 }

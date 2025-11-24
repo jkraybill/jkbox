@@ -336,7 +336,7 @@ export async function generateBatchAnswers(
 			})
 
 			// Using Claude 3.5 Sonnet - excellent quality for party game punchlines
-			const message = await anthropic.messages.create({
+			const message: Anthropic.Message = await anthropic.messages.create({
 				model: claudeModel,
 				max_tokens: isC1 ? 256 : 1024,
 				temperature: config.temperature,
@@ -358,14 +358,14 @@ export async function generateBatchAnswers(
 			// Calculate cost and log the response
 			const { cost, inputCost, outputCost } = calculateClaudeCost(
 				claudeModel,
-				message.usage.input_tokens,
-				message.usage.output_tokens
+				message.usage?.input_tokens ?? 0,
+				message.usage?.output_tokens ?? 0
 			)
 			logAIConversation('response', rawResponse, {
 				model: claudeModel,
-				inputTokens: message.usage.input_tokens,
-				outputTokens: message.usage.output_tokens,
-				totalTokens: message.usage.input_tokens + message.usage.output_tokens,
+				inputTokens: message.usage?.input_tokens ?? 0,
+				outputTokens: message.usage?.output_tokens ?? 0,
+				totalTokens: message.usage?.input_tokens ?? 0 + message.usage?.output_tokens ?? 0,
 				cost: `$${cost.toFixed(6)}`,
 				costBreakdown: {
 					input: `$${inputCost.toFixed(6)}`,
@@ -429,6 +429,181 @@ export async function generateBatchAnswers(
 		return cleanedAnswers
 	} catch (error) {
 		console.error('[Batch Answer Generation] Failed:', error)
+		throw error
+	}
+}
+
+/**
+ * Generate batch film titles (X AI + N house) given the 3 winning clip answers
+ * Returns array of X+N film titles in randomized order
+ */
+export async function generateBatchFilmTitles(
+	config: AIConfig,
+	act1Winner: string,
+	act2Winner: string,
+	act3Winner: string,
+	aiConstraints: string[], // AI player constraints
+	additionalCount: number // Number of additional house titles to generate
+): Promise<string[]> {
+	// Build constraint list: AI constraints + random unique constraints
+	const allConstraints = loadConstraints()
+	const availableForHouse = allConstraints.filter((c) => !aiConstraints.includes(c))
+	const shuffled = shuffleConstraints(availableForHouse)
+	const houseConstraints = shuffled.slice(0, additionalCount)
+
+	// Combine and randomize
+	const combinedConstraints = [...aiConstraints, ...houseConstraints]
+	const randomizedConstraints = shuffleConstraints(combinedConstraints)
+
+	// Extract constraint titles (part before " -- ")
+	const getConstraintTitle = (constraint: string): string => {
+		const match = constraint.match(/^([^-]+)\s*--/)
+		return match ? match[1].trim() : constraint.split(/\s+/)[0]
+	}
+
+	const constraint1 = randomizedConstraints[0]
+		? getConstraintTitle(randomizedConstraints[0] ?? '')
+		: ''
+	const constraint2 = randomizedConstraints[1]
+		? getConstraintTitle(randomizedConstraints[1] ?? '')
+		: ''
+	const constraint3 = randomizedConstraints[2]
+		? getConstraintTitle(randomizedConstraints[2] ?? '')
+		: ''
+
+	// Load prompts
+	const systemPrompt = fs.readFileSync(
+		path.join(__dirname, 'prompts', 'batch-generation-system.md'),
+		'utf-8'
+	)
+	const userPromptTemplate = fs.readFileSync(
+		path.join(__dirname, 'prompts', 'batch-generation-user-film-title.md'),
+		'utf-8'
+	)
+
+	// Build constraint list for system prompt
+	const constraintList = randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
+
+	// Replace placeholders in system prompt
+	const systemMessage = systemPrompt.replace('{{CONSTRAINTS}}', constraintList)
+
+	// Replace placeholders in user prompt
+	const userMessage = userPromptTemplate
+		.replace(/\{\{NUM_CONSTRAINTS\}\}/g, String(randomizedConstraints.length))
+		.replace(/\{\{ACT1_WINNER\}\}/g, act1Winner)
+		.replace(/\{\{ACT2_WINNER\}\}/g, act2Winner)
+		.replace(/\{\{ACT3_WINNER\}\}/g, act3Winner)
+		.replace(/\{\{CONSTRAINT_1\}\}/g, constraint1)
+		.replace(/\{\{CONSTRAINT_2\}\}/g, constraint2)
+		.replace(/\{\{CONSTRAINT_3\}\}/g, constraint3)
+
+	console.log(`[Film Title Generation] Generating ${randomizedConstraints.length} film titles`)
+	console.log(
+		`[Film Title Generation] Act winners: "${act1Winner}", "${act2Winner}", "${act3Winner}"`
+	)
+
+	logAIConversation('system', systemMessage)
+	logAIConversation('user', userMessage)
+
+	// Call LLM to generate film titles
+	let rawResponse: string
+	try {
+		if (config.ollamaEndpoint) {
+			// Use Ollama
+			const response = await fetch(`${config.ollamaEndpoint}/api/chat`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					model: config.model,
+					messages: [
+						{ role: 'system', content: systemMessage },
+						{ role: 'user', content: userMessage }
+					],
+					stream: false,
+					options: {
+						temperature: config.temperature
+					}
+				})
+			})
+
+			if (!response.ok) {
+				throw new Error(`Ollama API error: ${response.statusText}`)
+			}
+
+			const data = (await response.json()) as { message: { content: string } }
+			rawResponse = data.message.content
+
+			logAIConversation('response', rawResponse, { model: config.model })
+		} else {
+			// Use Claude
+			const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+			const claudeModel = 'claude-3-5-sonnet-20241022'
+
+			const message: Anthropic.Message = await anthropic.messages.create({
+				model: claudeModel,
+				max_tokens: 1024,
+				temperature: config.temperature,
+				system: systemMessage,
+				messages: [{ role: 'user', content: userMessage }]
+			})
+
+			const content = message.content[0]
+			if (content.type !== 'text') {
+				throw new Error('Expected text response from Claude')
+			}
+			rawResponse = (content as { type: 'text'; text: string }).text
+
+			// Calculate cost and log the response
+			const { cost, inputCost, outputCost } = calculateClaudeCost(
+				claudeModel,
+				message.usage?.input_tokens ?? 0,
+				message.usage?.output_tokens ?? 0
+			)
+			logAIConversation('response', rawResponse, {
+				model: claudeModel,
+				inputTokens: message.usage?.input_tokens ?? 0,
+				outputTokens: message.usage?.output_tokens ?? 0,
+				totalTokens: message.usage?.input_tokens ?? 0 + message.usage?.output_tokens ?? 0,
+				cost: `$${cost.toFixed(6)}`,
+				costBreakdown: {
+					input: `$${inputCost.toFixed(6)}`,
+					output: `$${outputCost.toFixed(6)}`
+				}
+			})
+		}
+
+		// Parse JSON response
+		const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
+		if (!jsonMatch) {
+			throw new Error('Failed to parse JSON object from response')
+		}
+
+		const titleMap = JSON.parse(jsonMatch[0]) as Record<string, string>
+
+		// Extract constraint titles for validation
+		const expectedTitles = randomizedConstraints.map((c) => getConstraintTitle(c))
+
+		// Validate that all expected constraint titles are present
+		const mapKeys = Object.keys(titleMap)
+		const missingKeys = expectedTitles.filter((title) => !mapKeys.includes(title))
+
+		if (missingKeys.length > 0) {
+			throw new Error(`Missing constraint keys in response: ${missingKeys.join(', ')}`)
+		}
+
+		// Map film titles back to the order of randomizedConstraints
+		const orderedTitles = expectedTitles.map((title) => {
+			const filmTitle = titleMap[title]
+			if (!filmTitle) {
+				throw new Error(`Missing film title for constraint: ${title}`)
+			}
+			// Clean: trim whitespace, remove trailing punctuation if present
+			return filmTitle.trim().replace(/[.!?]+$/, '')
+		})
+
+		return orderedTitles
+	} catch (error) {
+		console.error('[Batch Film Title Generation] Failed:', error)
 		throw error
 	}
 }

@@ -161,19 +161,42 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 					</div>
 				)
 
-			case 'film_title_collection':
+			case 'film_title_collection': {
+				// Get error for this player if any
+				const playerError =
+					gameState.playerErrors instanceof Map
+						? gameState.playerErrors.get(playerId)
+						: gameState.playerErrors?.[playerId]
+
 				return (
 					<div style={styles.container}>
 						<h1 style={styles.title}>Name This Film!</h1>
-						<p style={styles.message}>Film title submission coming soon...</p>
+						<AnswerInput
+							// No clipNumber for film title round
+							timeRemaining={timeRemaining}
+							onSubmit={handleSubmitAnswer}
+							submitted={hasSubmitted}
+							error={playerError}
+						/>
 					</div>
 				)
+			}
 
 			case 'film_title_voting':
 				return (
 					<div style={styles.container}>
-						<h1 style={styles.title}>Vote for Film Title!</h1>
-						<p style={styles.message}>Voting UI coming soon...</p>
+						<h1 style={styles.title}>Vote for the Funniest Title!</h1>
+						<VotingUI
+							playerId={playerId}
+							allAnswers={gameState.allAnswers}
+							onVote={(answerId) => {
+								sendToServer({
+									playerId,
+									type: 'SUBMIT_VOTE',
+									payload: { answerId }
+								})
+							}}
+						/>
 					</div>
 				)
 

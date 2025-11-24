@@ -11,6 +11,7 @@ import {
 	loadConstraints,
 	shuffleConstraints,
 	generateBatchAnswers,
+	generateBatchFilmTitles,
 	generateAIVote,
 	type AIConfig
 } from './ai-player'
@@ -297,16 +298,42 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	advanceToNextClip(): void {
 		this.state.currentClipIndex++
 
+		// Clear state from previous clip (votes, answers, player status flags)
+		this.clearAnswers()
+		this.clearVotes()
+
+		// Reset player voting/answer status for new clip
+		for (const [playerId, status] of this.state.playerStatus.entries()) {
+			status.hasSubmittedAnswer = false
+			status.hasVoted = false
+			this.state.playerStatus.set(playerId, status)
+		}
+
 		if (this.state.currentClipIndex >= 3) {
 			// All 3 clips done, go to film title round
-			// Clear state from previous clip voting
-			this.clearAnswers()
-			this.clearVotes()
 			console.log('[CinemaPippinGame] Cleared state before film_title_collection')
-
 			this.state.phase = 'film_title_collection'
+			this.state.answerCollectionStartTime = Date.now()
+
+			// Pre-mark AI players as having submitted film titles (before async generation)
+			console.log('[CinemaPippinGame] Pre-marking AI player statuses for film titles...')
+			for (const aiPlayer of this.state.aiPlayers) {
+				this.state.playerAnswers.set(aiPlayer.playerId, '...')
+				const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+				status.hasSubmittedAnswer = true
+				this.state.playerStatus.set(aiPlayer.playerId, status)
+				console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as submitted`)
+			}
+
+			// Start answer timeout timer
+			this.startAnswerTimeout()
+
+			// Trigger AI film title generation (async, don't await)
+			console.log('[CinemaPippinGame] Triggering AI film title generation...')
+			void this.generateAIFilmTitles()
 		} else {
 			// Next clip
+			console.log('[CinemaPippinGame] Cleared state before next clip')
 			this.state.phase = 'clip_intro'
 		}
 	}
@@ -449,15 +476,15 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				break
 
 			case 'SUBMIT_ANSWER': {
-				// Handle answer submission
+				// Handle answer submission (for both clips and film titles)
 				const { answer } = gameAction.payload as { answer: string }
 				const trimmedAnswer = answer.trim()
 
 				// Clear any previous errors for this player
 				this.state.playerErrors.delete(_playerId)
 
-				// For C1 (clip index 0), check for duplicate answers (case-insensitive)
-				if (this.state.currentClipIndex === 0) {
+				// For C1 (clip index 0) or film_title_collection, check for duplicate answers (case-insensitive)
+				if (this.state.currentClipIndex === 0 || this.state.phase === 'film_title_collection') {
 					const normalizedAnswer = trimmedAnswer.toLowerCase()
 					const existingAnswers = Array.from(this.state.playerAnswers.entries())
 
@@ -524,23 +551,34 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					// Clear the timeout timer since all players submitted
 					this.clearAnswerTimeout()
 
-					console.log(
-						'[CinemaPippinGame] All active players submitted (',
-						this.state.playerAnswers.size,
-						'/',
-						activePlayers,
-						'), advancing to voting_playback'
-					)
-
-					this.advanceToVotingPlayback()
+					// Film title round has no playback, go straight to voting
+					if (this.state.phase === 'film_title_collection') {
+						console.log(
+							'[CinemaPippinGame] All film titles submitted (',
+							this.state.playerAnswers.size,
+							'/',
+							activePlayers,
+							'), advancing to film_title_voting'
+						)
+						this.advanceToFilmTitleVoting()
+					} else {
+						console.log(
+							'[CinemaPippinGame] All active players submitted (',
+							this.state.playerAnswers.size,
+							'/',
+							activePlayers,
+							'), advancing to voting_playback'
+						)
+						this.advanceToVotingPlayback()
+					}
 				}
 				break
 			}
 
 			case 'SUBMIT_VOTE': {
-				// Handle vote submission
-				if (this.state.phase !== 'voting_collection') {
-					console.log('[CinemaPippinGame] Ignoring SUBMIT_VOTE - not in voting_collection phase')
+				// Handle vote submission (for both clip voting and film title voting)
+				if (this.state.phase !== 'voting_collection' && this.state.phase !== 'film_title_voting') {
+					console.log('[CinemaPippinGame] Ignoring SUBMIT_VOTE - not in voting phase')
 					break
 				}
 
@@ -590,14 +628,25 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 						this.state.votes.size,
 						'/',
 						activePlayersVoting,
-						'), advancing to results_display'
+						'), advancing to results'
 					)
 
 					// Calculate scores before showing results
 					this.applyVoteScores()
 					console.log('[CinemaPippinGame] Applied vote scores')
 
-					this.state.phase = 'results_display'
+					// Advance to appropriate results phase
+					if (this.state.phase === 'film_title_voting') {
+						// Store winning film title
+						const winner = this.calculateWinner()
+						if (winner) {
+							this.state.filmTitle = winner.text
+							console.log('[CinemaPippinGame] Stored winning film title:', winner.text)
+						}
+						this.state.phase = 'film_title_results'
+					} else {
+						this.state.phase = 'results_display'
+					}
 				}
 				break
 			}
@@ -787,6 +836,134 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				console.log('[AI] All players submitted during generation, advancing now')
 				this.clearAnswerTimeout()
 				this.advanceToVotingPlayback()
+
+				// Notify module of state change so it can broadcast to clients
+				if (this.stateChangeCallback) {
+					console.log('[AI] Triggering state change callback to broadcast update')
+					this.stateChangeCallback()
+				}
+			}
+		}
+	}
+
+	/**
+	 * Generate batch film titles (AI + house) during film_title_collection phase
+	 */
+	private async generateAIFilmTitles(): Promise<void> {
+		// Get the 3 winning answers from clipWinners
+		const act1Winner = this.state.clipWinners[0] || 'mystery'
+		const act2Winner = this.state.clipWinners[1] || 'intrigue'
+		const act3Winner = this.state.clipWinners[2] || 'revelation'
+
+		const aiConstraints = this.state.aiPlayers.map((ai) => ai.constraint)
+		const playerCount = this.state.scores.size
+
+		// ALWAYS block auto-advance during generation
+		this.aiGenerationInProgress = true
+		const hasAIPlayers = aiConstraints.length > 0
+		if (hasAIPlayers) {
+			console.log(
+				'[AI] Film title generation started for AI players, blocking auto-advance until complete'
+			)
+		} else {
+			console.log('[AI] Film title generation started for house titles only')
+		}
+
+		console.log(`[AI] Generating ${aiConstraints.length} AI + ${playerCount} house film titles...`)
+		console.log(
+			`[AI] AI Players:`,
+			this.state.aiPlayers.map((ai) => `${ai.nickname} (${ai.playerId})`)
+		)
+		console.log(`[AI] Clip winners: "${act1Winner}", "${act2Winner}", "${act3Winner}"`)
+
+		try {
+			// Generate X AI + N house film titles in one batch
+			const batchTitles = await generateBatchFilmTitles(
+				this.aiConfig,
+				act1Winner,
+				act2Winner,
+				act3Winner,
+				aiConstraints,
+				playerCount
+			)
+
+			console.log(`[AI] Batch generation returned ${batchTitles.length} film titles`)
+
+			// First X titles are for AI players
+			const aiTitles = batchTitles.slice(0, aiConstraints.length)
+			const houseTitles = batchTitles.slice(aiConstraints.length)
+
+			console.log(`[AI] Assigning ${aiTitles.length} titles to AI players...`)
+
+			// Assign AI titles to AI players
+			this.state.aiPlayers.forEach((aiPlayer, index) => {
+				const title = aiTitles[index]
+				this.state.playerAnswers.set(aiPlayer.playerId, title)
+
+				// Mark AI player as having submitted title
+				const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+				status.hasSubmittedAnswer = true
+				this.state.playerStatus.set(aiPlayer.playerId, status)
+
+				console.log(`[AI] ✓ ${aiPlayer.nickname} (${aiPlayer.playerId}): "${title}"`)
+			})
+
+			// Store house titles in queue
+			this.state.houseAnswerQueue = houseTitles
+			console.log(`[AI] Generated ${houseTitles.length} house film titles for timeout fallback`)
+		} catch (error) {
+			console.error('[AI] Film title generation failed, using fallback:', error)
+			// Fallback: Use generic film titles
+			const fallbackTitles = [
+				'The Mystery Continues',
+				'A Foreign Affair',
+				'Tales of the Unexpected',
+				'The Final Chapter',
+				'Shadows and Light',
+				'The Last Dance',
+				'Beyond the Horizon',
+				'Midnight Revelations'
+			]
+
+			const shuffled = this.shuffleArray([...fallbackTitles])
+
+			// Assign to AI players
+			this.state.aiPlayers.forEach((aiPlayer, index) => {
+				if (index < shuffled.length) {
+					const title = shuffled[index]
+					this.state.playerAnswers.set(aiPlayer.playerId, title)
+
+					const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+					status.hasSubmittedAnswer = true
+					this.state.playerStatus.set(aiPlayer.playerId, status)
+
+					console.log(`[AI FALLBACK] ${aiPlayer.nickname}: "${title}"`)
+				}
+			})
+
+			// Store rest as house titles
+			const aiCount = this.state.aiPlayers.length
+			this.state.houseAnswerQueue = shuffled.slice(aiCount, aiCount + playerCount)
+			console.log(`[AI FALLBACK] Using ${this.state.houseAnswerQueue.length} fallback titles`)
+		} finally {
+			console.log(
+				`[AI] Film titles submitted. Total: ${this.state.playerAnswers.size}/${this.state.scores.size}`
+			)
+
+			// Mark generation complete and check if we should auto-advance
+			this.aiGenerationInProgress = false
+			console.log('[AI] Film title generation complete, checking if auto-advance needed')
+
+			// Check if all players have now submitted
+			const activePlayers = this.state.scores.size
+			if (
+				this.state.phase === 'film_title_collection' &&
+				activePlayers &&
+				this.state.playerAnswers.size >= activePlayers
+			) {
+				console.log('[AI] All players submitted film titles during generation, advancing now')
+				this.clearAnswerTimeout()
+				this.advanceToFilmTitleVoting()
 
 				// Notify module of state change so it can broadcast to clients
 				if (this.stateChangeCallback) {
@@ -1070,6 +1247,58 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.state.phase = 'voting_playback'
 
 		console.log('[CinemaPippinGame] Prepared', this.state.allAnswers.length, 'answers for voting')
+	}
+
+	advanceToFilmTitleVoting(): void {
+		// Clear votes from previous round
+		this.clearVotes()
+		console.log('[CinemaPippinGame] Cleared votes and allAnswers for film title voting')
+
+		// Prepare film title answers for voting
+		const answers: typeof this.state.allAnswers = []
+
+		// Add all player film title answers
+		for (const [playerId, titleText] of this.state.playerAnswers.entries()) {
+			answers.push({
+				id: `player-${playerId}`,
+				text: titleText,
+				authorId: playerId,
+				votedBy: []
+			})
+		}
+
+		// Shuffle film titles
+		this.state.allAnswers = this.shuffleArray(answers)
+		this.state.phase = 'film_title_voting'
+
+		console.log(
+			'[CinemaPippinGame] Prepared',
+			this.state.allAnswers.length,
+			'film titles for voting'
+		)
+
+		// Start voting timeout
+		this.startVotingTimeout()
+
+		// Reset player voting status
+		for (const playerId of this.state.playerStatus.keys()) {
+			const status = this.state.playerStatus.get(playerId) || {}
+			status.hasVoted = false
+			this.state.playerStatus.set(playerId, status)
+		}
+
+		// Pre-mark AI players as having voted and trigger async voting
+		console.log('[CinemaPippinGame] Pre-marking AI player voting statuses...')
+		for (const aiPlayer of this.state.aiPlayers) {
+			this.state.votes.set(aiPlayer.playerId, '...')
+			const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
+			status.hasVoted = true
+			this.state.playerStatus.set(aiPlayer.playerId, status)
+			console.log(`  - Pre-marked ${aiPlayer.nickname} (${aiPlayer.playerId}) as voted`)
+		}
+
+		// Trigger AI voting (async)
+		void this.generateAIVotes()
 	}
 
 	/**

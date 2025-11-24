@@ -13,7 +13,7 @@ import type {
 	ControllerProps
 } from '@jkbox/shared'
 import { CinemaPippinGame } from './cinema-pippin'
-import { loadSRT, loadSRTWithKeywordReplacement } from './srt-processor'
+import { loadSRT, loadSRTWithKeywordReplacement, type Subtitle } from './srt-processor'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -60,44 +60,98 @@ class CinemaPippinModule implements PluggableGameModule {
 		// Get current clip data
 		const currentClip = this.game.getCurrentClip()
 
-		// Load and parse SRT subtitles
-		// For C2/C3, replace [keyword] with C1 winner (preserving casing)
-		let subtitles: ReturnType<typeof loadSRT>
-		const isC2OrC3 = rawState.currentClipIndex > 0
-		const keyword = rawState.keywords[rawState.currentFilmIndex]
+		// Only enrich clip data if we're in a clip-based phase
+		let enrichedClipData:
+			| { clipNumber: 1 | 2 | 3; videoUrl: string; subtitles: Subtitle[] }
+			| undefined
+		if (currentClip) {
+			// Load and parse SRT subtitles
+			// For C2/C3, replace [keyword] with C1 winner (preserving casing)
+			let subtitles: ReturnType<typeof loadSRT>
+			const isC2OrC3 = rawState.currentClipIndex > 0
+			const keyword = rawState.keywords[rawState.currentFilmIndex]
 
-		if (isC2OrC3 && keyword) {
-			// Get the original SRT path by replacing "-question.srt" with "-original.srt"
-			const originalSrtPath = currentClip.srtPath.replace('-question.srt', '-original.srt')
-			subtitles = loadSRTWithKeywordReplacement(currentClip.srtPath, originalSrtPath, keyword)
-			console.log(
-				'[CinemaPippinModule] Replaced [keyword] with',
-				keyword,
-				'for clip',
-				currentClip.clipNumber
-			)
-		} else {
-			subtitles = loadSRT(currentClip.srtPath)
-		}
+			if (isC2OrC3 && keyword) {
+				// Get the original SRT path by replacing "-question.srt" with "-original.srt"
+				const originalSrtPath = currentClip.srtPath.replace('-question.srt', '-original.srt')
+				subtitles = loadSRTWithKeywordReplacement(currentClip.srtPath, originalSrtPath, keyword)
+				console.log(
+					'[CinemaPippinModule] Replaced [keyword] with',
+					keyword,
+					'for clip',
+					currentClip.clipNumber
+				)
+			} else {
+				subtitles = loadSRT(currentClip.srtPath)
+			}
 
-		// During voting_playback, merge current answer into subtitles
-		if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {
-			const currentAnswer = rawState.allAnswers[rawState.currentAnswerIndex]
-			if (currentAnswer) {
-				subtitles = subtitles.map((sub) => ({
-					...sub,
-					text: sub.text.replace(/_{2,}(\s+_{2,})*/g, currentAnswer.text)
-				}))
+			// During voting_playback, merge current answer into subtitles
+			if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {
+				const currentAnswer = rawState.allAnswers[rawState.currentAnswerIndex]
+				if (currentAnswer) {
+					subtitles = subtitles.map((sub) => ({
+						...sub,
+						text: sub.text.replace(/_{2,}(\s+_{2,})*/g, currentAnswer.text)
+					}))
+				}
+			}
+
+			// Convert filesystem path to web URL
+			// /home/jk/jkbox/generated/clips/... → /clips/...
+			const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
+
+			enrichedClipData = {
+				clipNumber: currentClip.clipNumber,
+				videoUrl,
+				subtitles
 			}
 		}
 
-		// Convert filesystem path to web URL
-		// /home/jk/jkbox/generated/clips/... → /clips/...
-		const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
-
-		// During results_display, include sorted answers with vote data
+		// During results_display or film_title_results, include sorted answers with vote data
 		const sortedResults =
-			rawState.phase === 'results_display' ? this.game.getSortedAnswersByVotes() : undefined
+			rawState.phase === 'results_display' || rawState.phase === 'film_title_results'
+				? this.game.getSortedAnswersByVotes()
+				: undefined
+
+		// During final_montage, prepare all 3 clips with winning answers merged into subtitles
+		let montageClips:
+			| Array<{ clipNumber: 1 | 2 | 3; videoUrl: string; subtitles: Subtitle[] }>
+			| undefined
+		if (rawState.phase === 'final_montage') {
+			const film = this.game.getCurrentFilm()
+			const keyword = rawState.keywords[rawState.currentFilmIndex] || ''
+
+			montageClips = film.clips.map((clip, index) => {
+				const clipNumber = (index + 1) as 1 | 2 | 3
+				const winningAnswer = rawState.clipWinners[index] || ''
+
+				// Load subtitles and merge winning answer
+				let subtitles: ReturnType<typeof loadSRT>
+				if (index === 0) {
+					// C1: just load question SRT
+					subtitles = loadSRT(clip.srtPath)
+				} else {
+					// C2/C3: Replace [keyword] with C1 winner
+					const originalSrtPath = clip.srtPath.replace('-question.srt', '-original.srt')
+					subtitles = loadSRTWithKeywordReplacement(clip.srtPath, originalSrtPath, keyword)
+				}
+
+				// Merge winning answer into subtitles (replace blanks)
+				subtitles = subtitles.map((sub) => ({
+					...sub,
+					text: sub.text.replace(/_{2,}(\s+_{2,})*/g, winningAnswer)
+				}))
+
+				// Convert filesystem path to web URL
+				const videoUrl = clip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
+
+				return {
+					clipNumber,
+					videoUrl,
+					subtitles
+				}
+			})
+		}
 
 		// Create enriched state for client
 		// Convert Map objects to plain objects for JSON serialization over WebSocket
@@ -109,12 +163,9 @@ class CinemaPippinModule implements PluggableGameModule {
 			endGameVotes: Object.fromEntries(rawState.endGameVotes),
 			playerStatus: Object.fromEntries(rawState.playerStatus),
 			playerErrors: Object.fromEntries(rawState.playerErrors),
-			currentClip: {
-				clipNumber: currentClip.clipNumber,
-				videoUrl,
-				subtitles
-			},
-			...(sortedResults && { sortedResults })
+			...(enrichedClipData && { currentClip: enrichedClipData }),
+			...(sortedResults && { sortedResults }),
+			...(montageClips && { montageClips })
 		}
 
 		return enrichedState as GameState
@@ -129,7 +180,7 @@ class CinemaPippinModule implements PluggableGameModule {
 			.map((p) => ({
 				playerId: p.id,
 				nickname: p.nickname,
-				constraint: (p.aiConstraint as string | undefined) || p.nickname.replace(/Bot$/, '') // Fallback to nickname
+				constraint: p.aiConstraint || p.nickname.replace(/Bot$/, '') // Fallback to nickname
 			}))
 
 		// Get all player IDs (both human and AI)

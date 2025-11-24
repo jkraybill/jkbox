@@ -303,24 +303,46 @@ describe('CinemaPippinJumbotron', () => {
 	})
 
 	describe('results_display phase', () => {
-		it('should auto-advance to next clip after 5 seconds', async () => {
+		it('should render ResultsDisplay component when sortedResults and scores exist', () => {
+			const sendToServer = vi.fn()
+			const state = {
+				phase: 'results_display',
+				currentClipIndex: 0,
+				sortedResults: [
+					{
+						answer: { id: '1', text: 'Test answer', authorId: 'player1', votedBy: ['player2'] },
+						voteCount: 1,
+						voters: ['player2']
+					}
+				],
+				scores: { player1: 1 }
+			}
+			const players = [
+				{ id: 'player1', nickname: 'Alice', isAI: false },
+				{ id: 'player2', nickname: 'Bob', isAI: false }
+			]
+
+			const { getByText } = render(
+				<CinemaPippinJumbotron state={state} sendToServer={sendToServer} players={players} />
+			)
+
+			expect(getByText('Results')).toBeTruthy()
+			expect(getByText('"Test answer"')).toBeTruthy()
+		})
+
+		it('should show calculating message when sortedResults not ready', () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'results_display',
 				currentClipIndex: 0
 			}
 
-			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
+			const { getByText } = render(
+				<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />
+			)
 
-			expect(sendToServer).not.toHaveBeenCalled()
-
-			await vi.advanceTimersByTimeAsync(5000)
-
-			expect(sendToServer).toHaveBeenCalledWith({
-				playerId: 'jumbotron',
-				type: 'RESULTS_COMPLETE',
-				payload: {}
-			})
+			expect(getByText('Results')).toBeTruthy()
+			expect(getByText('Calculating scores...')).toBeTruthy()
 		})
 	})
 

@@ -29,8 +29,8 @@ interface ResultsDisplayProps {
 
 enum DisplayState {
 	ShowAnswer,
-	ShowAuthorAndVoters,
-	ShowScoreAnimation,
+	ShowVoters,
+	ShowAuthorAndScore,
 	ShowWinner,
 	Complete
 }
@@ -38,7 +38,8 @@ enum DisplayState {
 export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDisplayProps) {
 	const [currentIndex, setCurrentIndex] = useState(0)
 	const [displayState, setDisplayState] = useState<DisplayState>(DisplayState.ShowAnswer)
-	const [animatingScore, setAnimatingScore] = useState(0)
+	const [revealedVoters, setRevealedVoters] = useState<string[]>([])
+	const [shuffledVoters, setShuffledVoters] = useState<string[]>([])
 
 	// Create player ID to nickname mapping
 	const playerNicknames = useMemo(() => {
@@ -60,6 +61,16 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 	const currentResult = sortedResults[currentIndex]
 	const isLastResult = currentIndex === sortedResults.length - 1
 
+	// Shuffle voters when transitioning to a new answer
+	useEffect(() => {
+		if (displayState === DisplayState.ShowAnswer && currentResult) {
+			// Shuffle voters for random reveal order
+			const shuffled = [...currentResult.voters].sort(() => Math.random() - 0.5)
+			setShuffledVoters(shuffled)
+			setRevealedVoters([])
+		}
+	}, [currentIndex, displayState, currentResult])
+
 	// State machine for result display
 	useEffect(() => {
 		if (sortedResults.length === 0) {
@@ -76,36 +87,41 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 
 		switch (displayState) {
 			case DisplayState.ShowAnswer:
-				// Show answer for 1 second
+				// Show answer alone for 1 second
 				timer = setTimeout(() => {
-					setDisplayState(DisplayState.ShowAuthorAndVoters)
+					if (currentResult.voters.length === 0) {
+						// No voters, skip to author/score
+						setDisplayState(DisplayState.ShowAuthorAndScore)
+					} else {
+						// Start revealing voters
+						setDisplayState(DisplayState.ShowVoters)
+					}
 				}, 1000)
 				break
 
-			case DisplayState.ShowAuthorAndVoters:
-				// Show author/voters immediately, then start score animation
-				setDisplayState(DisplayState.ShowScoreAnimation)
-				setAnimatingScore(0)
+			case DisplayState.ShowVoters:
+				// Reveal one voter at a time (500ms each)
+				if (revealedVoters.length < shuffledVoters.length) {
+					timer = setTimeout(() => {
+						setRevealedVoters([...revealedVoters, shuffledVoters[revealedVoters.length] as string])
+					}, 500)
+				} else {
+					// All voters revealed, show author and score
+					setDisplayState(DisplayState.ShowAuthorAndScore)
+				}
 				break
 
-			case DisplayState.ShowScoreAnimation:
-				// Animate score increasing (100ms per point)
-				if (animatingScore < currentResult.voteCount) {
-					timer = setTimeout(() => {
-						setAnimatingScore(animatingScore + 1)
-					}, 100)
-				} else {
-					// Score animation complete
-					timer = setTimeout(() => {
-						if (isLastResult) {
-							setDisplayState(DisplayState.ShowWinner)
-						} else {
-							// Move to next answer
-							setCurrentIndex(currentIndex + 1)
-							setDisplayState(DisplayState.ShowAnswer)
-						}
-					}, 500) // Brief pause before next result
-				}
+			case DisplayState.ShowAuthorAndScore:
+				// Show author + points for 1.5 seconds
+				timer = setTimeout(() => {
+					if (isLastResult) {
+						setDisplayState(DisplayState.ShowWinner)
+					} else {
+						// Move to next answer
+						setCurrentIndex(currentIndex + 1)
+						setDisplayState(DisplayState.ShowAnswer)
+					}
+				}, 1500)
 				break
 
 			case DisplayState.ShowWinner:
@@ -125,7 +141,8 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 	}, [
 		displayState,
 		currentIndex,
-		animatingScore,
+		revealedVoters,
+		shuffledVoters,
 		isLastResult,
 		currentResult,
 		sortedResults.length,
@@ -151,16 +168,33 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 		if (!winner) {
 			return null
 		}
+
+		// Helper to get author display text for winner
+		const getWinnerAuthorText = (authorId: string): string => {
+			if (authorId === 'house') {
+				// Find who this house answer is for
+				const voter = winner.voters[0]
+				if (voter) {
+					return `🤖 House Answer for ${getPlayerName(voter)}`
+				}
+				return '🤖 House Answer'
+			}
+			return `👤 ${getPlayerName(authorId)}`
+		}
+
 		return (
 			<div style={styles.container}>
 				<h1 style={styles.winnerText}>WINNER!</h1>
 				<div style={styles.answerCard}>
 					<p style={styles.answerText}>"{winner.answer.text}"</p>
-					<p style={styles.authorText}>
-						{winner.answer.authorId === 'house' ? '🤖 AI' : `👤 ${getPlayerName(winner.answer.authorId)}`}
-					</p>
-					<p style={styles.voteCount}>
-						{winner.voteCount} {winner.voteCount === 1 ? 'vote' : 'votes'}
+					{winner.voters.length > 0 && (
+						<p style={styles.votersText}>
+							Voted by: {winner.voters.map((id) => getPlayerName(id)).join(', ')}
+						</p>
+					)}
+					<p style={styles.authorText}>by {getWinnerAuthorText(winner.answer.authorId)}</p>
+					<p style={styles.scoreText}>
+						+{winner.voteCount} {winner.voteCount === 1 ? 'point' : 'points'}
 					</p>
 				</div>
 			</div>
@@ -171,6 +205,19 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 		return null
 	}
 
+	// Helper to get author display text
+	const getAuthorText = (authorId: string): string => {
+		if (authorId === 'house') {
+			// Find who this house answer is for
+			const voter = currentResult.voters[0]
+			if (voter) {
+				return `🤖 House Answer for ${getPlayerName(voter)}`
+			}
+			return '🤖 House Answer'
+		}
+		return `👤 ${getPlayerName(authorId)}`
+	}
+
 	return (
 		<div style={styles.container}>
 			<h1 style={styles.title}>Results</h1>
@@ -178,24 +225,25 @@ export function ResultsDisplay({ sortedResults, players, onComplete }: ResultsDi
 			<div style={styles.answerCard}>
 				<p style={styles.answerText}>"{currentResult.answer.text}"</p>
 
-				{displayState !== DisplayState.ShowAnswer && (
+				{/* Show voters one by one */}
+				{displayState === DisplayState.ShowVoters && revealedVoters.length > 0 && (
+					<p style={styles.votersText}>
+						Voted by: {revealedVoters.map((id) => getPlayerName(id)).join(', ')}
+					</p>
+				)}
+
+				{/* Show author and score after all voters revealed */}
+				{displayState === DisplayState.ShowAuthorAndScore && (
 					<>
-						<p style={styles.authorText}>
-							by{' '}
-							{currentResult.answer.authorId === 'house'
-								? '🤖 AI'
-								: `👤 ${getPlayerName(currentResult.answer.authorId)}`}
-						</p>
-
-						<p style={styles.votersText}>
-							Voted by: {currentResult.voters.map(id => getPlayerName(id)).join(', ')}
-						</p>
-
-						{displayState === DisplayState.ShowScoreAnimation && (
-							<p style={styles.scoreText}>
-								+{animatingScore} {animatingScore === 1 ? 'point' : 'points'}
+						{currentResult.voters.length > 0 && (
+							<p style={styles.votersText}>
+								Voted by: {currentResult.voters.map((id) => getPlayerName(id)).join(', ')}
 							</p>
 						)}
+						<p style={styles.authorText}>by {getAuthorText(currentResult.answer.authorId)}</p>
+						<p style={styles.scoreText}>
+							+{currentResult.voteCount} {currentResult.voteCount === 1 ? 'point' : 'points'}
+						</p>
 					</>
 				)}
 			</div>

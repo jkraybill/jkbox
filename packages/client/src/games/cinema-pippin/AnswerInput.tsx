@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 export interface AnswerInputProps {
-	clipNumber: 1 | 2 | 3
+	clipNumber?: 1 | 2 | 3 // Optional: omit for film title round
 	timeRemaining: number
 	onSubmit: (answer: string) => void
 	submitted: boolean
@@ -23,6 +23,7 @@ export function AnswerInput({
 }: AnswerInputProps) {
 	const [answer, setAnswer] = useState('')
 	const isC1 = clipNumber === 1
+	const isFilmTitle = clipNumber === undefined
 
 	// Auto-submit when time reaches 0
 	// Only depends on timeRemaining to avoid triggering on every keystroke
@@ -30,8 +31,7 @@ export function AnswerInput({
 		if (timeRemaining === 0 && !submitted && answer.trim()) {
 			onSubmit(answer.trim())
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [timeRemaining])
+	}, [timeRemaining, submitted, answer, onSubmit])
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value
@@ -60,12 +60,17 @@ export function AnswerInput({
 	}
 
 	const isTimeLow = timeRemaining <= 10
-	const placeholder = isC1 ? 'Enter single word...' : 'Enter your answer...'
+	const placeholder = isC1
+		? 'Enter single word...'
+		: isFilmTitle
+			? 'Enter film title...'
+			: 'Enter your answer...'
+	const label = isFilmTitle ? 'Film Title' : clipNumber && ACT_LABELS[clipNumber]
 
 	return (
 		<div style={styles.container}>
 			<div style={styles.header}>
-				<h2 style={styles.actLabel}>{ACT_LABELS[clipNumber]}</h2>
+				<h2 style={styles.actLabel}>{label}</h2>
 				<div style={{ ...styles.timer, ...(isTimeLow ? styles.timerWarning : {}) }}>
 					{timeRemaining}s
 				</div>

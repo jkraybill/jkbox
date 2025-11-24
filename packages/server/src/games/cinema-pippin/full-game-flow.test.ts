@@ -68,9 +68,18 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.votes.size).toBe(0)
 
 		// Submit votes (including AI)
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
 
 		state = game.getState()
 		expect(state.phase).toBe('results_display') // Auto-advanced
@@ -105,8 +114,14 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.playerStatus.get('player2')?.hasSubmittedAnswer).toBeFalsy()
 
 		// Submit answers for C2
-		game.handlePlayerAction('player1', { type: 'SUBMIT_ANSWER', payload: { answer: 'eating delicious tacos' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_ANSWER', payload: { answer: 'pizza party tonight' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'eating delicious tacos' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'pizza party tonight' }
+		})
 
 		// Manually advance past AI generation wait
 		game.advanceToVotingPlayback()
@@ -117,9 +132,18 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		// Complete voting (including AI)
 		game.advancePhase() // voting_playback → voting_collection
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
 
 		state = game.getState()
 		expect(state.phase).toBe('results_display')
@@ -150,8 +174,14 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.playerAnswers.has('player2')).toBe(false)
 
 		// Submit answers for C3
-		game.handlePlayerAction('player1', { type: 'SUBMIT_ANSWER', payload: { answer: 'munching tacos today' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_ANSWER', payload: { answer: 'fresh pizza slice' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'munching tacos today' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'fresh pizza slice' }
+		})
 
 		// Manually advance past AI generation wait
 		game.advanceToVotingPlayback()
@@ -161,9 +191,18 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		// Complete voting (including AI)
 		game.advancePhase() // voting_playback → voting_collection
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
 
 		state = game.getState()
 		expect(state.phase).toBe('results_display')
@@ -178,7 +217,9 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 		expect(state.currentClipIndex).toBe(3)
 
 		// CRITICAL: State should be cleared before film title
-		expect(state.playerAnswers.size).toBe(0) // ⭐ Fixed!
+		// AI players are pre-marked with placeholders while generation happens
+		expect(state.playerAnswers.size).toBe(1) // 1 AI player pre-marked
+		expect(state.playerAnswers.get('ai-1')).toBe('...') // AI placeholder
 		expect(state.votes.size).toBe(0) // ⭐ Fixed!
 		expect(state.allAnswers.length).toBe(0) // ⭐ Fixed!
 
@@ -186,9 +227,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 	})
 
 	it('should clean state when transitioning between films', () => {
-		const mockAIPlayers = [
-			{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }
-		]
+		const mockAIPlayers = [{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }]
 		game.initialize(['player1', 'ai-1'], mockAIPlayers)
 
 		// Manually set current film and populate state
@@ -219,9 +258,7 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 	})
 
 	it('should clean state when transitioning to final scores', () => {
-		const mockAIPlayers = [
-			{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }
-		]
+		const mockAIPlayers = [{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }]
 		game.initialize(['player1', 'ai-1'], mockAIPlayers)
 
 		// Manually set to film 3, all clips done

@@ -15,9 +15,7 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 
 	it('should complete full film cycle: all 3 acts → title challenge → next film', () => {
 		// Setup: 2 humans + 1 AI
-		const mockAIPlayers = [
-			{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test constraint' }
-		]
+		const mockAIPlayers = [{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test constraint' }]
 		game.initialize(['player1', 'player2', 'ai-1'], mockAIPlayers)
 
 		let state = game.getState()
@@ -44,9 +42,18 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 
 		// Complete C1 voting
 		game.advancePhase() // voting_collection
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
 
 		state = game.getState()
 		expect(state.phase).toBe('results_display')
@@ -61,14 +68,29 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		console.log('\n📝 Act 2 (C2)')
 		game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
 		game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
-		game.handlePlayerAction('player1', { type: 'SUBMIT_ANSWER', payload: { answer: 'eating delicious tacos' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_ANSWER', payload: { answer: 'pizza party tonight' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'eating delicious tacos' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'pizza party tonight' }
+		})
 
 		game.advanceToVotingPlayback() // Skip AI generation wait
 		game.advancePhase() // voting_playback → voting_collection
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
 
 		// C2 Results → C3
 		game.handlePlayerAction('jumbotron', { type: 'RESULTS_COMPLETE', payload: {} })
@@ -80,14 +102,29 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		console.log('\n📝 Act 3 (C3)')
 		game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
 		game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
-		game.handlePlayerAction('player1', { type: 'SUBMIT_ANSWER', payload: { answer: 'munching tacos now' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_ANSWER', payload: { answer: 'fresh pizza slice' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'munching tacos now' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_ANSWER',
+			payload: { answer: 'fresh pizza slice' }
+		})
 
 		game.advanceToVotingPlayback() // Skip AI generation wait
 		game.advancePhase() // voting_playback → voting_collection
-		game.handlePlayerAction('player1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player2' } })
-		game.handlePlayerAction('player2', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
-		game.handlePlayerAction('ai-1', { type: 'SUBMIT_VOTE', payload: { answerId: 'player-player1' } })
+		game.handlePlayerAction('player1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player2' }
+		})
+		game.handlePlayerAction('player2', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
+		game.handlePlayerAction('ai-1', {
+			type: 'SUBMIT_VOTE',
+			payload: { answerId: 'player-player1' }
+		})
 
 		state = game.getState()
 		expect(state.phase).toBe('results_display')
@@ -102,8 +139,9 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 		expect(state.currentClipIndex).toBe(3) // Incremented to 3
 		expect(state.currentFilmIndex).toBe(0) // Still Film 1
 
-		// CRITICAL: State should be cleared
-		expect(state.playerAnswers.size).toBe(0)
+		// CRITICAL: State should be cleared (except AI player placeholders)
+		expect(state.playerAnswers.size).toBe(1) // 1 AI player pre-marked
+		expect(state.playerAnswers.get('ai-1')).toBe('...') // AI placeholder
 		expect(state.votes.size).toBe(0)
 		expect(state.allAnswers.length).toBe(0)
 		console.log('✅ State cleared after Act 3')
@@ -153,9 +191,10 @@ describe('Complete Film Cycle: Act 3 → Title → Next Film', () => {
 	})
 
 	it('should go to final_scores after completing all 3 films', () => {
-		game.initialize(['player1', 'ai-1'], [
-			{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }
-		])
+		game.initialize(
+			['player1', 'ai-1'],
+			[{ playerId: 'ai-1', nickname: 'TestBot', constraint: 'Test' }]
+		)
 
 		const state = game.getState()
 
