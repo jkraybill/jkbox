@@ -17,13 +17,26 @@ export function Join() {
 	const [roomId, setRoomId] = useState<string | null>(null)
 	const [isFetchingRoom, setIsFetchingRoom] = useState(true)
 
-	// Fetch singleton room on mount
+	// Fetch singleton room on mount and check if player is already active
 	useEffect(() => {
 		const fetchRoom = async () => {
 			try {
 				const response = await fetch('/api/room')
-				const data = (await response.json()) as { room: { roomId: string } }
+				const data = (await response.json()) as {
+					room: { roomId: string; players: Array<{ id: string; deviceId: string }> }
+				}
 				setRoomId(data.room.roomId)
+
+				// Check if this device is already an active player in the room
+				const deviceId = getDeviceId()
+				const existingPlayer = data.room.players.find((p) => p.deviceId === deviceId)
+
+				if (existingPlayer) {
+					console.log('[Join] Player already active in room, redirecting to /play')
+					// Auto-redirect to play - they're already in the game
+					navigate('/play')
+					return
+				}
 			} catch (err) {
 				setError('Failed to connect to server')
 			} finally {
@@ -31,7 +44,7 @@ export function Join() {
 			}
 		}
 		void fetchRoom()
-	}, [])
+	}, [navigate])
 
 	// Load saved nickname from cookie on mount
 	useEffect(() => {
