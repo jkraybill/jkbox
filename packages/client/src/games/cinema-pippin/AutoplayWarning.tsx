@@ -20,11 +20,14 @@ export function AutoplayWarning() {
 				video.muted = false // Test UNMUTED autoplay
 				video.volume = 0.01 // Very low volume for the test
 
+				console.log('[AutoplayWarning] Testing unmuted autoplay...')
+				console.log('[AutoplayWarning] Video readyState:', video.readyState)
+
 				// Try to play unmuted
 				await video.play()
 
 				// If we got here, unmuted autoplay works! Chrome flag is active.
-				console.log('[AutoplayWarning] Unmuted autoplay works - Chrome flag detected')
+				console.log('[AutoplayWarning] ✅ Unmuted autoplay SUCCESS - Chrome flag detected')
 				setShowWarning(false)
 
 				// Clean up
@@ -32,8 +35,18 @@ export function AutoplayWarning() {
 				video.remove()
 			} catch (error) {
 				// Unmuted autoplay failed - Chrome flag is NOT active
-				console.warn('[AutoplayWarning] Unmuted autoplay blocked - Chrome flag missing:', error)
-				setShowWarning(true)
+				console.error('[AutoplayWarning] ❌ Unmuted autoplay FAILED - Chrome flag missing')
+				console.error('[AutoplayWarning] Error details:', error)
+
+				// Check if error is specifically a NotAllowedError (autoplay policy block)
+				if (error instanceof Error && error.name === 'NotAllowedError') {
+					console.error('[AutoplayWarning] NotAllowedError: Autoplay policy is blocking playback')
+					setShowWarning(true)
+				} else {
+					// Some other error (maybe video data issue) - don't show warning
+					console.error('[AutoplayWarning] Non-policy error, not showing warning')
+					setShowWarning(false)
+				}
 			}
 		}
 
