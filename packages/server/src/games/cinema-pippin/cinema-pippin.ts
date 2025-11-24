@@ -672,15 +672,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			case 'RESULTS_COMPLETE':
 				if (this.state.phase === 'results_display') {
-					// If this was C1 (clip index 0), store the winning answer as the keyword
-					if (this.state.currentClipIndex === 0) {
-						const winner = this.calculateWinner()
-						if (winner) {
+					// Store the winning answer in clipWinners array
+					const winner = this.calculateWinner()
+					if (winner) {
+						this.state.clipWinners.push(winner.text)
+						console.log(
+							'[CinemaPippinGame] Stored clip',
+							this.state.currentClipIndex + 1,
+							'winner:',
+							winner.text
+						)
+
+						// If this was C1 (clip index 0), also store as keyword for [keyword] replacement
+						if (this.state.currentClipIndex === 0) {
 							this.state.keywords[this.state.currentFilmIndex] = winner.text
 							console.log(
-								'[CinemaPippinGame] Stored C1 winner as keyword:',
-								winner.text,
-								'for film',
+								'[CinemaPippinGame] Stored C1 winner as keyword for film',
 								this.state.currentFilmIndex
 							)
 						}
@@ -1115,22 +1122,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			this.applyVoteScores()
 			console.log('[AI] Applied vote scores')
 
-			// Determine winner
-			const winner = this.calculateWinner()
-			if (winner) {
-				this.state.clipWinners.push(winner.text)
-
-				// If C1, save keyword for C2/C3 (indexed by film, not pushed)
-				if (this.state.currentClipIndex === 0) {
-					this.state.keywords[this.state.currentFilmIndex] = winner.text
-					console.log(
-						'[AI] Stored C1 winner as keyword:',
-						winner.text,
-						'for film',
-						this.state.currentFilmIndex
-					)
-				}
-			}
+			// NOTE: Winner is stored in clipWinners array by RESULTS_COMPLETE handler
+			// when leaving results_display phase, not here when entering it
 
 			this.state.phase = 'results_display'
 			console.log('[AI] Advanced to results_display')
