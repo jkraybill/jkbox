@@ -18,7 +18,8 @@
     "extract-triplets": "./dist/extract-triplets.js"
   },
   "dependencies": {
-    "commander": "^12.0.0"
+    "commander": "^12.0.0",
+    "opensubtitles.com": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
