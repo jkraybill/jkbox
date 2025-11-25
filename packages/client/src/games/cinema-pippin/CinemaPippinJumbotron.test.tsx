@@ -17,7 +17,7 @@ describe('CinemaPippinJumbotron', () => {
 	})
 
 	describe('film_select phase', () => {
-		it('should auto-advance to clip_intro after 5 seconds (countdown)', async () => {
+		it('should auto-advance to clip_intro immediately (countdown moved to clip_intro)', async () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'film_select',
@@ -26,13 +26,7 @@ describe('CinemaPippinJumbotron', () => {
 
 			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
 
-			// Should not send immediately
-			expect(sendToServer).not.toHaveBeenCalled()
-
-			// Fast-forward 6 seconds (5s countdown + 1s final interval)
-			await vi.advanceTimersByTimeAsync(6000)
-
-			// Should send FILM_SELECT_COMPLETE event
+			// Should send FILM_SELECT_COMPLETE immediately (no countdown - that's in clip_intro now)
 			expect(sendToServer).toHaveBeenCalledWith({
 				playerId: 'jumbotron',
 				type: 'FILM_SELECT_COMPLETE',
@@ -42,11 +36,12 @@ describe('CinemaPippinJumbotron', () => {
 	})
 
 	describe('clip_intro phase', () => {
-		it('should auto-advance to clip_playback after 5 seconds (countdown)', async () => {
+		it('should show FilmCountdown only for the very first clip (Film 1, Clip 1)', async () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'clip_intro',
 				currentClipIndex: 0,
+				currentFilmIndex: 0, // First film, first clip
 				currentClip: {
 					clipNumber: 1 as const,
 					videoUrl: '/test.mp4',
@@ -56,7 +51,7 @@ describe('CinemaPippinJumbotron', () => {
 
 			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
 
-			// Should not send immediately
+			// Should not send immediately (FilmCountdown handles timing)
 			expect(sendToServer).not.toHaveBeenCalled()
 
 			// Fast-forward 6 seconds (5s countdown + 1s final interval)
@@ -70,11 +65,70 @@ describe('CinemaPippinJumbotron', () => {
 			})
 		})
 
+		it('should show Act X slide and auto-advance after 1.5s for Film 1 Clip 2', async () => {
+			const sendToServer = vi.fn()
+			const state = {
+				phase: 'clip_intro',
+				currentClipIndex: 1, // Second clip of first film
+				currentFilmIndex: 0,
+				currentClip: {
+					clipNumber: 2 as const,
+					videoUrl: '/test.mp4',
+					subtitles: []
+				}
+			}
+
+			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
+
+			// Should not send immediately
+			expect(sendToServer).not.toHaveBeenCalled()
+
+			// Fast-forward 1.5 seconds (Act X slide duration)
+			await vi.advanceTimersByTimeAsync(1500)
+
+			// Should send INTRO_COMPLETE event
+			expect(sendToServer).toHaveBeenCalledWith({
+				playerId: 'jumbotron',
+				type: 'INTRO_COMPLETE',
+				payload: {}
+			})
+		})
+
+		it('should show Act X slide and auto-advance after 1.5s for subsequent films', async () => {
+			const sendToServer = vi.fn()
+			const state = {
+				phase: 'clip_intro',
+				currentClipIndex: 0,
+				currentFilmIndex: 1, // Second film
+				currentClip: {
+					clipNumber: 1 as const,
+					videoUrl: '/test.mp4',
+					subtitles: []
+				}
+			}
+
+			render(<CinemaPippinJumbotron state={state} sendToServer={sendToServer} />)
+
+			// Should not send immediately
+			expect(sendToServer).not.toHaveBeenCalled()
+
+			// Fast-forward 1.5 seconds (Act X slide duration)
+			await vi.advanceTimersByTimeAsync(1500)
+
+			// Should send INTRO_COMPLETE event
+			expect(sendToServer).toHaveBeenCalledWith({
+				playerId: 'jumbotron',
+				type: 'INTRO_COMPLETE',
+				payload: {}
+			})
+		})
+
 		it('should not send INTRO_COMPLETE if phase changes before timer', () => {
 			const sendToServer = vi.fn()
 			const state = {
 				phase: 'clip_intro',
-				currentClipIndex: 0
+				currentClipIndex: 0,
+				currentFilmIndex: 0 // First clip of first film
 			}
 
 			const { rerender } = render(

@@ -208,7 +208,7 @@ export function VideoPlayer({
 							color: '#fff',
 							padding: '0.8vh 2vw',
 							borderRadius: '4px',
-							fontSize: '3.5vw',
+							fontSize: '2.6vw',
 							textAlign: 'center',
 							maxWidth: '100%',
 							lineHeight: '1.3'

@@ -217,6 +217,45 @@ export function CinemaPippinJumbotron({
 		return () => clearTimeout(timer)
 	}, [gameState.phase, sendToServer])
 
+	// Auto-advance from film_select immediately (no countdown here - clip_intro handles it)
+	useEffect(() => {
+		if (gameState.phase !== 'film_select') {
+			return
+		}
+
+		// Immediate auto-advance - the actual countdown happens in clip_intro
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'FILM_SELECT_COMPLETE',
+			payload: {}
+		})
+	}, [gameState.phase, sendToServer])
+
+	// Auto-advance from clip_intro for all clips EXCEPT the very first one (Film 1, Clip 1)
+	// The first clip uses FilmCountdown component which handles its own timing
+	useEffect(() => {
+		if (gameState.phase !== 'clip_intro') {
+			return
+		}
+
+		// Skip auto-advance for the very first clip (Film 1, Clip 1) - FilmCountdown handles it
+		const isFirstClipOfGame = gameState.currentFilmIndex === 0 && gameState.currentClipIndex === 0
+		if (isFirstClipOfGame) {
+			return
+		}
+
+		// Show "Act X" slide for 1.5 seconds before advancing to clip playback
+		const timer = setTimeout(() => {
+			sendToServer({
+				playerId: 'jumbotron',
+				type: 'INTRO_COMPLETE',
+				payload: {}
+			})
+		}, 1500)
+
+		return () => clearTimeout(timer)
+	}, [gameState.phase, gameState.currentFilmIndex, gameState.currentClipIndex, sendToServer])
+
 	// Handle video completion
 	const handleVideoComplete = () => {
 		// Notify server that video has completed
@@ -232,31 +271,67 @@ export function CinemaPippinJumbotron({
 	const renderPhaseContent = () => {
 		switch (gameState.phase) {
 			case 'film_select':
+				// film_select is just a transition state
+				// Show loading briefly - useEffect below handles auto-advance
 				return (
-					<FilmCountdown
-						duration={5000}
-						onComplete={() => {
-							sendToServer({
-								playerId: 'jumbotron',
-								type: 'FILM_SELECT_COMPLETE',
-								payload: {}
-							})
+					<div
+						style={{
+							width: '100%',
+							height: '100%',
+							backgroundColor: '#000',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center'
 						}}
-					/>
+					>
+						<div style={{ color: '#fff', fontSize: '24px', fontFamily: 'monospace' }}>
+							Loading...
+						</div>
+					</div>
 				)
 
 			case 'clip_intro':
+				// Old-timey countdown ONLY for the very first clip of the game (Film 1, Clip 1)
+				// All subsequent clips show "Act X" slide then auto-advance
+				if (gameState.currentFilmIndex === 0 && gameState.currentClipIndex === 0) {
+					return (
+						<FilmCountdown
+							duration={5000}
+							onComplete={() => {
+								sendToServer({
+									playerId: 'jumbotron',
+									type: 'INTRO_COMPLETE',
+									payload: {}
+								})
+							}}
+						/>
+					)
+				}
+				// For all other clips, show "Act X" slide then auto-advance
+				// (the useEffect handles the auto-advance timing)
 				return (
-					<FilmCountdown
-						duration={5000}
-						onComplete={() => {
-							sendToServer({
-								playerId: 'jumbotron',
-								type: 'INTRO_COMPLETE',
-								payload: {}
-							})
+					<div
+						style={{
+							width: '100%',
+							height: '100%',
+							backgroundColor: '#000',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center'
 						}}
-					/>
+					>
+						<div
+							style={{
+								color: '#fff',
+								fontSize: '72px',
+								fontFamily: 'Georgia, serif',
+								fontStyle: 'italic',
+								textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)'
+							}}
+						>
+							Act {(gameState.currentClipIndex ?? 0) + 1}
+						</div>
+					</div>
 				)
 
 			case 'clip_playback':

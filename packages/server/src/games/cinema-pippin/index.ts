@@ -13,7 +13,15 @@ import type {
 	ControllerProps
 } from '@jkbox/shared'
 import { CinemaPippinGame } from './cinema-pippin'
-import { loadSRT, loadSRTWithKeywordReplacement, mergeSRT, type Subtitle } from './srt-processor'
+import {
+	loadSRT,
+	loadSRTWithKeywordReplacement,
+	mergeSRT,
+	formatSRT,
+	parseSRT,
+	type Subtitle
+} from './srt-processor'
+import { extendLastFrameTimestamp } from '@jkbox/cinema-pippin'
 
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
@@ -85,12 +93,28 @@ class CinemaPippinModule implements PluggableGameModule {
 				subtitles = loadSRT(currentClip.srtPath)
 			}
 
+			// During clip_playback, extend the last subtitle frame to fill to end of video
+			// This ensures questions like "_____?" stay visible until video ends
+			if (rawState.phase === 'clip_playback') {
+				// Extend last frame by end padding duration (default 2.0 seconds)
+				const srtText = formatSRT(subtitles)
+				const extendedSrtText = extendLastFrameTimestamp(srtText, 2.0)
+				subtitles = parseSRT(extendedSrtText)
+				console.log('[CinemaPippinModule] Extended last subtitle frame for clip_playback phase')
+			}
+
 			// During voting_playback, merge current answer into subtitles
 			if (rawState.phase === 'voting_playback' && rawState.allAnswers.length > 0) {
 				const currentAnswer = rawState.allAnswers[rawState.currentAnswerIndex]
 				if (currentAnswer) {
 					// Use mergeSRT to properly handle line splitting for long answers
+					// mergeSRT already extends the last frame, so no need to extend again here
 					subtitles = mergeSRT(subtitles, currentAnswer.text)
+					console.log(
+						'[CinemaPippinModule] voting_playback: merged answer',
+						currentAnswer.text,
+						'into subtitles'
+					)
 				}
 			}
 

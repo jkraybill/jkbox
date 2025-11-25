@@ -50,7 +50,8 @@ describe('CinemaPippinGame', () => {
 				film.clips.forEach((clip) => {
 					expect(clip.videoPath).toBeTruthy()
 					expect(clip.srtPath).toBeTruthy()
-					expect(clip.precomputedAnswers).toHaveLength(3)
+					// Precomputed answers are cached AI responses - may vary in count (typically 3-10)
+					expect(clip.precomputedAnswers.length).toBeGreaterThanOrEqual(3)
 				})
 			})
 		})
@@ -285,9 +286,7 @@ describe('CinemaPippinGame', () => {
 				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] },
 				{ id: 'a2', text: 'answer2', authorId: 'player2', votedBy: [] }
 			]
-			state.votes = new Map([
-				['player3', 'a1']
-			])
+			state.votes = new Map([['player3', 'a1']])
 			game.setState(state)
 
 			const winner = game.calculateWinner()
@@ -367,9 +366,7 @@ describe('CinemaPippinGame', () => {
 			game.initialize(['player1', 'player2'])
 
 			const state = game.getState()
-			state.aiPlayers = [
-				{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }
-			]
+			state.aiPlayers = [{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }]
 			state.playerStatus = new Map([
 				['player1', {}],
 				['player2', {}],
@@ -388,9 +385,7 @@ describe('CinemaPippinGame', () => {
 			game.initialize(['player1', 'player2'])
 
 			const state = game.getState()
-			state.aiPlayers = [
-				{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }
-			]
+			state.aiPlayers = [{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }]
 			state.phase = 'answer_collection'
 
 			// Simulate what generateAIAnswers() does
@@ -411,13 +406,9 @@ describe('CinemaPippinGame', () => {
 			game.initialize(['player1', 'player2'])
 
 			const state = game.getState()
-			state.aiPlayers = [
-				{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }
-			]
+			state.aiPlayers = [{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }]
 			state.phase = 'voting_collection'
-			state.allAnswers = [
-				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] }
-			]
+			state.allAnswers = [{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: [] }]
 
 			// Simulate what generateAIVotes() does
 			state.votes.set('ai-1', 'a1')
@@ -469,9 +460,7 @@ describe('CinemaPippinGame', () => {
 			game.initialize([])
 
 			const state = game.getState()
-			state.aiPlayers = [
-				{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }
-			]
+			state.aiPlayers = [{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }]
 			state.phase = 'answer_collection'
 
 			// Simulate what loadFallbackAnswers() does
@@ -492,9 +481,7 @@ describe('CinemaPippinGame', () => {
 			game.initialize(['player1', 'player2'])
 
 			const state = game.getState()
-			state.aiPlayers = [
-				{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }
-			]
+			state.aiPlayers = [{ playerId: 'ai-1', nickname: 'PoopBot', constraint: 'Poop' }]
 
 			state.allAnswers = [
 				{ id: 'a1', text: 'answer1', authorId: 'player1', votedBy: ['ai-1', 'player2'] }
