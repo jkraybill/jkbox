@@ -10,70 +10,73 @@
  * - "Above my Father's" → "father"
  */
 export function extractLastWordFromText(text: string): string {
-  const words = text.trim().split(/\s+/);
-  if (words.length === 0) {
-    throw new Error('Cannot extract keyword: text is empty or contains only whitespace');
-  }
+	const words = text.trim().split(/\s+/)
+	if (words.length === 0) {
+		throw new Error('Cannot extract keyword: text is empty or contains only whitespace')
+	}
 
-  let lastWord = words[words.length - 1];
+	let lastWord = words[words.length - 1]
 
-  // First, check if it contains 's followed by punctuation or end of string
-  // This handles: "father's", "father's.", "father's!", etc.
-  const possessiveMatch = lastWord.match(/'s([.!?]*)$/i);
-  if (possessiveMatch) {
-    // Remove the 's but keep any trailing punctuation for next step
-    lastWord = lastWord.slice(0, -2) + (possessiveMatch[1] || '');
-  }
+	// First, check if it contains 's followed by punctuation or end of string
+	// This handles: "father's", "father's.", "father's!", etc.
+	const possessiveMatch = lastWord.match(/'s([.!?]*)$/i)
+	if (possessiveMatch) {
+		// Remove the 's but keep any trailing punctuation for next step
+		lastWord = lastWord.slice(0, -2) + (possessiveMatch[1] || '')
+	}
 
-  // Then remove all remaining punctuation and convert to lowercase
-  const keyword = lastWord.replace(/[^a-zA-Z-]/g, '').toLowerCase();
+	// Then remove all remaining punctuation and convert to lowercase
+	// Use Unicode property \p{L} to match any letter (including accented: é, ï, ñ, ü, etc.)
+	const keyword = lastWord.replace(/[^\p{L}-]/gu, '').toLowerCase()
 
-  if (!keyword) {
-    throw new Error(`Cannot extract keyword: last word "${lastWord}" contains no letters`);
-  }
+	if (!keyword) {
+		throw new Error(`Cannot extract keyword: last word "${lastWord}" contains no letters`)
+	}
 
-  return keyword;
+	return keyword
 }
 
 /**
  * Replace keyword in text with blank, preserving any trailing punctuation and possessives
  */
 export function replaceKeywordWithBlank(text: string, keyword: string): string {
-  // Validate keyword to prevent regex chaos
-  if (!keyword || keyword.length < 2) {
-    throw new Error(`Invalid keyword for blanking: "${keyword}" (must be at least 2 characters)`);
-  }
+	// Validate keyword to prevent regex chaos
+	if (!keyword || keyword.length < 2) {
+		throw new Error(`Invalid keyword for blanking: "${keyword}" (must be at least 2 characters)`)
+	}
 
-  // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
-  // Preserve both possessive and punctuation that's directly attached
-  const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
-    'gi'
-  );
-  return text.replace(keywordRegex, (match, possessive, punctuation) => {
-    // Replace keyword with _____ but preserve possessive ('s) and punctuation
-    return '_____' + (possessive || '') + (punctuation || '');
-  });
+	// Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
+	// Preserve both possessive and punctuation that's directly attached
+	const keywordRegex = new RegExp(
+		`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
+		'gi'
+	)
+	return text.replace(keywordRegex, (match, possessive, punctuation) => {
+		// Replace keyword with _____ but preserve possessive ('s) and punctuation
+		return '_____' + (possessive || '') + (punctuation || '')
+	})
 }
 
 /**
  * Replace keyword in text with literal "[keyword]", preserving punctuation and possessives
  */
 export function replaceKeywordWithBrackets(text: string, keyword: string): string {
-  // Validate keyword to prevent regex chaos
-  if (!keyword || keyword.length < 2) {
-    throw new Error(`Invalid keyword for bracket replacement: "${keyword}" (must be at least 2 characters)`);
-  }
+	// Validate keyword to prevent regex chaos
+	if (!keyword || keyword.length < 2) {
+		throw new Error(
+			`Invalid keyword for bracket replacement: "${keyword}" (must be at least 2 characters)`
+		)
+	}
 
-  // Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
-  // Replace with literal "[keyword]" (not the actual keyword value), preserving possessive and punctuation
-  const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
-    'gi'
-  );
-  return text.replace(keywordRegex, (match, possessive, punctuation) => {
-    return '[keyword]' + (possessive || '') + (punctuation || '');
-  });
+	// Match keyword followed by optional possessive ('s) and punctuation (case-insensitive)
+	// Replace with literal "[keyword]" (not the actual keyword value), preserving possessive and punctuation
+	const keywordRegex = new RegExp(
+		`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?([.!?]*)(?=\\s|$)`,
+		'gi'
+	)
+	return text.replace(keywordRegex, (match, possessive, punctuation) => {
+		return '[keyword]' + (possessive || '') + (punctuation || '')
+	})
 }
 
 /**
@@ -84,21 +87,23 @@ export function replaceKeywordWithBrackets(text: string, keyword: string): strin
  * - applyCasing("mendoza", "poop") => "poop"
  */
 export function applyCasing(sourceWord: string, targetWord: string): string {
-  if (!sourceWord || !targetWord) return targetWord;
+	if (!sourceWord || !targetWord) return targetWord
 
-  // Check if source is all uppercase
-  if (sourceWord === sourceWord.toUpperCase() && sourceWord !== sourceWord.toLowerCase()) {
-    return targetWord.toUpperCase();
-  }
+	// Check if source is all uppercase
+	if (sourceWord === sourceWord.toUpperCase() && sourceWord !== sourceWord.toLowerCase()) {
+		return targetWord.toUpperCase()
+	}
 
-  // Check if source is title case (first letter uppercase, rest lowercase)
-  if (sourceWord[0] === sourceWord[0].toUpperCase() &&
-      sourceWord.slice(1) === sourceWord.slice(1).toLowerCase()) {
-    return targetWord[0].toUpperCase() + targetWord.slice(1).toLowerCase();
-  }
+	// Check if source is title case (first letter uppercase, rest lowercase)
+	if (
+		sourceWord[0] === sourceWord[0].toUpperCase() &&
+		sourceWord.slice(1) === sourceWord.slice(1).toLowerCase()
+	) {
+		return targetWord[0].toUpperCase() + targetWord.slice(1).toLowerCase()
+	}
 
-  // Default to lowercase
-  return targetWord.toLowerCase();
+	// Default to lowercase
+	return targetWord.toLowerCase()
 }
 
 /**
@@ -106,35 +111,35 @@ export function applyCasing(sourceWord: string, targetWord: string): string {
  * Example: If original was "MENDOZA!!" -> "_____!!" and replacement is "poop", result is "POOP!!"
  */
 export function replaceBlankWithWord(
-  text: string,
-  replacementWord: string,
-  originalKeyword: string
+	text: string,
+	replacementWord: string,
+	originalKeyword: string
 ): string {
-  // Match _____ (5 underscores)
-  const blankRegex = /_____/g;
+	// Match _____ (5 underscores)
+	const blankRegex = /_____/g
 
-  // Track which occurrence we're on to apply different casing if needed
-  let occurrenceIndex = 0;
+	// Track which occurrence we're on to apply different casing if needed
+	let occurrenceIndex = 0
 
-  // First, find all occurrences of the original keyword in the text to get their casing
-  const originalKeywordRegex = new RegExp(
-    `\\b${originalKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-    'gi'
-  );
+	// First, find all occurrences of the original keyword in the text to get their casing
+	const originalKeywordRegex = new RegExp(
+		`\\b${originalKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+		'gi'
+	)
 
-  const casings: string[] = [];
-  let match;
-  const originalText = text.replace(blankRegex, originalKeyword); // Temporarily restore to detect casing
-  while ((match = originalKeywordRegex.exec(originalText)) !== null) {
-    casings.push(match[0]);
-  }
+	const casings: string[] = []
+	let match
+	const originalText = text.replace(blankRegex, originalKeyword) // Temporarily restore to detect casing
+	while ((match = originalKeywordRegex.exec(originalText)) !== null) {
+		casings.push(match[0])
+	}
 
-  // Now replace each blank with the word, applying the appropriate casing
-  return text.replace(blankRegex, () => {
-    const casing = casings[occurrenceIndex] || originalKeyword;
-    occurrenceIndex++;
-    return applyCasing(casing, replacementWord);
-  });
+	// Now replace each blank with the word, applying the appropriate casing
+	return text.replace(blankRegex, () => {
+		const casing = casings[occurrenceIndex] || originalKeyword
+		occurrenceIndex++
+		return applyCasing(casing, replacementWord)
+	})
 }
 
 /**
@@ -145,26 +150,26 @@ export function replaceBlankWithWord(
  *          => "My mother's house"
  */
 export function replaceKeywordWithWord(
-  text: string,
-  keyword: string,
-  replacementWord: string
+	text: string,
+	keyword: string,
+	replacementWord: string
 ): string {
-  // Validate inputs to prevent regex chaos
-  if (!keyword || keyword.length < 2) {
-    throw new Error(`Invalid keyword for replacement: "${keyword}" (must be at least 2 characters)`);
-  }
-  if (!replacementWord) {
-    throw new Error(`Invalid replacement word: "${replacementWord}"`);
-  }
+	// Validate inputs to prevent regex chaos
+	if (!keyword || keyword.length < 2) {
+		throw new Error(`Invalid keyword for replacement: "${keyword}" (must be at least 2 characters)`)
+	}
+	if (!replacementWord) {
+		throw new Error(`Invalid replacement word: "${replacementWord}"`)
+	}
 
-  const keywordRegex = new RegExp(
-    `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?\\b`,
-    'gi'
-  );
+	const keywordRegex = new RegExp(
+		`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}('s)?\\b`,
+		'gi'
+	)
 
-  return text.replace(keywordRegex, (match, possessive) => {
-    // Extract the keyword part without the possessive
-    const keywordPart = possessive ? match.slice(0, -2) : match;
-    return applyCasing(keywordPart, replacementWord) + (possessive || '');
-  });
+	return text.replace(keywordRegex, (match, possessive) => {
+		// Extract the keyword part without the possessive
+		const keywordPart = possessive ? match.slice(0, -2) : match
+		return applyCasing(keywordPart, replacementWord) + (possessive || '')
+	})
 }

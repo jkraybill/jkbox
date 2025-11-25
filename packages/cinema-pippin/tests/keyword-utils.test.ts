@@ -13,6 +13,30 @@ describe('Keyword Utils', () => {
       expect(extractLastWordFromText('I love bananas')).toBe('bananas');
     });
 
+    // Unicode/accented character tests (Fix #61)
+    it('should extract keyword with French accents (é)', () => {
+      expect(extractLastWordFromText('Haydée.')).toBe('haydée');
+      expect(extractLastWordFromText('Her name is Haydée')).toBe('haydée');
+    });
+
+    it('should extract keyword with French accents (ï)', () => {
+      expect(extractLastWordFromText("You think mine is really Anaïs?")).toBe('anaïs');
+    });
+
+    it('should extract keyword with Spanish accents (ñ, ó)', () => {
+      expect(extractLastWordFromText('Señor.')).toBe('señor');
+      expect(extractLastWordFromText('El niño')).toBe('niño');
+    });
+
+    it('should extract keyword with German umlauts (ü, ö, ä)', () => {
+      expect(extractLastWordFromText('Herr Müller')).toBe('müller');
+      expect(extractLastWordFromText('Königsberg')).toBe('königsberg');
+    });
+
+    it('should extract keyword with Nordic characters (å, ø)', () => {
+      expect(extractLastWordFromText('København')).toBe('københavn');
+    });
+
     it('should strip punctuation from last word', () => {
       expect(extractLastWordFromText('I love bananas.')).toBe('bananas');
       expect(extractLastWordFromText('I love bananas!')).toBe('bananas');
@@ -81,6 +105,32 @@ describe('Keyword Utils', () => {
         '_____ are great. I love _____.'
       );
     });
+
+    // Unicode/accented character tests (Fix #61)
+    it('should replace keyword with French accents (é)', () => {
+      expect(replaceKeywordWithBlank('Her name is Haydée.', 'haydée')).toBe('Her name is _____.');
+      expect(replaceKeywordWithBlank('Haydée is here', 'haydée')).toBe('_____ is here');
+    });
+
+    it('should replace keyword with French accents (ï)', () => {
+      expect(replaceKeywordWithBlank("You think mine is really Anaïs?", 'anaïs')).toBe(
+        'You think mine is really _____?'
+      );
+    });
+
+    it('should replace keyword with Spanish accents', () => {
+      expect(replaceKeywordWithBlank('Hola Señor.', 'señor')).toBe('Hola _____.');
+      expect(replaceKeywordWithBlank('El niño juega', 'niño')).toBe('El _____ juega');
+    });
+
+    it('should replace keyword with German umlauts', () => {
+      expect(replaceKeywordWithBlank('Herr Müller kommt', 'müller')).toBe('Herr _____ kommt');
+    });
+
+    it('should be case-insensitive with Unicode', () => {
+      expect(replaceKeywordWithBlank('HAYDÉE is here', 'haydée')).toBe('_____ is here');
+      expect(replaceKeywordWithBlank('Haydée and HAYDÉE', 'haydée')).toBe('_____ and _____');
+    });
   });
 
   describe('replaceKeywordWithBrackets', () => {
@@ -112,6 +162,20 @@ describe('Keyword Utils', () => {
     it('should preserve possessive forms', () => {
       expect(replaceKeywordWithBrackets('My father\'s house', 'father')).toBe('My [keyword]\'s house');
       expect(replaceKeywordWithBrackets('The apartment above my father\'s.', 'father')).toBe('The apartment above my [keyword]\'s.');
+    });
+
+    // Unicode/accented character tests (Fix #61)
+    it('should replace keyword with French accents', () => {
+      expect(replaceKeywordWithBrackets('Her name is Haydée.', 'haydée')).toBe('Her name is [keyword].');
+      expect(replaceKeywordWithBrackets('Haydée is here', 'haydée')).toBe('[keyword] is here');
+    });
+
+    it('should replace keyword with Spanish accents', () => {
+      expect(replaceKeywordWithBrackets('Hola Señor.', 'señor')).toBe('Hola [keyword].');
+    });
+
+    it('should be case-insensitive with Unicode', () => {
+      expect(replaceKeywordWithBrackets('HAYDÉE and haydée', 'haydée')).toBe('[keyword] and [keyword]');
     });
   });
 
@@ -181,6 +245,16 @@ describe('Keyword Utils', () => {
       expect(replaceKeywordWithWord('My father and my father\'s house', 'father', 'mother')).toBe(
         'My mother and my mother\'s house'
       );
+    });
+
+    // Unicode/accented character tests (Fix #61)
+    it('should replace keyword with French accents preserving case', () => {
+      expect(replaceKeywordWithWord('Her name is Haydée.', 'haydée', 'marie')).toBe('Her name is Marie.');
+      expect(replaceKeywordWithWord('HAYDÉE is here', 'haydée', 'marie')).toBe('MARIE is here');
+    });
+
+    it('should replace keyword with Spanish accents', () => {
+      expect(replaceKeywordWithWord('Hola Señor García', 'señor', 'doctor')).toBe('Hola Doctor García');
     });
   });
 });
