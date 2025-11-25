@@ -485,15 +485,23 @@ export class ConnectionHandler {
 
 	/**
 	 * Start countdown for game launch (with pause support)
+	 * Cinema Pippin skips the room countdown - it has its own film countdown animation
 	 */
 	private async startCountdown(roomId: string, selectedGame: GameId): Promise<void> {
-		const COUNTDOWN_FROM = 5
-
-		// Transition room to countdown phase
 		const room = this.roomManager.getRoom(roomId)
 		if (!room) {
 			return
 		}
+
+		// Cinema Pippin has its own countdown animation in film_select phase
+		// Skip the room-level countdown to avoid double countdown
+		if (selectedGame === 'cinema-pippin') {
+			console.log(`[ConnectionHandler] Skipping room countdown for Cinema Pippin`)
+			await this.startGame(roomId, selectedGame)
+			return
+		}
+
+		const COUNTDOWN_FROM = 5
 
 		const countdownState: CountdownState = {
 			phase: 'countdown',

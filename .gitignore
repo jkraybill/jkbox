@@ -88,3 +88,10 @@ jkbox-migration-*.tar.gz
 scripts/.env.backup
 scripts/.gordo-memory.backup/
 scripts/packages/
+
+# Python virtual environments
+*venv/
+*-venv/
+
+# Compiled scripts output
+scripts/scripts/

@@ -108,31 +108,45 @@ while true; do
     TEMP_ERROR_LOG=$(mktemp)
 
     # Run pipeline with FULL TTY access (no background, direct output, allow keyboard input)
-    # We tee output to both console and log file for diagnostics
+    # Tee to temp file for error diagnostics, console output goes directly to terminal
     set +e
-    (cd "$PIPPIN_DIR" && npm run cli process "$basename_no_ext" 2>&1 | tee -a "$LOG_FILE" | tee "$TEMP_ERROR_LOG")
-    pipeline_exit_code=$?
+    (cd "$PIPPIN_DIR" && npm run cli process "$basename_no_ext" 2>&1 | tee "$TEMP_ERROR_LOG")
+    pipeline_exit_code=${PIPESTATUS[0]}
     set -e
 
+    # Append temp file to log
+    cat "$TEMP_ERROR_LOG" >> "$LOG_FILE" 2>/dev/null || true
+
     echo ""
+    info "  🔍 DEBUG: Pipeline finished, captured exit code: $pipeline_exit_code"
 
     if [ $pipeline_exit_code -eq 0 ]; then
+        info "  🔍 DEBUG: Exit code is 0, entering success block"
         # Step 4a: Check if clips directory was created
+        info "  🔍 DEBUG: Checking for clips directory: $clips_dir"
         if [ -d "$clips_dir" ]; then
             log "  ✓ Pipeline succeeded - clips directory created"
 
             # Move video file and any matching .srt file to succeeded/
+            info "  🔍 DEBUG: Moving video file: $video_file -> $SUCCEEDED_DIR/"
             mv "$video_file" "$SUCCEEDED_DIR/"
+            info "  🔍 DEBUG: Video file moved successfully"
+
             if [ -f "$ASSETS_DIR/$basename_no_ext.srt" ]; then
+                info "  🔍 DEBUG: Moving SRT file: $ASSETS_DIR/$basename_no_ext.srt -> $SUCCEEDED_DIR/"
                 mv "$ASSETS_DIR/$basename_no_ext.srt" "$SUCCEEDED_DIR/"
+                info "  🔍 DEBUG: SRT file moved successfully"
                 log "  ✓ Moved $basename_no_ext.$extension + .srt to succeeded/"
             else
                 log "  ✓ Moved $basename_no_ext.$extension to succeeded/"
             fi
 
+            info "  🔍 DEBUG: Incrementing success counter"
             success=$((success + 1))
+            info "  🔍 DEBUG: Success counter now: $success"
         else
             # Step 4b: Pipeline succeeded but no clips directory (unexpected)
+            info "  🔍 DEBUG: Clips directory NOT found, entering error handling"
             set +e
 
             error "  ⚠️  UNEXPECTED: Pipeline succeeded but no clips directory created"
@@ -178,9 +192,11 @@ while true; do
         fi
     else
         # Step 4b: Pipeline failed - disable errexit for entire error handling block
+        info "  🔍 DEBUG: Exit code is non-zero ($pipeline_exit_code), entering failure block"
         set +e
 
         # Check if this is a bitmap subtitle error (needs OCR)
+        info "  🔍 DEBUG: Checking if bitmap subtitle error..."
         is_bitmap_subtitle=false
         if [ -f "$TEMP_ERROR_LOG" ] && grep -q "BITMAP SUBTITLE FORMAT" "$TEMP_ERROR_LOG" 2>/dev/null; then
             is_bitmap_subtitle=true
@@ -263,10 +279,15 @@ while true; do
     fi
 
     # Clean up temp error log
+    info "  🔍 DEBUG: Cleaning up temp error log: $TEMP_ERROR_LOG"
     rm -f "$TEMP_ERROR_LOG"
+    info "  🔍 DEBUG: Temp error log cleaned up"
 
+    info "  🔍 DEBUG: Iteration complete, continuing to next video..."
     echo ""
 done
+
+info "🔍 DEBUG: Main loop exited - no more video files in $ASSETS_DIR"
 
 # Summary
 echo "================================================"
