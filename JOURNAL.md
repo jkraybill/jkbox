@@ -192,7 +192,7 @@ Journal entries reference HC outcomes:
 
 ## Session Count
 
-**Current session: 14** (updated at BOS)
+**Current session: 15** (updated at BOS)
 
 ## Current Journal
 
@@ -255,6 +255,10 @@ Journal entries reference HC outcomes:
 ### Session Cont'd (2025-11-24)
 
 [2025-11-24 12:00 UTC] Cinema Pippin AI film titles✓. T:2✗→221✓. Batch generation prompt (3 act winners→titles). FinalMontage component, film voting UI. Test fix: AI placeholder pre-marking→expectations updated. Linting: PauseState type annotation (not just assertion)→ESLint happy. C:824fc07. Pattern: AI behavior change→test expectations need sync. Pre-commit hooks caught linting→proper fix better than bypass✓.
+
+### Session 15 (2025-11-25)
+
+[2025-11-25 19:30 UTC] EOS cleanup session✓. Pre-existing uncommitted WIP→pristine. Prompt loader refactoring (prompts→.md files w/hot-reload). Subtitle downloader (OpenSubtitles API). 22 old SRTs removed, 8 new added. Lint fixes: triplet-judger+cli (59 errors→0). Skip room countdown for Cinema Pippin (film countdown instead). T:all passing✓. C:42de76e,17126af,f24e6c3,dad4bb2,1d4025c. Pattern: Large uncommitted diffs→systematic commit grouping by feature✓. JKLES: ∅ (cleanup work).
 
 ---
 
