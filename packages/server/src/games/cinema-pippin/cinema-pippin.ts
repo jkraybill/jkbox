@@ -1030,6 +1030,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				}
 			})
 
+			// Broadcast state update so clients see AI players marked as submitted
+			if (this.stateChangeCallback) {
+				this.stateChangeCallback()
+			}
+
 			// Store rest as house titles
 			const aiCount = this.state.aiPlayers.length
 			this.state.houseAnswerQueue = shuffled.slice(aiCount, aiCount + playerCount)
@@ -1077,9 +1082,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			const answersPath = path.join(clipDir, 'answers.json')
 			const fs = await import('fs/promises')
 			const answersData = await fs.readFile(answersPath, 'utf-8')
-			const answersArray = JSON.parse(answersData) as string[][]
+			const parsed = JSON.parse(answersData) as { answers: string[][] }
 
-			// answers.json is 2D array: outer index = clip number (0-2), inner = answers
+			// answers.json is { answers: [[c1], [c2], [c3]] } - outer index = clip number (0-2)
+			const answersArray = parsed.answers || []
 			const clipAnswers = answersArray[clipNumber - 1] || []
 
 			// Shuffle and take what we need
@@ -1101,6 +1107,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					console.log(`[AI FALLBACK] ${aiPlayer.nickname}: "${answer}"`)
 				}
 			})
+
+			// Broadcast state update so clients see AI players marked as submitted
+			if (this.stateChangeCallback) {
+				this.stateChangeCallback()
+			}
 
 			// Store rest as house answers
 			this.state.houseAnswerQueue = shuffled.slice(aiCount, aiCount + playerCount)
