@@ -85,6 +85,16 @@ if (existsSync(constraintsSource)) {
   console.warn('⚠️  No constraints.txt found at assets/constraints.txt')
 }
 
+// Step 10: Copy AI prompts folder
+const promptsSource = resolve(ROOT, 'packages/server/src/games/cinema-pippin/prompts')
+const promptsTarget = resolve(DIST_DIR, 'prompts')
+if (existsSync(promptsSource)) {
+  cpSync(promptsSource, promptsTarget, { recursive: true })
+  console.log('✓ AI prompts folder copied')
+} else {
+  console.warn('⚠️  No prompts folder found')
+}
+
 // Create README for distribution
 const readmeContent = `# jkbox Party Server - Cinema Pippin
 

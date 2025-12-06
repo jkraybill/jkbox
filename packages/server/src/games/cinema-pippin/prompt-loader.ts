@@ -7,9 +7,48 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const PROMPTS_DIR = path.join(__dirname, 'prompts')
+/**
+ * Find the prompts directory
+ * Searches multiple locations for packaged vs dev environments
+ */
+function findPromptsDir(): string {
+	const __filename = fileURLToPath(import.meta.url)
+	const __dirname = path.dirname(__filename)
+
+	const promptsPaths = [
+		path.join(process.cwd(), 'prompts'),                           // Packaged: next to executable
+		path.join(__dirname, 'prompts'),                               // Dev: relative to prompt-loader.ts
+		path.join(__dirname, '../prompts'),                            // Dev: one level up
+		'/home/jk/jkbox/packages/server/src/games/cinema-pippin/prompts', // Fallback: absolute dev path
+	]
+
+	// Normalize paths for Windows (remove leading slash from /C:/...)
+	const normalizedPaths = promptsPaths.map(p => {
+		if (process.platform === 'win32' && p.startsWith('/') && p[2] === ':') {
+			return p.substring(1)
+		}
+		return p
+	})
+
+	const promptsPath = normalizedPaths.find(p => fs.existsSync(p))
+
+	if (!promptsPath) {
+		console.error('[PromptLoader] Searched paths:', normalizedPaths)
+		throw new Error('Prompts directory not found! Searched: ' + normalizedPaths.join(', '))
+	}
+
+	console.log(`[PromptLoader] Using prompts directory: ${promptsPath}`)
+	return promptsPath
+}
+
+// Lazy-initialize PROMPTS_DIR on first access
+let _promptsDir: string | null = null
+function getPromptsDir(): string {
+	if (_promptsDir === null) {
+		_promptsDir = findPromptsDir()
+	}
+	return _promptsDir
+}
 
 // Cache for loaded prompts
 const promptCache = new Map<string, string>()
@@ -21,7 +60,7 @@ const watchers = new Map<string, fs.FSWatcher>()
  * Load a prompt from a .md file and set up a file watcher for hot-reload
  */
 function loadPrompt(filename: string): string {
-	const filepath = path.join(PROMPTS_DIR, filename)
+	const filepath = path.join(getPromptsDir(), filename)
 
 	// Read the file
 	const content = fs.readFileSync(filepath, 'utf-8')

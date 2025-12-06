@@ -546,21 +546,21 @@ export async function generateBatchFilmTitles(
 		? getConstraintTitle(randomizedConstraints[2] ?? '')
 		: ''
 
-	// Load prompts
-	const systemPrompt = fs.readFileSync(
-		path.join(__dirname, 'prompts', 'batch-generation-system.md'),
-		'utf-8'
-	)
-	const userPromptTemplate = fs.readFileSync(
-		path.join(__dirname, 'prompts', 'batch-generation-user-film-title.md'),
-		'utf-8'
-	)
+	// Load prompts using getPrompt helper (handles packaged vs dev paths)
+	const systemPromptRaw = getPrompt('batch-generation-system.md', {
+		WORD_COUNT_C2: 4,
+		WORD_COUNT_C3: 3,
+		NUM_CONSTRAINTS: randomizedConstraints.length,
+		ANSWER_TYPE: 'FILM TITLES',
+		CONSTRAINTS_LIST: randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n'),
+		CONSTRAINT_1: constraint1,
+		CONSTRAINT_2: constraint2,
+		CONSTRAINT_3: constraint3
+	})
+	const userPromptTemplate = getPrompt('batch-generation-user-film-title.md')
 
-	// Build constraint list for system prompt
-	const constraintList = randomizedConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
-
-	// Replace placeholders in system prompt
-	const systemMessage = systemPrompt.replace('{{CONSTRAINTS}}', constraintList)
+	// System prompt already has replacements from getPrompt call above
+	const systemMessage = systemPromptRaw
 
 	// Replace placeholders in user prompt
 	const userMessage = userPromptTemplate
