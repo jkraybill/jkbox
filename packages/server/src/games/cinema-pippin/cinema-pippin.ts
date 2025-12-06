@@ -162,6 +162,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 	clearAnswers(): void {
 		this.state.playerAnswers.clear()
+		this.state.houseAnswerQueue = [] // Clear stale house answers from previous phase
 	}
 
 	clearVotes(): void {
@@ -1310,10 +1311,18 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 				this.state.playerAnswers.set(playerId, houseAnswer)
 
-				// Don't mark hasSubmittedAnswer as true - this lets us detect house answers later
-				// The player status remains with hasSubmittedAnswer: false/undefined
+				// Mark as submitted so UI shows "Answered" instead of "Answering..."
+				const status = this.state.playerStatus.get(playerId) || {}
+				status.hasSubmittedAnswer = true
+				status.timedOut = true // Flag to detect house answers if needed
+				this.state.playerStatus.set(playerId, status)
 
 				console.log(`[CinemaPippinGame] Assigned house answer to ${playerId}: "${houseAnswer}"`)
+			}
+
+			// Broadcast state update so UI reflects the changes
+			if (this.stateChangeCallback) {
+				this.stateChangeCallback()
 			}
 		}
 

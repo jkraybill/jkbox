@@ -52,6 +52,7 @@ export interface AIPlayerData {
 export interface PlayerStatus {
 	hasSubmittedAnswer?: boolean
 	hasVoted?: boolean
+	timedOut?: boolean // True if answer was assigned by timeout (house answer)
 }
 
 export interface PlayerError {
