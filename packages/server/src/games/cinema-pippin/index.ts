@@ -242,19 +242,13 @@ class CinemaPippinModule implements PluggableGameModule {
 	}
 
 	async loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {
-		// Lazy load jumbotron component
-		const module = (await import(
-			'../../../client/src/games/cinema-pippin/CinemaPippinJumbotron'
-		)) as { CinemaPippinJumbotron: React.ComponentType<JumbotronProps> }
-		return module.CinemaPippinJumbotron
+		// Component loading happens on the client side via the game router
+		throw new Error('loadJumbotronComponent should only be called on client')
 	}
 
 	async loadControllerComponent(): Promise<React.ComponentType<ControllerProps>> {
-		// Lazy load controller component
-		const module = (await import(
-			'../../../client/src/games/cinema-pippin/CinemaPippinController'
-		)) as { CinemaPippinController: React.ComponentType<ControllerProps> }
-		return module.CinemaPippinController
+		// Component loading happens on the client side via the game router
+		throw new Error('loadControllerComponent should only be called on client')
 	}
 
 	async cleanup(): Promise<void> {

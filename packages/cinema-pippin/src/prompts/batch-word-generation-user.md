@@ -55,6 +55,10 @@ Examples:
 🚨 REMEMBER: The punctuation is already in the film scene! You only provide the WORD!
 
 📋 YOUR 6 CONSTRAINTS (one per word, IN ORDER):
+
+⚠️ Each constraint has a NAME and a DESCRIPTION (after "--") explaining what kind of word to generate.
+You MUST generate a word that satisfies each constraint's description!
+
 {{CONSTRAINTS_LIST}}
 
 🎬 FILM SCENE WITH BLANK:
@@ -104,6 +108,14 @@ GOOD Output: [["{{EXAMPLE_CONSTRAINT_1}}", "word1"], ["{{EXAMPLE_CONSTRAINT_2}}"
 
 ⚠️ OUTPUT FORMAT:
 Respond with ONLY a valid JSON array of 6 couplets (constraint-word pairs).
-Each couplet is [constraint_text, word] where constraint_text is EXACTLY copied from above.
+
+🚨 CRITICAL: For each couplet [constraint_key, word]:
+- constraint_key = ONLY the constraint NAME (e.g., "Snob")
+- DO NOT include the description (the part after "--") in the JSON key!
+- The description is for YOUR understanding, NOT for the output
+
+Example: If constraint is "Snob -- this punchline should sound like..."
+- CORRECT key: "Snob"
+- WRONG key: "Snob -- this punchline should sound like..."
 
 No explanations, no other text. Just the JSON array of couplets.

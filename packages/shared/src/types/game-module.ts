@@ -53,6 +53,7 @@ export interface JumbotronProps {
 	players: Player[]
 	sendToServer: (action: GameAction) => void
 	pauseState?: PauseState
+	replayTrigger?: number // Increments when admin requests clip replay
 }
 
 /**

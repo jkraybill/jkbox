@@ -1,11 +1,11 @@
-import Database from 'better-sqlite3'
+import { Database } from './database'
 
 /**
  * Global configuration storage (persists across server restarts)
  * Stores system-wide settings like AI player count
  */
 export class GlobalConfigStorage {
-	private db: Database.Database
+	private db: Database
 
 	constructor(dbPath: string = './jkbox-config.db') {
 		this.db = new Database(dbPath)

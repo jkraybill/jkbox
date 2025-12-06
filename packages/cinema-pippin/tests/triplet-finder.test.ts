@@ -104,63 +104,63 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:05,000',  // F1 duration: 2 seconds
+        endTime: '00:00:04,000',  // F1 duration: 1 second
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
       {
         index: 3,
-        startTime: '00:00:05,000',
-        endTime: '00:00:07,000',
+        startTime: '00:00:04,000',
+        endTime: '00:00:05,000',
         text: 'F1.',
         rawText: ['F1.'],
       },
       {
         index: 4,
-        startTime: '00:00:07,000',
-        endTime: '00:00:09,000',
+        startTime: '00:00:05,000',
+        endTime: '00:00:06,000',
         text: 'F2.',
         rawText: ['F2.'],
       },
       {
         index: 5,
-        startTime: '00:00:09,000',
-        endTime: '00:00:11,000',
+        startTime: '00:00:06,000',
+        endTime: '00:00:07,000',
         text: 'F3.',
         rawText: ['F3.'],
       },
       {
         index: 6,
-        startTime: '00:00:11,000',
-        endTime: '00:00:13,000',
+        startTime: '00:00:07,000',
+        endTime: '00:00:08,000',
         text: 'F4.',
         rawText: ['F4.'],
       },
       {
         index: 7,
-        startTime: '00:00:13,000',
-        endTime: '00:00:15,000',
+        startTime: '00:00:08,000',
+        endTime: '00:00:09,000',
         text: 'F5.',
         rawText: ['F5.'],
       },
       {
         index: 8,
-        startTime: '00:00:15,000',
-        endTime: '00:00:17,000',
+        startTime: '00:00:09,000',
+        endTime: '00:00:10,000',
         text: 'F6.',
         rawText: ['F6.'],
       },
       {
         index: 9,
-        startTime: '00:00:17,000',
-        endTime: '00:00:19,500',  // F2 duration: 2.5 seconds (longer than F1)
+        startTime: '00:00:10,000',
+        endTime: '00:00:12,000',  // F2 duration: 2 seconds (longer than F1)
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 10,
-        startTime: '00:00:19,500',
-        endTime: '00:00:22,500',  // F3 duration: 3 seconds (longer than F2), total 19.5s from F1 start
+        startTime: '00:00:12,000',
+        endTime: '00:00:15,000',  // F3 duration: 3 seconds (longer than F2), total 12s from F1 start
         text: 'Answer!',
         rawText: ['Answer!'],
       },
@@ -171,7 +171,7 @@ describe('isValidFirstTriplet', () => {
     expect(result).toBe(true);
   });
 
-  it('should accept duration up to 20 seconds', () => {
+  it('should accept duration up to 15 seconds', () => {
     const entries: SRTEntry[] = [
       {
         index: 1,
@@ -183,21 +183,21 @@ describe('isValidFirstTriplet', () => {
       {
         index: 2,
         startTime: '00:00:03,000',
-        endTime: '00:00:08,000',  // F1 duration: 5 seconds
+        endTime: '00:00:07,000',  // F1 duration: 4 seconds
         text: 'First frame here.',
         rawText: ['First frame here.'],
       },
       {
         index: 3,
-        startTime: '00:00:08,000',
-        endTime: '00:00:15,000',  // F2 duration: 7 seconds (longer than F1)
+        startTime: '00:00:07,000',
+        endTime: '00:00:12,000',  // F2 duration: 5 seconds (longer than F1)
         text: 'Second frame.',
         rawText: ['Second frame.'],
       },
       {
         index: 4,
-        startTime: '00:00:15,000',
-        endTime: '00:00:23,000',  // F3 duration: 8 seconds (longer than F2), total 20s from F1 start
+        startTime: '00:00:12,000',
+        endTime: '00:00:18,000',  // F3 duration: 6 seconds (longer than F2), total 15s from F1 start
         text: 'Answer!',
         rawText: ['Answer!'],
       },
@@ -207,7 +207,7 @@ describe('isValidFirstTriplet', () => {
     expect(result).toBe(true);
   });
 
-  it('should reject duration over 20 seconds', () => {
+  it('should reject duration over 15 seconds', () => {
     const entries: SRTEntry[] = [
       {
         index: 1,
@@ -303,7 +303,7 @@ describe('isValidFirstTriplet', () => {
     expect(result).toBe(false);
   });
 
-  it('should return false if duration is not between 5-20 seconds', () => {
+  it('should return false if duration is not between 4-15 seconds', () => {
     const entries: SRTEntry[] = [
       {
         index: 1,
@@ -778,52 +778,53 @@ This answer here contains answer!`;
     // T1: keyword "light" only at end of F3
     // T2/T3: keyword "light" appears in F1 or F2 (required for subsequent triplets)
     // Frame durations must be strictly increasing within each triplet
+    // All triplets must be under 15 seconds total duration
     const srt = `1
-00:00:00,000 --> 00:00:01,500
+00:00:00,000 --> 00:00:01,000
 Previous.
 
 2
-00:00:01,500 --> 00:00:04,000
+00:00:01,000 --> 00:00:02,500
 Short text-
 
 3
-00:00:04,000 --> 00:00:08,500
+00:00:02,500 --> 00:00:05,000
 more content-
 
 4
-00:00:08,500 --> 00:00:15,000
+00:00:05,000 --> 00:00:09,000
 Here comes the light!
 
 5
-00:00:16,000 --> 00:00:18,500
+00:00:10,000 --> 00:00:11,500
 The light shines.
 
 6
-00:00:18,500 --> 00:00:22,000
+00:00:11,500 --> 00:00:13,500
 Medium text-
 
 7
-00:00:22,000 --> 00:00:27,500
+00:00:13,500 --> 00:00:17,000
 even more text-
 
 8
-00:00:27,500 --> 00:00:36,000
+00:00:17,000 --> 00:00:22,000
 Another answer with bright light here!
 
 9
-00:00:37,000 --> 00:00:39,500
+00:00:23,000 --> 00:00:24,500
 A light appears.
 
 10
-00:00:39,500 --> 00:00:43,000
+00:00:24,500 --> 00:00:27,000
 Question here-
 
 11
-00:00:43,000 --> 00:00:48,500
+00:00:27,000 --> 00:00:30,000
 Answer text-
 
 12
-00:00:48,500 --> 00:00:57,000
+00:00:30,000 --> 00:00:35,000
 The keyword brings more light than ever!`;
 
     const optimized = await findAllTripletsOptimized(srt);

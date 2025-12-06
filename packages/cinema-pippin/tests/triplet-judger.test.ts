@@ -3,8 +3,128 @@ import { judgeTriplet } from '../src/triplet-judger.js';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-// Mock fetch for Ollama API
-global.fetch = vi.fn();
+// Track Claude call count for all mocks (generation + judging)
+let claudeCallCount = 0;
+
+// Mock Anthropic SDK for all Claude calls (generation + judging)
+vi.mock('@anthropic-ai/sdk', () => {
+  const MockAnthropic = function() {
+    return {
+      messages: {
+        create: async (params: any) => {
+          claudeCallCount++;
+          const prompt = params.messages[0].content;
+
+          // Parse constraints from prompt (for generation calls)
+          // Look for numbered constraints that contain " -- " (e.g., "1. Foodie -- this punchline...")
+          // This distinguishes actual constraints from numbered instructions in the prompt
+          const constraintMatches = prompt.match(/^\d+\.\s+.+\s--\s.+$/gm) || [];
+          const constraints = constraintMatches.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
+
+          // Mock usage data for cost tracking
+          const mockUsage = { input_tokens: 1000, output_tokens: 100 };
+
+          // T1 word generation (call 1)
+          if (claudeCallCount === 1) {
+            const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
+              const words = ['sexophone', 'convertible', 'boobies', 'avocado', 'puppy', 'tacos'];
+              return [constraint, words[idx]];
+            });
+            return {
+              content: [{ type: 'text', text: JSON.stringify(mockCouplets) }],
+              usage: mockUsage
+            };
+          }
+
+          // T1 word judging (call 2) - returns top 3 indices
+          if (claudeCallCount === 2) {
+            return {
+              content: [{ type: 'text', text: '3 1 5' }], // Top 3: boobies, sexophone, puppy
+              usage: mockUsage
+            };
+          }
+
+          // T2 phrase generation (call 3)
+          if (claudeCallCount === 3) {
+            const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
+              const phrases = [
+                'very sexy saxophone!',
+                'driving a red convertible.',
+                'showing off my boobies!',
+                'eating fresh avocado toast.',
+                'playing with my puppy.',
+                'munching delicious tacos!'
+              ];
+              return [constraint, phrases[idx]];
+            });
+            return {
+              content: [{ type: 'text', text: JSON.stringify(mockCouplets) }],
+              usage: mockUsage
+            };
+          }
+
+          // T2 phrase judging (call 4) - returns top 3 indices
+          if (claudeCallCount === 4) {
+            return {
+              content: [{ type: 'text', text: '2 4 1' }], // Top 3: convertible, avocado toast, sexy saxophone
+              usage: mockUsage
+            };
+          }
+
+          // T3 phrase generation (call 5)
+          if (claudeCallCount === 5) {
+            const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
+              const phrases = [
+                'super sexy scenario!',
+                'amazing automobile adventure.',
+                'bouncing boobies bonanza!',
+                'radical racing rivals?',
+                'perfect puppy playtime.',
+                'tasty taco time!'
+              ];
+              return [constraint, phrases[idx]];
+            });
+            return {
+              content: [{ type: 'text', text: JSON.stringify(mockCouplets) }],
+              usage: mockUsage
+            };
+          }
+
+          // T3 phrase judging (call 6) - returns top 3 indices
+          if (claudeCallCount === 6) {
+            return {
+              content: [{ type: 'text', text: '4 2 5' }], // Top 3: racing rivals, automobile adventure, puppy playtime
+              usage: mockUsage
+            };
+          }
+
+          // Quality judging (call 7)
+          if (claudeCallCount === 7) {
+            const mockQualityAnswers = [
+              ['1. Is scene 1 funny?', true],
+              ['2. Is scene 2 funny?', true],
+              ['3. Is scene 3 funny?', true],
+              ['4. Is scene 1 coherent?', true],
+              ['5. Is scene 2 coherent?', true],
+              ['6. Is scene 3 coherent?', false],
+              ['7. Do these three scenes tell a coherent story together?', true],
+              ['8. Would these three scenes each make a spectator laugh out loud?', true],
+              ['9. Are these scenes unexpected in a funny or ironic way?', true],
+              ['10. Do these three scenes all embody best screenwriting practices?', false]
+            ];
+            return {
+              content: [{ type: 'text', text: JSON.stringify(mockQualityAnswers) }],
+              usage: mockUsage
+            };
+          }
+
+          throw new Error(`Unexpected Claude call #${claudeCallCount}`);
+        }
+      }
+    };
+  };
+  return { default: MockAnthropic };
+});
 
 // Mock fs.readFileSync to control constraints
 vi.mock('fs', async () => {
@@ -30,6 +150,7 @@ Foodie -- this punchline should be food-related.`;
 describe('Triplet Judger', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    claudeCallCount = 0; // Reset Claude call counter
   });
 
   describe('judgeTriplet', () => {
@@ -69,238 +190,8 @@ Fruit is amazing!`;
       const testFile = join(testDir, 'test.txt');
       writeFileSync(testFile, tripletContent, 'utf-8');
 
-      // Mock Ollama responses with couplet format
-      // The constraints are randomly selected in the actual code, so we need to intercept
-      // the fetch call and dynamically create a response based on what was actually selected
-      // Now we have 4 calls: T1 gen, T1 judge, T2 gen, T2 judge
-
-      let mockResponseCount = 0;
-
-      const mockResponse = (url: string, options: any) => {
-        mockResponseCount++;
-
-        const body = JSON.parse(options.body);
-        const prompt = body.prompt;
-
-        // First call is T1 generation (Prompt 1)
-        if (mockResponseCount === 1) {
-          // Parse constraints from prompt (they're listed as "1. constraint text")
-          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
-          const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
-          const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
-
-          // Create couplets with proper constraints (T1 words have NO punctuation now)
-          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
-            const words = ['sexophone', 'convertible', 'boobies', 'avocado', 'puppy', 'tacos'];
-            return [constraint, words[idx]];
-          });
-
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: JSON.stringify(mockCouplets),
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Second call is T1 judging (Prompt 2) - returns top 3
-        if (mockResponseCount === 2) {
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: '3 1 5', // Top 3: boobies, sexophone, puppy
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Third call is T2 generation (Prompt 1 T2)
-        if (mockResponseCount === 3) {
-          // Parse constraints from T2 prompt (includes word counts)
-          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
-          const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
-          const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
-
-          // Create couplets with proper constraints (phrases this time)
-          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
-            const phrases = [
-              'very sexy saxophone!',
-              'driving a red convertible.',
-              'showing off my boobies!',
-              'eating fresh avocado toast.',
-              'playing with my puppy.',
-              'munching delicious tacos!'
-            ];
-            return [constraint, phrases[idx]];
-          });
-
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: JSON.stringify(mockCouplets),
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Fourth call is T2 judging (Prompt 2 T2) - returns top 3
-        if (mockResponseCount === 4) {
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: '2 4 1', // Top 3: convertible, avocado toast, sexy saxophone
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Fifth call is T3 generation (Prompt 1 T3)
-        if (mockResponseCount === 5) {
-          // Parse constraints from T3 prompt (includes word counts)
-          const constraintMatches = prompt.match(/📋 YOUR 6 CONSTRAINTS.*?\n([\s\S]*?)\n\n🎬 FILM SCENE/);
-          const constraintLines = constraintMatches ? constraintMatches[1].split('\n') : [];
-          const constraints = constraintLines.map((line: string) => line.replace(/^\d+\.\s*/, '').trim());
-
-          // Create couplets with proper constraints (phrases for T3)
-          const mockCouplets = constraints.slice(0, 6).map((constraint: string, idx: number) => {
-            const phrases = [
-              'super sexy scenario!',
-              'amazing automobile adventure.',
-              'bouncing boobies bonanza!',
-              'radical racing rivals?',
-              'perfect puppy playtime.',
-              'tasty taco time!'
-            ];
-            return [constraint, phrases[idx]];
-          });
-
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: JSON.stringify(mockCouplets),
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Sixth call is T3 judging (Prompt 2 T3) - returns top 3
-        if (mockResponseCount === 6) {
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: '4 2 5', // Top 3: racing rivals, automobile adventure, puppy playtime
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Seventh call is final quality judging
-        if (mockResponseCount === 7) {
-          const mockQualityAnswers = [
-            ['1. Is scene 1 funny?', true],
-            ['2. Is scene 2 funny?', true],
-            ['3. Is scene 3 funny?', true],
-            ['4. Is scene 1 coherent?', true],
-            ['5. Is scene 2 coherent?', true],
-            ['6. Is scene 3 coherent?', false],
-            ['7. Do these three scenes tell a coherent story together?', true],
-            ['8. Would these three scenes each make a spectator laugh out loud?', true],
-            ['9. Are these scenes unexpected in a funny or ironic way?', true],
-            ['10. Do these three scenes all embody best screenwriting practices?', false]
-          ];
-
-          return Promise.resolve({
-            ok: true,
-            body: {
-              getReader: () => ({
-                read: vi.fn()
-                  .mockResolvedValueOnce({
-                    done: false,
-                    value: new TextEncoder().encode(JSON.stringify({
-                      model: 'test',
-                      created_at: '2024',
-                      response: JSON.stringify(mockQualityAnswers),
-                      done: false,
-                    })),
-                  })
-                  .mockResolvedValueOnce({ done: true }),
-              }),
-            },
-          });
-        }
-
-        // Fallback for any unexpected calls
-        throw new Error(`Unexpected mock call #${mockResponseCount}`);
-      };
-
-      (global.fetch as any) = vi.fn(mockResponse);
+      // All Claude calls are now mocked via the @anthropic-ai/sdk mock above
+      // 7 total calls: T1 gen, T1 judge, T2 gen, T2 judge, T3 gen, T3 judge, quality judge
 
       const result = await judgeTriplet(testFile, 1);
 
@@ -349,49 +240,9 @@ Fruit is amazing!`;
       expect(result.finalScene3).toContain(result.bestPhraseT3);
     });
 
-    it.skip('should handle Ollama API errors gracefully with retries', async () => {
-      const testDir = '/tmp/triplet-test';
-      const tripletContent = `1
-00:00:00,000 --> 00:00:02,000
-Test content.
-
----
-
-2
-00:00:02,000 --> 00:00:04,000
-[keyword] here.
-
-3
-00:00:04,000 --> 00:00:06,000
-More text.
-
----
-
-4
-00:00:06,000 --> 00:00:08,000
-Final content.`;
-
-      const testFile = join(testDir, 'test2.txt');
-      writeFileSync(testFile, tripletContent, 'utf-8');
-
-      // Mock 3 failed attempts (initial + 2 retries)
-      (global.fetch as any)
-        .mockResolvedValueOnce({
-          ok: false,
-          statusText: 'Internal Server Error',
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          statusText: 'Internal Server Error',
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          statusText: 'Internal Server Error',
-        });
-
-      await expect(judgeTriplet(testFile, 1)).rejects.toThrow(
-        'Generate replacement words failed after 3 attempts'
-      );
+    it.skip('should handle Claude API errors gracefully with retries', async () => {
+      // This test would need to mock the Anthropic SDK to throw errors
+      // Skipped for now - the retry logic is tested elsewhere
     });
   });
 });

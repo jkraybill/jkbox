@@ -93,9 +93,9 @@ function buildFirstTripletIndex(entries: SRTEntry[]): ValidFirstTriplet[] {
       // Filter out: empty, too short (<2 chars), no letters, or excluded common words
       if (!keyword || keyword.length < 2 || !/[a-z]/i.test(keyword) || isExcludedWord(keyword)) continue;
 
-      // Validate duration (4-20 seconds)
+      // Validate duration (4-15 seconds)
       const duration = getDurationSeconds(frame1, frame3);
-      if (duration < 4 || duration > 20) continue;
+      if (duration < 4 || duration > 15) continue;
 
       validFirstTriplets.push({
         f1Start: i,
@@ -221,9 +221,9 @@ function isValidSubsequentTriplet(
     return false;
   }
 
-  // Duration validation (4-20 seconds)
+  // Duration validation (4-15 seconds)
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 4 || duration > 20) {
+  if (duration < 4 || duration > 15) {
     return false;
   }
 

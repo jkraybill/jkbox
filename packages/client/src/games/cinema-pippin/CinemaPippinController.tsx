@@ -7,6 +7,8 @@ import { useState, useEffect, useCallback } from 'react'
 import type { ControllerProps } from '@jkbox/shared'
 import { AnswerInput } from './AnswerInput'
 import { VotingUI } from './VotingUI'
+import { PlayerVideoReplay } from './PlayerVideoReplay'
+import type { Subtitle } from './VideoPlayer'
 
 interface Answer {
 	id: string
@@ -32,12 +34,18 @@ interface CinemaPippinGameState {
 	playerErrors?: Map<string, PlayerError> | Record<string, PlayerError>
 	scoresBeforeRound?: Map<string, number> | Record<string, number>
 	voteCountsThisRound?: Map<string, number> | Record<string, number>
+	currentClip?: {
+		clipNumber: 1 | 2 | 3
+		videoUrl: string
+		subtitles: Subtitle[]
+	}
 }
 
 export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {
 	const gameState = state as CinemaPippinGameState
 	const [timeRemaining, setTimeRemaining] = useState(60)
 	const [hasSubmitted, setHasSubmitted] = useState(false)
+	const [showVideoReplay, setShowVideoReplay] = useState(false)
 
 	// Check if player has already submitted an answer
 	useEffect(() => {
@@ -126,6 +134,14 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 							submitted={hasSubmitted}
 							error={playerError}
 						/>
+						{gameState.currentClip && (
+							<button
+								onClick={() => setShowVideoReplay(true)}
+								style={styles.replayButton}
+							>
+								📹 Replay Clip
+							</button>
+						)}
 					</div>
 				)
 			}
@@ -181,6 +197,14 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 							submitted={hasSubmitted}
 							error={playerError}
 						/>
+						{gameState.currentClip && (
+							<button
+								onClick={() => setShowVideoReplay(true)}
+								style={styles.replayButton}
+							>
+								📹 Replay Clip
+							</button>
+						)}
 					</div>
 				)
 			}
@@ -222,7 +246,20 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 		}
 	}
 
-	return <div style={styles.fullscreen}>{renderPhaseContent()}</div>
+	return (
+		<div style={styles.fullscreen}>
+			{renderPhaseContent()}
+
+			{/* Video replay overlay */}
+			{showVideoReplay && gameState.currentClip && (
+				<PlayerVideoReplay
+					videoUrl={gameState.currentClip.videoUrl}
+					subtitles={gameState.currentClip.subtitles}
+					onClose={() => setShowVideoReplay(false)}
+				/>
+			)}
+		</div>
+	)
 }
 
 const styles = {
@@ -251,5 +288,18 @@ const styles = {
 	message: {
 		fontSize: '18px',
 		color: '#aaa'
+	},
+	replayButton: {
+		marginTop: '20px',
+		padding: '14px 28px',
+		fontSize: '18px',
+		fontWeight: 'bold' as const,
+		backgroundColor: '#2a2a2a',
+		color: '#fff',
+		border: '2px solid #444',
+		borderRadius: '8px',
+		cursor: 'pointer',
+		touchAction: 'manipulation' as const,
+		transition: 'background-color 0.2s'
 	}
 }

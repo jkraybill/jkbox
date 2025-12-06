@@ -1,8 +1,14 @@
 /**
- * Triplet Judger - Reduce 18 triplets down to 6 best using Ollama/Qwen
+ * Triplet Judger - Reduce 18 triplets down to 6 best
+ * All LLM calls use Claude Haiku (generation + judging)
  */
 
+import Anthropic from '@anthropic-ai/sdk'
+import { config } from 'dotenv'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+
+// Load .env from project root
+config({ path: '/home/jk/jkbox/.env' })
 import { basename, join } from 'path'
 import {
 	extractLastWordFromText,
@@ -18,16 +24,58 @@ import {
 import { replaceBlankedText, condenseAndBlank } from './blanking-utils.js'
 import { getPrompt } from './prompt-loader.js'
 
-const OLLAMA_API_URL = 'http://localhost:11434/api/generate'
-const MODEL = 'qwen-fast' // Optimized qwen2.5:14b (num_ctx=2048, num_batch=512) - ~40% faster
+const CLAUDE_MODEL = 'claude-3-5-haiku-20241022' // Claude Haiku for all generation and judging
 const CONSTRAINTS_FILE = '/home/jk/jkbox/assets/constraints.txt'
 const MAX_RETRIES = 4 // Max 4 retries = 5 total attempts
 
-interface OllamaResponse {
-	model: string
-	created_at: string
-	response: string
-	done: boolean
+// Initialize Anthropic client
+const anthropic = new Anthropic()
+
+// Claude API cost tracking (Claude 3.5 Haiku pricing)
+const HAIKU_INPUT_COST_PER_MILLION = 0.25
+const HAIKU_OUTPUT_COST_PER_MILLION = 1.25
+
+interface ClaudeCostTracker {
+	totalInputTokens: number
+	totalOutputTokens: number
+	totalCost: number
+	callCount: number
+}
+
+const claudeCosts: ClaudeCostTracker = {
+	totalInputTokens: 0,
+	totalOutputTokens: 0,
+	totalCost: 0,
+	callCount: 0
+}
+
+function calculateClaudeCost(inputTokens: number, outputTokens: number): number {
+	const inputCost = (inputTokens / 1_000_000) * HAIKU_INPUT_COST_PER_MILLION
+	const outputCost = (outputTokens / 1_000_000) * HAIKU_OUTPUT_COST_PER_MILLION
+	return inputCost + outputCost
+}
+
+function logClaudeCost(inputTokens: number, outputTokens: number, label: string): void {
+	const cost = calculateClaudeCost(inputTokens, outputTokens)
+	claudeCosts.totalInputTokens += inputTokens
+	claudeCosts.totalOutputTokens += outputTokens
+	claudeCosts.totalCost += cost
+	claudeCosts.callCount++
+
+	console.log(`💰 Claude API Cost (${label}):`)
+	console.log(`   This call: ${inputTokens} in + ${outputTokens} out = $${cost.toFixed(6)}`)
+	console.log(`   Running total: ${claudeCosts.totalInputTokens} in + ${claudeCosts.totalOutputTokens} out = $${claudeCosts.totalCost.toFixed(6)} (${claudeCosts.callCount} calls)`)
+}
+
+export function getClaudeCosts(): ClaudeCostTracker {
+	return { ...claudeCosts }
+}
+
+export function resetClaudeCosts(): void {
+	claudeCosts.totalInputTokens = 0
+	claudeCosts.totalOutputTokens = 0
+	claudeCosts.totalCost = 0
+	claudeCosts.callCount = 0
 }
 
 interface TripletJudgment {
@@ -203,62 +251,31 @@ function generateWordCount(): number {
 }
 
 /**
- * Call Ollama API with streaming and accumulate full response
+ * Call Claude API for generation tasks
  */
-async function callOllama(prompt: string, temperature = 0.7, system?: string): Promise<string> {
-	const requestBody: Record<string, unknown> = {
-		model: MODEL,
-		prompt,
+async function callClaude(
+	prompt: string,
+	temperature = 0.7,
+	system?: string,
+	costLabel = 'generation'
+): Promise<string> {
+	const response = await anthropic.messages.create({
+		model: CLAUDE_MODEL,
+		max_tokens: 2048,
 		temperature,
-		stream: true
-	}
-
-	if (system) {
-		requestBody['system'] = system
-	}
-
-	const response = await fetch(OLLAMA_API_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(requestBody)
+		system: system || 'You are a creative comedy writer for an adults-only party game.',
+		messages: [{ role: 'user', content: prompt }]
 	})
 
-	if (!response.ok) {
-		throw new Error(`Ollama API error: ${response.statusText}`)
+	const textBlock = response.content[0]
+	if (textBlock?.type !== 'text') {
+		throw new Error('Unexpected response type from Claude')
 	}
 
-	if (!response.body) {
-		throw new Error('No response body from Ollama')
-	}
+	// Log cost tracking
+	logClaudeCost(response.usage.input_tokens, response.usage.output_tokens, costLabel)
 
-	// Accumulate the full response from streaming
-	let fullResponse = ''
-	const reader = response.body.getReader()
-	const decoder = new TextDecoder()
-
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const { done, value } = await reader.read()
-		if (done) break
-
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-		const chunk = decoder.decode(value)
-		const lines = chunk.split('\n').filter((line) => line.trim())
-
-		for (const line of lines) {
-			try {
-				const json = JSON.parse(line) as OllamaResponse
-				fullResponse += json.response
-			} catch (e) {
-				// Ignore JSON parse errors for incomplete chunks
-			}
-		}
-	}
-
-	return fullResponse.trim()
+	return textBlock.text.trim()
 }
 
 /**
@@ -332,8 +349,8 @@ async function generateReplacementWordsInternal(
 ): Promise<string[]> {
 	const constraintsList = constraints.map((c, i) => `${i + 1}. ${c}`).join('\n')
 
-	// Use ALL 6 actual constraints in examples (prevents confusion from showing different count)
-	// Extract just the constraint name (before " -- ") to keep examples concise
+	// For JSON examples, use ONLY constraint names (without descriptions) to avoid
+	// embedded quotes breaking JSON parsing. The model sees full descriptions in CONSTRAINTS_LIST.
 	const exampleConstraints = constraints.map((c) => c.split(' -- ')[0])
 
 	// Load prompts from templates
@@ -352,7 +369,7 @@ async function generateReplacementWordsInternal(
 	console.log('\n================================================================================')
 	console.log('🎬 PROMPT 1: GENERATE REPLACEMENT WORDS')
 	console.log('================================================================================')
-	console.log('Model:', MODEL)
+	console.log('Model:', CLAUDE_MODEL)
 	console.log('Temperature: 0.95')
 	console.log('\nSystem:')
 	console.log(system)
@@ -366,10 +383,10 @@ async function generateReplacementWordsInternal(
 		)
 	}
 
-	const response = await callOllama(prompt, 0.95, system)
+	const response = await callClaude(prompt, 0.95, system, 'T1 word generation')
 
 	console.log('================================================================================')
-	console.log('📥 OLLAMA RESPONSE (PROMPT 1)')
+	console.log('📥 CLAUDE RESPONSE (PROMPT 1)')
 	console.log('================================================================================')
 	console.log(response)
 	console.log('================================================================================\n')
@@ -469,9 +486,13 @@ async function generateReplacementWordsInternal(
 		const returnedPrefix = returnedConstraint.split(' -- ')[0] // What LLM returned
 
 		// Check if the returned prefix matches the expected prefix (case-insensitive)
+		// Allow truncation: "Pippin" matches "Pippin word", "Food" matches "Foodie"
+		const returnedNorm = returnedPrefix.trim().toLowerCase()
+		const expectedNorm = expectedPrefix.trim().toLowerCase()
 		if (
-			returnedPrefix.trim().toLowerCase() !== expectedPrefix.trim().toLowerCase() &&
-			!returnedPrefix.trim().toLowerCase().startsWith(expectedPrefix.trim().toLowerCase())
+			returnedNorm !== expectedNorm &&
+			!returnedNorm.startsWith(expectedNorm) &&
+			!expectedNorm.startsWith(returnedNorm)
 		) {
 			throw new Error(
 				`❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
@@ -541,8 +562,8 @@ async function generateReplacementPhrasesInternal(
 
 	const constraintsList = constraintsWithWordCount.map((c, i) => `${i + 1}. ${c}`).join('\n')
 
-	// Use ALL 6 actual constraints in examples (prevents confusion from showing different count)
-	// Extract just the constraint name + word count (before " -- ") to keep examples concise
+	// For JSON examples, use constraint name + word count (without description) to avoid
+	// embedded quotes breaking JSON parsing. The model sees full descriptions in CONSTRAINTS_LIST.
 	const exampleConstraints = constraintsWithWordCount.map((c) => c.split(' -- ')[0])
 
 	// Load prompts from templates
@@ -561,7 +582,7 @@ async function generateReplacementPhrasesInternal(
 	console.log('\n================================================================================')
 	console.log(`🎬 PROMPT 1 (${stage}): GENERATE REPLACEMENT PHRASES`)
 	console.log('================================================================================')
-	console.log('Model:', MODEL)
+	console.log('Model:', CLAUDE_MODEL)
 	console.log('Temperature: 0.95')
 	console.log('\nSystem:')
 	console.log(system)
@@ -575,10 +596,10 @@ async function generateReplacementPhrasesInternal(
 		)
 	}
 
-	const response = await callOllama(prompt, 0.95, system)
+	const response = await callClaude(prompt, 0.95, system, `${stage} phrase generation`)
 
 	console.log('================================================================================')
-	console.log(`📥 OLLAMA RESPONSE (PROMPT 1 ${stage})`)
+	console.log(`📥 CLAUDE RESPONSE (PROMPT 1 ${stage})`)
 	console.log('================================================================================')
 	console.log(response)
 	console.log('================================================================================\n')
@@ -691,8 +712,8 @@ async function generateReplacementPhrasesInternal(
 		const returnedNorm = normalizeConstraint(returnedName)
 
 		// Check if the returned constraint name matches the expected name (normalized)
-		// Be lenient - just check that it starts with or equals the expected name
-		if (returnedNorm !== expectedNorm && !returnedNorm.startsWith(expectedNorm)) {
+		// Be lenient - allow truncation: "Pippin" matches "Pippin word", "Food" matches "Foodie"
+		if (returnedNorm !== expectedNorm && !returnedNorm.startsWith(expectedNorm) && !expectedNorm.startsWith(returnedNorm)) {
 			throw new Error(
 				`❌ CONSTRAINT MISMATCH at position ${i + 1}!\n\n` +
 					`Expected constraint name:\n"${expectedName}"\n\n` +
@@ -764,7 +785,7 @@ async function judgeWordsInternal(
 	console.log('\n================================================================================')
 	console.log('⚖️  PROMPT 2: JUDGE FUNNIEST WORD')
 	console.log('================================================================================')
-	console.log('Model:', MODEL)
+	console.log('Model:', CLAUDE_MODEL)
 	console.log('Temperature: 0.3')
 	console.log('\nSystem:')
 	console.log(system)
@@ -778,10 +799,10 @@ async function judgeWordsInternal(
 		)
 	}
 
-	const response = await callOllama(prompt, 0.3, system)
+	const response = await callClaude(prompt, 0.3, system, 'T1 word judging')
 
 	console.log('================================================================================')
-	console.log('📥 OLLAMA RESPONSE (PROMPT 2)')
+	console.log('📥 CLAUDE RESPONSE (PROMPT 2)')
 	console.log('================================================================================')
 	console.log(response)
 	console.log('================================================================================\n')
@@ -834,7 +855,7 @@ async function judgePhrasesInternal(
 	console.log('\n================================================================================')
 	console.log(`⚖️  PROMPT 2 (${stage}): JUDGE FUNNIEST PHRASE`)
 	console.log('================================================================================')
-	console.log('Model:', MODEL)
+	console.log('Model:', CLAUDE_MODEL)
 	console.log('Temperature: 0.3')
 	console.log('\nSystem:')
 	console.log(system)
@@ -848,10 +869,10 @@ async function judgePhrasesInternal(
 		)
 	}
 
-	const response = await callOllama(prompt, 0.3, system)
+	const response = await callClaude(prompt, 0.3, system, `${stage} phrase judging`)
 
 	console.log('================================================================================')
-	console.log(`📥 OLLAMA RESPONSE (PROMPT 2 ${stage})`)
+	console.log(`📥 CLAUDE RESPONSE (PROMPT 2 ${stage})`)
 	console.log('================================================================================')
 	console.log(response)
 	console.log('================================================================================\n')
@@ -939,7 +960,7 @@ No explanations, no other text. Just the JSON array of couplets.`
 	console.log('\n================================================================================')
 	console.log('🎯 FINAL QUALITY JUDGING')
 	console.log('================================================================================')
-	console.log('Model:', MODEL)
+	console.log('Model:', CLAUDE_MODEL)
 	console.log('Temperature: 0.3')
 	console.log('\nSystem:')
 	console.log(system)
@@ -953,10 +974,10 @@ No explanations, no other text. Just the JSON array of couplets.`
 		)
 	}
 
-	const response = await callOllama(prompt, 0.3, system)
+	const response = await callClaude(prompt, 0.3, system, 'quality judging')
 
 	console.log('================================================================================')
-	console.log('📥 OLLAMA RESPONSE (QUALITY JUDGING)')
+	console.log('📥 CLAUDE RESPONSE (QUALITY JUDGING)')
 	console.log('================================================================================')
 	console.log(response)
 	console.log('================================================================================\n')
@@ -1452,6 +1473,17 @@ export async function judgeAllTriplets(srtFile: string): Promise<TripletJudgment
 	console.log(`Total triplets evaluated: ${judgments.length}`)
 	console.log(`Best score: ${judgments[0]?.qualityScore ?? 0}/10`)
 	console.log(`Worst score: ${judgments[judgments.length - 1]?.qualityScore ?? 0}/10`)
+
+	// Final Claude API cost summary
+	const costs = getClaudeCosts()
+	console.log('\n' + '='.repeat(80))
+	console.log('💰 CLAUDE API COST SUMMARY')
+	console.log('='.repeat(80))
+	console.log(`Total API calls: ${costs.callCount}`)
+	console.log(`Total input tokens: ${costs.totalInputTokens.toLocaleString()}`)
+	console.log(`Total output tokens: ${costs.totalOutputTokens.toLocaleString()}`)
+	console.log(`Total cost: $${costs.totalCost.toFixed(6)}`)
+	console.log('='.repeat(80))
 
 	return judgments
 }

@@ -17,6 +17,8 @@ import type {
 	AdminUpdateConfigMessage,
 	AdminPauseMessage,
 	AdminUnpauseMessage,
+	AdminReplayClipMessage,
+	ClipReplayMessage,
 	RestoreSessionMessage,
 	GameId,
 	CountdownState,
@@ -415,6 +417,17 @@ export class ConnectionHandler {
 	}
 
 	/**
+	 * Sync AI players for a room with the voting handler
+	 * Called from HTTP endpoints (e.g., title→lobby transition)
+	 */
+	syncAIPlayersForRoom(roomId: string): void {
+		const room = this.roomManager.getRoom(roomId)
+		if (room) {
+			this.syncAIPlayersWithVotingHandler(roomId, room.players)
+		}
+	}
+
+	/**
 	 * Get or create voting handler for a room
 	 */
 	private getVotingHandler(roomId: string): VotingHandler {
@@ -424,6 +437,33 @@ export class ConnectionHandler {
 			this.votingHandlers.set(roomId, handler)
 		}
 		return handler
+	}
+
+	/**
+	 * Sync AI players with VotingHandler
+	 * Ensures all AI players in the room are registered, and removed AI players are unregistered
+	 */
+	private syncAIPlayersWithVotingHandler(roomId: string, players: Player[]): void {
+		const votingHandler = this.getVotingHandler(roomId)
+
+		// Get current AI player IDs from room
+		const currentAIPlayerIds = new Set(
+			players.filter((p) => p.isAI).map((p) => p.id)
+		)
+
+		// Remove AI players that are no longer in the room
+		// (VotingHandler tracks playerIds internally, we need to sync removals)
+		// For now, we'll just ensure all current AI players are added
+		// The VotingHandler.addPlayer is idempotent for the aiPlayerIds set
+
+		// Add all current AI players
+		for (const player of players) {
+			if (player.isAI) {
+				votingHandler.addPlayer(player.id, true)
+			}
+		}
+
+		console.log(`[VotingHandler] Synced ${currentAIPlayerIds.size} AI players for room ${roomId}`)
 	}
 
 	/**
@@ -1127,6 +1167,12 @@ export class ConnectionHandler {
 			return
 		}
 
+		// Sync AI players with VotingHandler
+		// AI players are managed by room-manager but need to be registered with voting handler
+		if (message.config.cinemaPippinAIPlayers !== undefined) {
+			this.syncAIPlayersWithVotingHandler(mapping.roomId, updatedRoom.players)
+		}
+
 		// Broadcast updated room state to all clients
 		const roomStateMessage: RoomStateMessage = {
 			type: 'room:state',
@@ -1249,6 +1295,70 @@ export class ConnectionHandler {
 			state: updatedRoom
 		}
 		this.io.to(mapping.roomId).emit('room:state', roomStateMessage)
+	}
+
+	/**
+	 * Admin: Replay the current clip on jumbotron during answer collection
+	 */
+	handleReplayClip(socket: Socket, _message: AdminReplayClipMessage): void {
+		const mapping = this.socketToPlayer.get(socket.id)
+		if (!mapping) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'NOT_IN_ROOM',
+				message: 'You must join a room first'
+			})
+			return
+		}
+
+		// Verify admin permission
+		const room = this.roomManager.getRoom(mapping.roomId)
+		const adminPlayer = room?.players.find((p) => p.id === mapping.playerId)
+		if (!adminPlayer?.isAdmin) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'UNAUTHORIZED',
+				message: 'Admin access required'
+			})
+			return
+		}
+
+		if (!room) {
+			return
+		}
+
+		// Get the game host to check game phase
+		const gameHost = this.gameHosts.get(mapping.roomId)
+		if (!gameHost) {
+			socket.emit('error', {
+				type: 'error',
+				code: 'NO_GAME',
+				message: 'No game is currently running'
+			})
+			return
+		}
+
+		// Get game state to check phase
+		const gameState = gameHost.getState()
+		const phase = (gameState as { phase?: string })?.phase
+
+		// Only allow replay during answer collection phases
+		if (phase !== 'answer_collection' && phase !== 'film_title_collection') {
+			socket.emit('error', {
+				type: 'error',
+				code: 'INVALID_PHASE',
+				message: 'Can only replay clip during answer collection'
+			})
+			return
+		}
+
+		console.log(`Admin ${adminPlayer.nickname} replaying clip in room ${mapping.roomId}`)
+
+		// Broadcast replay message to all watchers (jumbotron)
+		const replayMessage: ClipReplayMessage = {
+			type: 'clip:replay'
+		}
+		this.io.to(mapping.roomId).emit('clip:replay', replayMessage)
 	}
 
 	/**

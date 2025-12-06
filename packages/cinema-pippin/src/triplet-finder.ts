@@ -71,9 +71,9 @@ export function isValidFirstTriplet(
 
   // Frame 2 no longer requires question mark - any text is valid
 
-  // Duration must be 4-20 seconds
+  // Duration must be 4-15 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 4 || duration > 20) {
+  if (duration < 4 || duration > 15) {
     return false;
   }
 
@@ -124,9 +124,9 @@ export function isValidSubsequentTriplet(
     return false;
   }
 
-  // Duration must be 4-20 seconds
+  // Duration must be 4-15 seconds
   const duration = getDurationSeconds(frame1, frame3);
-  if (duration < 4 || duration > 20) {
+  if (duration < 4 || duration > 15) {
     return false;
   }
 

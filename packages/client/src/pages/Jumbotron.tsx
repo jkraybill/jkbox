@@ -9,7 +9,7 @@ import { getJoinUrl } from '../lib/network-url'
 import { UnimplementedGameJumbotron } from '../games/UnimplementedGameJumbotron'
 import { Scratchpad1Jumbotron } from '../games/Scratchpad1Jumbotron'
 import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbotron'
-import type { LobbyCountdownMessage, RoomState, GameId, JumbotronProps } from '@jkbox/shared'
+import type { LobbyCountdownMessage, ClipReplayMessage, RoomState, GameId, JumbotronProps } from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
 	'fake-facts': 'Fake Facts',
@@ -33,6 +33,7 @@ export function Jumbotron() {
 	const [isLoadingRoom, setIsLoadingRoom] = useState(true)
 	const [resetFeedback, setResetFeedback] = useState(false)
 	const [joinUrl, setJoinUrl] = useState<string>('')
+	const [replayTrigger, setReplayTrigger] = useState(0) // Increments when admin requests clip replay
 	const hasJoinedRoom = useRef<string | null>(null) // Track which room we've joined
 
 	// Enter fullscreen mode and hide scrollbars on mount
@@ -185,8 +186,15 @@ export function Jumbotron() {
 			setCountdown({ count: message.countdown, game: gameName })
 		})
 
+		// Listen for clip replay requests from admin
+		socket.on('clip:replay', (_message: ClipReplayMessage) => {
+			console.log('[Jumbotron] Received clip:replay request')
+			setReplayTrigger((prev) => prev + 1)
+		})
+
 		return () => {
 			socket.off('lobby:countdown')
+			socket.off('clip:replay')
 		}
 	}, [socket, room, isConnected])
 
@@ -335,6 +343,7 @@ export function Jumbotron() {
 								players={room.players}
 								sendToServer={(action) => socket.emit('game:action', action)}
 								pauseState={room.pauseState}
+								replayTrigger={replayTrigger}
 							/>
 						)
 					})()}

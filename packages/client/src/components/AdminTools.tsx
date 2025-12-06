@@ -6,7 +6,8 @@ import type {
 	AdminHardResetMessage,
 	AdminUpdateConfigMessage,
 	AdminPauseMessage,
-	AdminUnpauseMessage
+	AdminUnpauseMessage,
+	AdminReplayClipMessage
 } from '@jkbox/shared'
 
 export function AdminTools() {
@@ -85,6 +86,18 @@ export function AdminTools() {
 		}
 	}
 
+	const handleReplayClip = () => {
+		if (!socket) return
+
+		const message: AdminReplayClipMessage = {
+			type: 'admin:replay-clip'
+		}
+		socket.emit('admin:replay-clip', message)
+	}
+
+	// Check if we're in a phase where replay makes sense (playing phase with game running)
+	const canReplayClip = room.phase === 'playing' && !!room.gameState
+
 	return (
 		<div style={styles.overlay}>
 			<div style={styles.panel}>
@@ -153,6 +166,11 @@ export function AdminTools() {
 						? '▶️ Resume'
 						: '⏸️ Pause'}
 					</button>
+					{canReplayClip && (
+						<button onClick={handleReplayClip} style={styles.actionButton}>
+							🔁 Replay Clip
+						</button>
+					)}
 					<button onClick={handleBackToLobby} style={styles.actionButton}>
 						🔄 Back to Lobby
 					</button>

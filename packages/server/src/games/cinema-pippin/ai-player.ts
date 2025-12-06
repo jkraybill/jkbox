@@ -105,13 +105,34 @@ export function createAIPlayer(index: number, constraint: string): AIPlayer {
 
 /**
  * Load constraints from assets/constraints.txt
+ * Searches multiple locations to support both dev and packaged environments
  */
 export function loadConstraints(): string[] {
-	// Always use assets/constraints.txt from project root
-	const constraintsPath = path.join(process.cwd(), '../../assets/constraints.txt')
+	// Get __dirname equivalent for ES modules
+	const currentDir = path.dirname(new URL(import.meta.url).pathname)
 
-	if (!fs.existsSync(constraintsPath)) {
-		throw new Error(`constraints.txt not found at: ${constraintsPath}`)
+	// Search multiple locations (packaged vs dev)
+	const constraintsPaths = [
+		path.join(process.cwd(), 'constraints.txt'),                    // Packaged: next to executable
+		path.join(process.cwd(), 'assets/constraints.txt'),             // Packaged: assets folder
+		path.join(currentDir, '../../../../../assets/constraints.txt'), // Dev: relative to ai-player.ts
+		path.join(currentDir, '../../../../../../assets/constraints.txt'), // Dev: from dist folder
+		'/home/jk/jkbox/assets/constraints.txt',                        // Fallback: absolute dev path
+	]
+
+	// Normalize paths for Windows (remove leading slash from /C:/...)
+	const normalizedPaths = constraintsPaths.map(p => {
+		if (process.platform === 'win32' && p.startsWith('/') && p[2] === ':') {
+			return p.substring(1)
+		}
+		return p
+	})
+
+	const constraintsPath = normalizedPaths.find(p => fs.existsSync(p))
+
+	if (!constraintsPath) {
+		const searchedPaths = normalizedPaths.join('\n  - ')
+		throw new Error(`constraints.txt not found. Searched:\n  - ${searchedPaths}`)
 	}
 
 	console.log(`[AI] Loading constraints from: ${constraintsPath}`)
@@ -320,10 +341,17 @@ export async function generateBatchAnswers(
 		let rawResponse: string
 
 		// Always use Claude Sonnet for batch generation (higher quality)
-		if (!process.env.ANTHROPIC_API_KEY) {
-			throw new Error(
-				'ANTHROPIC_API_KEY environment variable is required for AI answer generation. Please set it in your .env file.'
-			)
+		// Validate API key before making request
+		const apiKey = process.env.ANTHROPIC_API_KEY || ''
+		const PLACEHOLDER_KEYS = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
+		const isPlaceholderKey = PLACEHOLDER_KEYS.some(p => apiKey === p || apiKey.startsWith('YOUR_'))
+
+		if (!apiKey || isPlaceholderKey) {
+			const error = new Error('API_KEY_NOT_CONFIGURED')
+			;(error as Error & { code: string }).code = 'API_KEY_NOT_CONFIGURED'
+			;(error as Error & { userMessage: string }).userMessage =
+				'Anthropic API key not configured. Please edit the .env file and add your API key from console.anthropic.com'
+			throw error
 		}
 
 		{
@@ -439,7 +467,44 @@ export async function generateBatchAnswers(
 		return cleanedAnswers
 	} catch (error) {
 		console.error('[Batch Answer Generation] Failed:', error)
-		throw error
+
+		// Check for specific Anthropic API errors
+		const err = error as Error & { status?: number; code?: string; userMessage?: string }
+
+		// Already has a user message (our custom errors)
+		if (err.userMessage) {
+			throw error
+		}
+
+		// Check for Anthropic API errors
+		if (err.status === 400 && err.message?.includes('credit')) {
+			err.code = 'INSUFFICIENT_CREDITS'
+			err.userMessage = 'Your Anthropic account has insufficient credits. Please add credits at console.anthropic.com/settings/billing'
+			throw err
+		}
+
+		if (err.status === 401) {
+			err.code = 'INVALID_API_KEY'
+			err.userMessage = 'Invalid Anthropic API key. Please check your .env file and ensure the key is correct.'
+			throw err
+		}
+
+		if (err.status === 429) {
+			err.code = 'RATE_LIMITED'
+			err.userMessage = 'Anthropic API rate limit reached. Please wait a moment and try again.'
+			throw err
+		}
+
+		if (err.status === 529 || err.message?.includes('overloaded')) {
+			err.code = 'API_OVERLOADED'
+			err.userMessage = 'Anthropic API is currently overloaded. Please try again in a few moments.'
+			throw err
+		}
+
+		// Generic API error
+		err.code = 'API_ERROR'
+		err.userMessage = `AI service error: ${err.message || 'Unknown error'}. Please try again.`
+		throw err
 	}
 }
 

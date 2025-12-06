@@ -286,68 +286,129 @@ export class RoomManager {
 	/**
 	 * Sync AI players in lobby based on config
 	 * AI players are first-class players, created once in lobby and persisting through the game
+	 *
+	 * Incremental updates:
+	 * - When adding: Add random AI with unused constraint
+	 * - When removing: Remove random existing AI player
+	 * - Always preserve existing AI players that should remain
 	 */
 	private syncAIPlayers(room: LobbyState): void {
-		const aiPlayerCount = room.config.cinemaPippinAIPlayers || 0
+		const targetCount = room.config.cinemaPippinAIPlayers || 0
+		const currentAIPlayers = room.players.filter((p) => p.isAI)
+		const currentCount = currentAIPlayers.length
 
-		// Remove existing AI players
-		room.players = room.players.filter((p) => !p.isAI)
+		// No change needed
+		if (currentCount === targetCount) {
+			return
+		}
 
-		// Add new AI players
-		if (aiPlayerCount > 0) {
-			try {
-				const constraints = loadConstraints()
-				const shuffled = shuffleConstraints(constraints)
+		// Need to remove AI players
+		if (currentCount > targetCount) {
+			const removeCount = currentCount - targetCount
+			// Shuffle current AI players and remove from the end
+			const shuffledAI = [...currentAIPlayers].sort(() => Math.random() - 0.5)
+			const toRemove = new Set(shuffledAI.slice(0, removeCount).map((p) => p.id))
 
-				for (let i = 0; i < aiPlayerCount && i < shuffled.length; i++) {
-					const constraint = shuffled[i]
-					const firstWord = constraint.split(/\s+/)[0]
-					const nickname = `${firstWord}Bot`
+			room.players = room.players.filter((p) => !toRemove.has(p.id))
+			console.log(`[RoomManager] Removed ${removeCount} AI players (${currentCount} → ${targetCount})`)
+			return
+		}
 
-					const aiPlayer: Player = {
-						id: `ai-${i + 1}`,
-						roomId: room.roomId,
-						nickname,
-						sessionToken: `ai-token-${i + 1}`,
-						deviceId: `ai-device-${i + 1}`,
-						isAdmin: false,
-						isHost: false,
-						isAI: true,
-						aiConstraint: constraint,
-						score: 0,
-						connectedAt: new Date(),
-						lastSeenAt: new Date(),
-						isConnected: true
-					}
+		// Need to add AI players
+		const addCount = targetCount - currentCount
 
-					room.players.push(aiPlayer)
-					console.log(`[RoomManager] Created AI player: ${nickname} (${constraint})`)
-				}
+		try {
+			const allConstraints = loadConstraints()
 
-				console.log(`[RoomManager] Added ${aiPlayerCount} AI players to lobby`)
-			} catch (error) {
-				console.error('[RoomManager] Failed to load AI players:', error)
-				// Fallback: create generic AI players without constraints
-				for (let i = 0; i < aiPlayerCount; i++) {
-					const aiPlayer: Player = {
-						id: `ai-${i + 1}`,
-						roomId: room.roomId,
-						nickname: `AIBot${i + 1}`,
-						sessionToken: `ai-token-${i + 1}`,
-						deviceId: `ai-device-${i + 1}`,
-						isAdmin: false,
-						isHost: false,
-						isAI: true,
-						score: 0,
-						connectedAt: new Date(),
-						lastSeenAt: new Date(),
-						isConnected: true
-					}
+			// Get constraints already in use by existing AI players
+			const usedConstraints = new Set(
+				currentAIPlayers
+					.map((p) => p.aiConstraint)
+					.filter((c): c is string => c !== undefined)
+			)
 
-					room.players.push(aiPlayer)
-				}
-				console.log(`[RoomManager] Added ${aiPlayerCount} generic AI players (fallback)`)
+			// Get available constraints (not already in use)
+			const availableConstraints = allConstraints.filter((c) => !usedConstraints.has(c))
+
+			if (availableConstraints.length === 0) {
+				console.warn('[RoomManager] No unused constraints available for new AI players')
+				return
 			}
+
+			// Shuffle available constraints and pick the ones we need
+			const shuffled = shuffleConstraints(availableConstraints)
+
+			// Find next available AI ID
+			const existingIds = new Set(currentAIPlayers.map((p) => p.id))
+			let nextId = 1
+			while (existingIds.has(`ai-${nextId}`)) {
+				nextId++
+			}
+
+			for (let i = 0; i < addCount && i < shuffled.length; i++) {
+				const constraint = shuffled[i]
+				const firstWord = constraint?.split(/\s+/)[0] || 'AI'
+				const nickname = `${firstWord}Bot`
+
+				// Find next available ID
+				while (existingIds.has(`ai-${nextId}`)) {
+					nextId++
+				}
+
+				const aiPlayer: Player = {
+					id: `ai-${nextId}`,
+					roomId: room.roomId,
+					nickname,
+					sessionToken: `ai-token-${nextId}`,
+					deviceId: `ai-device-${nextId}`,
+					isAdmin: false,
+					isHost: false,
+					isAI: true,
+					aiConstraint: constraint,
+					score: 0,
+					connectedAt: new Date(),
+					lastSeenAt: new Date(),
+					isConnected: true
+				}
+
+				existingIds.add(`ai-${nextId}`)
+				room.players.push(aiPlayer)
+				console.log(`[RoomManager] Added AI player: ${nickname} (${constraint})`)
+				nextId++
+			}
+
+			console.log(`[RoomManager] Added ${addCount} AI players (${currentCount} → ${targetCount})`)
+		} catch (error) {
+			console.error('[RoomManager] Failed to load AI players:', error)
+			// Fallback: create generic AI players without constraints
+			let nextId = 1
+			const existingIds = new Set(currentAIPlayers.map((p) => p.id))
+
+			for (let i = 0; i < addCount; i++) {
+				while (existingIds.has(`ai-${nextId}`)) {
+					nextId++
+				}
+
+				const aiPlayer: Player = {
+					id: `ai-${nextId}`,
+					roomId: room.roomId,
+					nickname: `AIBot${nextId}`,
+					sessionToken: `ai-token-${nextId}`,
+					deviceId: `ai-device-${nextId}`,
+					isAdmin: false,
+					isHost: false,
+					isAI: true,
+					score: 0,
+					connectedAt: new Date(),
+					lastSeenAt: new Date(),
+					isConnected: true
+				}
+
+				existingIds.add(`ai-${nextId}`)
+				room.players.push(aiPlayer)
+				nextId++
+			}
+			console.log(`[RoomManager] Added ${addCount} generic AI players (fallback)`)
 		}
 	}
 

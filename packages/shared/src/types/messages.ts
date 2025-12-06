@@ -97,6 +97,10 @@ export interface AdminUpdateConfigMessage {
 	config: Partial<import('./room-state').RoomConfig>
 }
 
+export interface AdminReplayClipMessage {
+	type: 'admin:replay-clip'
+}
+
 export type ClientMessage =
 	| JoinMessage
 	| SubmitMessage
@@ -110,6 +114,7 @@ export type ClientMessage =
 	| AdminBackToLobbyMessage
 	| AdminHardResetMessage
 	| AdminUpdateConfigMessage
+	| AdminReplayClipMessage
 	| WatchMessage
 	| LobbyVoteGameMessage
 	| LobbyReadyToggleMessage
@@ -203,6 +208,11 @@ export interface GameStartMessage {
 	gameState: unknown // Game module owns this
 }
 
+export interface ClipReplayMessage {
+	type: 'clip:replay'
+	// Jumbotron uses currentClip from its existing game state
+}
+
 export type ServerMessage =
 	| JoinSuccessMessage
 	| RoomUpdateMessage
@@ -218,3 +228,4 @@ export type ServerMessage =
 	| LobbyCountdownMessage
 	| LobbyCountdownCancelledMessage
 	| GameStartMessage
+	| ClipReplayMessage

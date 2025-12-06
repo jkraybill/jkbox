@@ -18,5 +18,11 @@ Generate {{NUM_CONSTRAINTS}} HILARIOUS {{ANSWER_TYPE}} that maximize LAUGHS and 
 - **CONTEXT-AWARE:** These fill blanks in FILM SUBTITLES (dramatic, romantic, tense scenes)
 - **INCOGNITO CONSTRAINTS:** Satisfy constraint WITHOUT being obvious about it
 
-📋 CONSTRAINTS (one per answer, in ORDER):
+📋 YOUR {{NUM_CONSTRAINTS}} CONSTRAINTS (generate ONE answer per constraint, IN ORDER):
+
+Each constraint below has a NAME and a DESCRIPTION explaining what kind of answer to generate.
+You MUST generate an answer that satisfies each constraint's description.
+
 {{CONSTRAINTS_LIST}}
+
+⚠️ IMPORTANT: Read each constraint description carefully! The description after "--" explains exactly what kind of answer to generate.

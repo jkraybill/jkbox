@@ -1,11 +1,34 @@
-import Database from 'better-sqlite3'
+import { Database } from './database'
 import type { RoomState } from '@jkbox/shared'
-import { readFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+// Inline schema (embedded for single-executable compatibility)
+const ROOM_SCHEMA = `
+-- Room persistence schema for crash recovery
+-- This is server state (ephemeral), not persistent data
+
+CREATE TABLE IF NOT EXISTS rooms (
+  room_id TEXT PRIMARY KEY,
+  phase TEXT NOT NULL CHECK(phase IN ('title', 'lobby', 'countdown', 'playing', 'results')),
+  state_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_rooms_phase ON rooms(phase);
+CREATE INDEX IF NOT EXISTS idx_rooms_updated_at ON rooms(updated_at);
+
+CREATE TABLE IF NOT EXISTS room_players (
+  player_id TEXT NOT NULL,
+  room_id TEXT NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
+  nickname TEXT NOT NULL,
+  connected INTEGER NOT NULL DEFAULT 1,
+  joined_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, room_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_players_room_id ON room_players(room_id);
+CREATE INDEX IF NOT EXISTS idx_room_players_connected ON room_players(connected);
+`
 
 /**
  * SQLite-based temporary persistence for server state (rooms, players)
@@ -16,31 +39,28 @@ const __dirname = dirname(__filename)
  * Stores full RoomState as JSON for simplicity.
  */
 export class RoomStorage {
-  private db: Database.Database
+  private db: Database
 
   constructor(dbPath: string = './jkbox-rooms.db') {
     this.db = new Database(dbPath)
 
     // Enable foreign keys
-    this.db.pragma('foreign_keys = ON')
+    this.db.exec('PRAGMA foreign_keys = ON')
 
-    // Load and execute schema
+    // Initialize schema
     this.initializeSchema()
   }
 
   private initializeSchema(): void {
-    const schemaPath = join(__dirname, '../../schema/room-persistence.sql')
-    const schema = readFileSync(schemaPath, 'utf-8')
-
-    // Execute schema (SQLite supports multiple statements)
-    this.db.exec(schema)
+    // Execute embedded schema (SQLite supports multiple statements)
+    this.db.exec(ROOM_SCHEMA)
   }
 
   /**
    * Save room to database (insert or update)
    */
   saveRoom(room: RoomState): void {
-    const tx = this.db.transaction(() => {
+    const saveRoomTx = this.db.transaction((roomData: RoomState) => {
       // Upsert room (serialize full state as JSON)
       const stmt = this.db.prepare(`
         INSERT INTO rooms (
@@ -54,28 +74,28 @@ export class RoomStorage {
 
       const now = Date.now()
       stmt.run(
-        room.roomId,
-        room.phase,
-        JSON.stringify(room),
+        roomData.roomId,
+        roomData.phase,
+        JSON.stringify(roomData),
         now, // created_at (ignored on update due to ON CONFLICT)
         now  // updated_at
       )
 
       // Delete existing players (simpler than diff)
-      this.db.prepare('DELETE FROM room_players WHERE room_id = ?').run(room.roomId)
+      this.db.prepare('DELETE FROM room_players WHERE room_id = ?').run(roomData.roomId)
 
       // Insert current players (denormalized for quick lookups)
-      if (room.players.length > 0) {
+      if (roomData.players.length > 0) {
         const playerStmt = this.db.prepare(`
           INSERT INTO room_players (
             player_id, room_id, nickname, connected, joined_at
           ) VALUES (?, ?, ?, ?, ?)
         `)
 
-        for (const player of room.players) {
+        for (const player of roomData.players) {
           playerStmt.run(
             player.id,
-            room.roomId,
+            roomData.roomId,
             player.nickname,
             player.isConnected ? 1 : 0,
             player.connectedAt.getTime()
@@ -84,7 +104,7 @@ export class RoomStorage {
       }
     })
 
-    tx()
+    saveRoomTx(room)
   }
 
   /**
@@ -142,12 +162,12 @@ export class RoomStorage {
    * This fully resets server state like a fresh boot
    */
   clearAllServerState(): void {
-    const tx = this.db.transaction(() => {
+    const clearTx = this.db.transaction(() => {
       this.db.prepare('DELETE FROM room_players').run()
       this.db.prepare('DELETE FROM rooms').run()
     })
 
-    tx()
+    clearTx()
     console.log('✓ Cleared all server state (stale data)')
   }
 

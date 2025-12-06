@@ -6,14 +6,50 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Load .env from project root (3 levels up: src -> server -> packages -> root)
-const envPath = join(__dirname, '../../../.env')
-const result = config({ path: envPath })
-if (result.error) {
-	console.error(`[ENV] Failed to load .env from ${envPath}:`, result.error)
+// Load .env from multiple locations (packaged vs dev)
+const envPaths = [
+	join(process.cwd(), '.env'),                    // Packaged: next to executable
+	join(__dirname, '../../../.env'),               // Dev: relative to server/src
+	join(__dirname, '../../../../.env'),            // Dev: from dist folder
+]
+
+let envLoaded = false
+for (const envPath of envPaths) {
+	const result = config({ path: envPath })
+	if (!result.error) {
+		console.log(`[ENV] ✓ Loaded environment variables from ${envPath}`)
+		envLoaded = true
+		break
+	}
+}
+
+if (!envLoaded) {
+	console.warn('[ENV] ⚠️  No .env file found')
+}
+
+// Validate ANTHROPIC_API_KEY
+const PLACEHOLDER_KEYS = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
+const apiKey = process.env.ANTHROPIC_API_KEY || ''
+const isPlaceholderKey = PLACEHOLDER_KEYS.some(p => apiKey === p || apiKey.startsWith('YOUR_'))
+
+if (!apiKey || isPlaceholderKey) {
+	console.error('')
+	console.error('╔══════════════════════════════════════════════════════════════════╗')
+	console.error('║  ⚠️   ANTHROPIC API KEY NOT CONFIGURED                            ║')
+	console.error('╠══════════════════════════════════════════════════════════════════╣')
+	console.error('║  The game requires a valid Anthropic API key to generate         ║')
+	console.error('║  AI answers and judge submissions.                               ║')
+	console.error('║                                                                  ║')
+	console.error('║  To fix this:                                                    ║')
+	console.error('║  1. Get an API key from https://console.anthropic.com/           ║')
+	console.error('║  2. Open the .env file in this folder                            ║')
+	console.error('║  3. Replace YOUR_API_KEY_HERE with your actual key               ║')
+	console.error('║  4. Restart the server                                           ║')
+	console.error('╚══════════════════════════════════════════════════════════════════╝')
+	console.error('')
+	// Don't exit - let the server start but AI features will fail with clear errors
 } else {
-	console.log(`[ENV] ✓ Loaded environment variables from ${envPath}`)
-	console.log(`[ENV] ANTHROPIC_API_KEY is ${process.env.ANTHROPIC_API_KEY ? 'SET' : 'NOT SET'}`)
+	console.log(`[ENV] ✓ ANTHROPIC_API_KEY is configured`)
 }
 
 import express from 'express'
@@ -22,6 +58,8 @@ import { Server } from 'socket.io'
 import cors from 'cors'
 import { networkInterfaces } from 'os'
 import { execSync } from 'child_process'
+import { existsSync } from 'fs'
+import { resolve } from 'path'
 import type {
 	JoinMessage,
 	WatchMessage,
@@ -33,6 +71,7 @@ import type {
 	AdminUpdateConfigMessage,
 	AdminPauseMessage,
 	AdminUnpauseMessage,
+	AdminReplayClipMessage,
 	RestoreSessionMessage,
 	GameAction
 } from '@jkbox/shared'
@@ -78,18 +117,65 @@ app.use(cors())
 app.use(express.json())
 
 // Serve video clips and subtitles with explicit CORS headers
-app.use(
-	'/clips',
-	(req, res, next) => {
-		// Set CORS headers explicitly for video and subtitle files
-		res.setHeader('Access-Control-Allow-Origin', '*')
-		res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-		res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type')
-		res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range')
-		next()
-	},
-	express.static('/home/jk/jkbox/generated/clips')
-)
+// Look for clips in multiple locations (dev vs packaged)
+const clipsPaths = [
+	resolve(process.cwd(), 'clips'),                    // Packaged: next to executable
+	resolve(process.cwd(), 'generated/clips'),          // Packaged: generated folder
+	resolve(__dirname, '../../../generated/clips'),     // Dev: relative to server/src
+	resolve(__dirname, '../../../../generated/clips'),  // Dev: from dist folder
+	'/home/jk/jkbox/generated/clips',                   // Fallback: absolute dev path
+]
+
+const clipsPath = clipsPaths.find(p => existsSync(p))
+
+if (clipsPath) {
+	console.log(`🎬 Serving clips from: ${clipsPath}`)
+	app.use(
+		'/clips',
+		(req, res, next) => {
+			// Set CORS headers explicitly for video and subtitle files
+			res.setHeader('Access-Control-Allow-Origin', '*')
+			res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+			res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type')
+			res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range')
+			next()
+		},
+		express.static(clipsPath)
+	)
+} else {
+	console.warn('⚠️  No clips folder found! Videos will not be available.')
+	console.warn('   Expected location: ./clips or ./generated/clips')
+}
+
+// Production mode: Serve built React client
+// Look for client dist in multiple locations (dev vs packaged)
+const clientDistPaths = [
+	resolve(__dirname, '../../../client/dist'),     // Dev: relative to server/src
+	resolve(__dirname, '../../client/dist'),        // Built: relative to server/dist
+	resolve(process.cwd(), 'client-dist'),          // Packaged: next to executable
+	resolve(process.cwd(), 'dist'),                 // Packaged: dist folder
+]
+
+const clientDistPath = clientDistPaths.find(p => existsSync(p))
+
+if (clientDistPath) {
+	console.log(`📦 Serving client from: ${clientDistPath}`)
+
+	// Serve static files from client dist
+	app.use(express.static(clientDistPath))
+
+	// Handle client-side routing: serve index.html for unknown routes
+	// Must be after API routes but before 404
+	app.get('*', (req, res, next) => {
+		// Don't intercept API routes or socket.io
+		if (req.path.startsWith('/api') || req.path.startsWith('/socket.io') || req.path.startsWith('/clips')) {
+			return next()
+		}
+		res.sendFile(resolve(clientDistPath, 'index.html'))
+	})
+} else {
+	console.log('⚠️  No built client found - run in dev mode with separate client server')
+}
 
 // Helper function to get the Windows host's LAN IP (for WSL2)
 function getLocalNetworkIP(): string | null {
@@ -140,6 +226,20 @@ app.get('/api/health', (_req, res) => {
 	res.json({ status: 'ok', service: 'jkbox-server' })
 })
 
+// API configuration status (for client to check if AI is available)
+app.get('/api/status', (_req, res) => {
+	const apiKeyVal = process.env.ANTHROPIC_API_KEY || ''
+	const placeholders = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
+	const isPlaceholder = placeholders.some(p => apiKeyVal === p || apiKeyVal.startsWith('YOUR_'))
+
+	res.json({
+		aiConfigured: !!(apiKeyVal && !isPlaceholder),
+		aiError: (!apiKeyVal || isPlaceholder)
+			? 'API key not configured. Edit .env file and add your Anthropic API key.'
+			: null
+	})
+})
+
 // Get available games (for lobby voting)
 app.get('/api/games', (_req, res) => {
 	const allGames = gameRegistry.list()
@@ -169,6 +269,10 @@ app.post('/api/room/transition-to-lobby', (_req, res) => {
 		res.status(400).json({ error: 'Room not in title phase or does not exist' })
 		return
 	}
+
+	// Sync AI players with voting handler
+	connectionHandler.syncAIPlayersForRoom(room.roomId)
+
 	res.json({ room })
 })
 
@@ -277,6 +381,11 @@ io.on('connection', (socket) => {
 	// Handle admin unpause
 	socket.on('admin:unpause', (message: AdminUnpauseMessage) => {
 		connectionHandler.handleUnpause(socket, message)
+	})
+
+	// Handle admin replay clip
+	socket.on('admin:replay-clip', (message: AdminReplayClipMessage) => {
+		connectionHandler.handleReplayClip(socket, message)
 	})
 
 	// Handle game actions (player/jumbotron interactions during gameplay)

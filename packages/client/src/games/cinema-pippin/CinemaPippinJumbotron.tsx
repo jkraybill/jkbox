@@ -3,7 +3,7 @@
  * Displays video playback, voting screens, and results
  */
 
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { JumbotronProps, Player, PauseState } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
@@ -145,11 +145,40 @@ export function CinemaPippinJumbotron({
 	state,
 	players,
 	sendToServer,
-	pauseState
+	pauseState,
+	replayTrigger
 }: JumbotronProps) {
 	const gameState = state as CinemaPippinGameState
 	const typedPauseState: PauseState | undefined = pauseState
 	const isPaused: boolean = typedPauseState ? typedPauseState.isPaused : false
+
+	// Replay overlay state
+	const [showReplayOverlay, setShowReplayOverlay] = useState(false)
+	const lastReplayTrigger = useRef(replayTrigger ?? 0)
+
+	// Handle replay trigger changes
+	useEffect(() => {
+		// Check if replayTrigger has actually changed
+		if (replayTrigger !== undefined && replayTrigger !== lastReplayTrigger.current) {
+			lastReplayTrigger.current = replayTrigger
+
+			// Only show replay during answer collection phases when we have a clip
+			const canReplay =
+				(gameState.phase === 'answer_collection' || gameState.phase === 'film_title_collection') &&
+				gameState.currentClip
+
+			if (canReplay) {
+				console.log('[CinemaPippinJumbotron] Starting clip replay')
+				setShowReplayOverlay(true)
+			}
+		}
+	}, [replayTrigger, gameState.phase, gameState.currentClip])
+
+	// Close replay overlay handler
+	const handleReplayComplete = () => {
+		console.log('[CinemaPippinJumbotron] Replay complete')
+		setShowReplayOverlay(false)
+	}
 
 	// Auto-advance from film_select handled by FilmCountdown component
 	// (5 second countdown, or longer if prep tasks take longer)
@@ -638,6 +667,21 @@ export function CinemaPippinJumbotron({
 		<div style={styles.fullscreen}>
 			<AutoplayWarning />
 			{renderPhaseContent()}
+
+			{/* Replay overlay - shows video when admin triggers replay during answer collection */}
+			{showReplayOverlay && gameState.currentClip && (
+				<div style={styles.replayOverlay}>
+					<VideoPlayer
+						key={`replay-${replayTrigger}`}
+						videoUrl={gameState.currentClip.videoUrl}
+						subtitles={gameState.currentClip.subtitles}
+						onComplete={handleReplayComplete}
+						fadeInDuration={500}
+						fadeOutDuration={500}
+						isPaused={isPaused}
+					/>
+				</div>
+			)}
 		</div>
 	)
 }
@@ -651,7 +695,20 @@ const styles = {
 		alignItems: 'center',
 		justifyContent: 'center',
 		backgroundColor: '#000',
-		color: '#fff'
+		color: '#fff',
+		position: 'relative' as const
+	},
+	replayOverlay: {
+		position: 'fixed' as const,
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: '#000',
+		zIndex: 1000,
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center'
 	},
 	container: {
 		textAlign: 'center' as const,

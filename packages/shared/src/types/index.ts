@@ -70,6 +70,7 @@ export type {
 	AdminBackToLobbyMessage,
 	AdminHardResetMessage,
 	AdminUpdateConfigMessage,
+	AdminReplayClipMessage,
 	RestoreSessionMessage,
 	LobbyVoteGameMessage,
 	LobbyReadyToggleMessage,
@@ -91,5 +92,6 @@ export type {
 	LobbyVotingUpdateMessage,
 	LobbyCountdownMessage,
 	LobbyCountdownCancelledMessage,
+	ClipReplayMessage,
 	ServerMessage
 } from './messages'
