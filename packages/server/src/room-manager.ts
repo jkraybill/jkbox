@@ -288,8 +288,8 @@ export class RoomManager {
 	 * AI players are first-class players, created once in lobby and persisting through the game
 	 *
 	 * Incremental updates:
-	 * - When adding: Add random AI with unused constraint
-	 * - When removing: Remove random existing AI player
+	 * - When adding: Add random AI with unused constraint (appended to end)
+	 * - When removing: LIFO - remove most recently added AI players first
 	 * - Always preserve existing AI players that should remain
 	 */
 	private syncAIPlayers(room: LobbyState): void {
@@ -302,15 +302,16 @@ export class RoomManager {
 			return
 		}
 
-		// Need to remove AI players
+		// Need to remove AI players (LIFO - remove most recently added first)
 		if (currentCount > targetCount) {
 			const removeCount = currentCount - targetCount
-			// Shuffle current AI players and remove from the end
-			const shuffledAI = [...currentAIPlayers].sort(() => Math.random() - 0.5)
-			const toRemove = new Set(shuffledAI.slice(0, removeCount).map((p) => p.id))
+			// Take the last N AI players (most recently added) to remove
+			const toRemove = new Set(
+				currentAIPlayers.slice(-removeCount).map((p) => p.id)
+			)
 
 			room.players = room.players.filter((p) => !toRemove.has(p.id))
-			console.log(`[RoomManager] Removed ${removeCount} AI players (${currentCount} → ${targetCount})`)
+			console.log(`[RoomManager] Removed ${removeCount} AI players LIFO (${currentCount} → ${targetCount})`)
 			return
 		}
 
