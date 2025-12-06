@@ -1290,6 +1290,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		)
 		console.log('[CinemaPippinGame] houseAnswerQueue.length:', this.state.houseAnswerQueue.length)
 
+		// CRITICAL GUARD: Check phase is still answer_collection (not already advanced)
+		if (this.state.phase !== 'answer_collection' && this.state.phase !== 'film_title_collection') {
+			console.log(
+				'[CinemaPippinGame] Timeout fired but phase is now',
+				this.state.phase,
+				'- ignoring'
+			)
+			return
+		}
+
+		// CRITICAL GUARD: No players = nothing to do
+		if (this.state.scores.size === 0) {
+			console.error('[CinemaPippinGame] CRITICAL: Timeout with 0 active players - cannot advance')
+			return
+		}
+
 		// Find players who haven't submitted
 		const nonSubmitters: string[] = []
 		for (const playerId of this.state.scores.keys()) {
@@ -1335,8 +1351,22 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			Array.from(this.state.playerAnswers.entries())
 		)
 
-		// Advance to voting playback
-		this.advanceToVotingPlayback()
+		// CRITICAL: Verify we have answers before advancing
+		// (advanceToVotingPlayback has its own guard, but log here for debugging)
+		if (this.state.playerAnswers.size === 0) {
+			console.error('[CinemaPippinGame] CRITICAL: Still 0 answers after timeout handling!')
+			console.error(
+				'[CinemaPippinGame] This indicates a bug - house answers should have been assigned'
+			)
+			// Don't advance - let the guards in advance methods catch this
+		}
+
+		// Advance to appropriate voting phase
+		if (this.state.phase === 'film_title_collection') {
+			this.advanceToFilmTitleVoting()
+		} else {
+			this.advanceToVotingPlayback()
+		}
 	}
 
 	/**
@@ -1359,9 +1389,20 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		console.log('[CinemaPippinGame] playerAnswers:', Array.from(this.state.playerAnswers.entries()))
 		console.log('[CinemaPippinGame] playerStatus:', Array.from(this.state.playerStatus.entries()))
 
-		// Guard against empty playerAnswers
+		// CRITICAL GUARD: Never advance with 0 active players
+		if (this.state.scores.size === 0) {
+			console.error(
+				'[CinemaPippinGame] CRITICAL: Attempted to advance to voting with 0 active players!'
+			)
+			console.error(
+				'[CinemaPippinGame] This should never happen - game initialized without players?'
+			)
+			return
+		}
+
+		// CRITICAL GUARD: Never advance to voting with 0 answers
 		if (this.state.playerAnswers.size === 0) {
-			console.error('[CinemaPippinGame] ERROR: No player answers to create voting round from!')
+			console.error('[CinemaPippinGame] CRITICAL: Attempted to advance to voting with 0 answers!')
 			console.error(
 				'[CinemaPippinGame] Film',
 				this.state.currentFilmIndex + 1,
@@ -1375,10 +1416,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				'[CinemaPippinGame] houseAnswerQueue.length:',
 				this.state.houseAnswerQueue.length
 			)
-			// This is a critical bug - we should not be here with 0 answers
-			// Skip voting entirely and go to next clip
-			this.state.phase = 'results_display'
-			// No results to calculate with 0 answers
+
+			// DO NOT advance to results_display - that causes "No Results" screen
+			// Stay in answer_collection and wait for timeout to assign house answers
+			console.error('[CinemaPippinGame] Staying in answer_collection phase - DO NOT ADVANCE')
 			return
 		}
 
@@ -1415,6 +1456,23 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.clearVotes()
 		console.log('[CinemaPippinGame] Cleared votes and allAnswers for film title voting')
 
+		// CRITICAL GUARD: Never advance with 0 active players
+		if (this.state.scores.size === 0) {
+			console.error(
+				'[CinemaPippinGame] CRITICAL: Attempted to advance to film title voting with 0 active players!'
+			)
+			return
+		}
+
+		// CRITICAL GUARD: Never advance to voting with 0 answers
+		if (this.state.playerAnswers.size === 0) {
+			console.error(
+				'[CinemaPippinGame] CRITICAL: Attempted to advance to film title voting with 0 answers!'
+			)
+			console.error('[CinemaPippinGame] Staying in film_title_collection phase - DO NOT ADVANCE')
+			return
+		}
+
 		// Prepare film title answers for voting
 		const answers: typeof this.state.allAnswers = []
 
@@ -1431,6 +1489,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Shuffle film titles
 		this.state.allAnswers = this.shuffleArray(answers)
 		this.state.phase = 'film_title_voting'
+		this.state.votingCollectionStartTime = Date.now() // Set start time for countdown timer
 
 		console.log(
 			'[CinemaPippinGame] Prepared',

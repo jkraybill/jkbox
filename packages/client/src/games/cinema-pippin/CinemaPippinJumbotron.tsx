@@ -12,6 +12,7 @@ import { FinalMontage } from './FinalMontage'
 import { ScoreboardTransition } from './ScoreboardTransition'
 import { AutoplayWarning } from './AutoplayWarning'
 import { FilmCountdown } from './FilmCountdown'
+import { CountdownTimer } from './CountdownTimer'
 
 interface Answer {
 	id: string
@@ -52,6 +53,11 @@ interface CinemaPippinGameState {
 		videoUrl: string
 		subtitles: Subtitle[]
 	}>
+	// Timer fields for synced countdown
+	answerTimeout?: number
+	answerCollectionStartTime?: number
+	votingTimeout?: number
+	votingCollectionStartTime?: number
 }
 
 // Helper component to display player status
@@ -389,6 +395,13 @@ export function CinemaPippinJumbotron({
 			case 'answer_collection':
 				return (
 					<div style={styles.container}>
+						{gameState.answerCollectionStartTime && gameState.answerTimeout && (
+							<CountdownTimer
+								startTime={gameState.answerCollectionStartTime}
+								timeout={gameState.answerTimeout}
+								label="Time Left"
+							/>
+						)}
 						<h1 style={styles.title}>Submit Your Answer!</h1>
 						<p style={styles.subtitle}>Players are writing their answers...</p>
 						<PlayerStatusList
@@ -429,6 +442,13 @@ export function CinemaPippinJumbotron({
 			case 'voting_collection':
 				return (
 					<div style={styles.container}>
+						{gameState.votingCollectionStartTime && gameState.votingTimeout && (
+							<CountdownTimer
+								startTime={gameState.votingCollectionStartTime}
+								timeout={gameState.votingTimeout}
+								label="Time Left"
+							/>
+						)}
 						<h1 style={styles.title}>Vote for the Funniest!</h1>
 						<p style={styles.subtitle}>Players are voting...</p>
 						<PlayerStatusList
@@ -514,6 +534,13 @@ export function CinemaPippinJumbotron({
 			case 'film_title_collection':
 				return (
 					<div style={styles.container}>
+						{gameState.answerCollectionStartTime && gameState.answerTimeout && (
+							<CountdownTimer
+								startTime={gameState.answerCollectionStartTime}
+								timeout={gameState.answerTimeout}
+								label="Time Left"
+							/>
+						)}
 						<h1 style={styles.title}>Create a title for this movie!</h1>
 						<p style={styles.subtitle}>Players are submitting film titles...</p>
 					</div>
@@ -523,6 +550,13 @@ export function CinemaPippinJumbotron({
 				if (gameState.allAnswers && gameState.allAnswers.length > 0) {
 					return (
 						<div style={styles.container}>
+							{gameState.votingCollectionStartTime && gameState.votingTimeout && (
+								<CountdownTimer
+									startTime={gameState.votingCollectionStartTime}
+									timeout={gameState.votingTimeout}
+									label="Time Left"
+								/>
+							)}
 							<h1 style={styles.title}>Vote for Best Title!</h1>
 							<div style={styles.answersGrid}>
 								{gameState.allAnswers.map((answer, index) => (
