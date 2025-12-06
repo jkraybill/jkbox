@@ -268,6 +268,10 @@ export class ConnectionHandler {
 			lastSeenAt: new Date()
 		})
 
+		// Add player to voting handler (they may have been removed on disconnect)
+		const votingHandler = this.getVotingHandler(message.roomId)
+		votingHandler.addPlayer(player.id, player.isAI ?? false)
+
 		// Send restore success with player and current room state
 		const updated = this.roomManager.getRoom(message.roomId)
 		if (updated) {
@@ -285,6 +289,9 @@ export class ConnectionHandler {
 				state: updated
 			}
 			this.io.to(message.roomId).emit('room:state', roomStateMessage)
+
+			// Broadcast updated voting state
+			this.broadcastVotingUpdate(message.roomId)
 		}
 	}
 
