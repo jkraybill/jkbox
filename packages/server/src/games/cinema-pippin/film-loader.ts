@@ -1,19 +1,60 @@
 /**
  * Cinema Pippin - Film Loader
- * Loads film clips from /home/jk/jkbox/generated/clips
+ * Loads film clips from clips directory (supports packaged and dev environments)
  */
 
 import * as fs from 'fs'
 import * as path from 'path'
 import type { FilmData, ClipData, ClipNumber } from './types'
 
-const CLIPS_ROOT = '/home/jk/jkbox/generated/clips'
+/**
+ * Find the clips root directory
+ * Searches multiple locations for packaged vs dev environments
+ */
+function findClipsRoot(): string {
+	const currentDir = path.dirname(new URL(import.meta.url).pathname)
+
+	const clipsPaths = [
+		path.join(process.cwd(), 'clips'),                              // Packaged: next to executable
+		path.join(process.cwd(), 'generated/clips'),                    // Packaged: generated folder
+		path.join(currentDir, '../../../../../generated/clips'),        // Dev: relative to film-loader.ts
+		path.join(currentDir, '../../../../../../generated/clips'),     // Dev: from dist folder
+		'/home/jk/jkbox/generated/clips',                               // Fallback: absolute dev path
+	]
+
+	// Normalize paths for Windows (remove leading / before drive letter)
+	const normalizedPaths = clipsPaths.map(p => {
+		if (process.platform === 'win32' && p.startsWith('/') && p[2] === ':') {
+			return p.substring(1)
+		}
+		return p
+	})
+
+	const clipsPath = normalizedPaths.find(p => fs.existsSync(p))
+
+	if (!clipsPath) {
+		console.error('[FilmLoader] Searched paths:', normalizedPaths)
+		throw new Error('Clips directory not found! Searched: ' + normalizedPaths.join(', '))
+	}
+
+	console.log(`[FilmLoader] Using clips directory: ${clipsPath}`)
+	return clipsPath
+}
+
+// Lazy-initialize CLIPS_ROOT on first access
+let _clipsRoot: string | null = null
+function getClipsRoot(): string {
+	if (_clipsRoot === null) {
+		_clipsRoot = findClipsRoot()
+	}
+	return _clipsRoot
+}
 
 /**
  * Get all available film directories
  */
 export function getAvailableFilms(): string[] {
-	const entries = fs.readdirSync(CLIPS_ROOT, { withFileTypes: true })
+	const entries = fs.readdirSync(getClipsRoot(), { withFileTypes: true })
 	return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
 }
 
@@ -21,7 +62,7 @@ export function getAvailableFilms(): string[] {
  * Get available sequence numbers for a film
  */
 export function getAvailableSequences(filmName: string): number[] {
-	const filmPath = path.join(CLIPS_ROOT, filmName)
+	const filmPath = path.join(getClipsRoot(), filmName)
 	const entries = fs.readdirSync(filmPath, { withFileTypes: true })
 	return entries
 		.filter((entry) => entry.isDirectory())
@@ -34,7 +75,7 @@ export function getAvailableSequences(filmName: string): number[] {
  * Load answers.json from a clip sequence folder
  */
 export function loadAnswersJSON(filmName: string, sequenceNumber: number): string[][] {
-	const answersPath = path.join(CLIPS_ROOT, filmName, sequenceNumber.toString(), 'answers.json')
+	const answersPath = path.join(getClipsRoot(), filmName, sequenceNumber.toString(), 'answers.json')
 	const fileContent = fs.readFileSync(answersPath, 'utf-8')
 	const data = JSON.parse(fileContent) as { answers: string[][] }
 	return data.answers
@@ -44,7 +85,7 @@ export function loadAnswersJSON(filmName: string, sequenceNumber: number): strin
  * Load all clips from a sequence folder
  */
 export function loadClipsFromSequence(filmName: string, sequenceNumber: number): ClipData[] {
-	const sequencePath = path.join(CLIPS_ROOT, filmName, sequenceNumber.toString())
+	const sequencePath = path.join(getClipsRoot(), filmName, sequenceNumber.toString())
 	const files = fs.readdirSync(sequencePath)
 
 	// Load precomputed answers

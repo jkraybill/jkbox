@@ -23,6 +23,32 @@ import {
 } from './srt-processor'
 import { extendLastFrameTimestamp } from '@jkbox/cinema-pippin'
 
+/**
+ * Convert a filesystem path to a web URL for serving clips
+ * Works on both Linux (/home/.../clips/...) and Windows (C:\...\clips\...)
+ */
+function toClipsUrl(fsPath: string): string {
+	// Normalize path separators to forward slashes
+	const normalized = fsPath.replace(/\\/g, '/')
+
+	// Find the 'clips' segment and take everything from there
+	const clipsIndex = normalized.lastIndexOf('/clips/')
+	if (clipsIndex !== -1) {
+		return normalized.substring(clipsIndex)
+	}
+
+	// Fallback: if path ends with /clips/... structure, extract it
+	const match = normalized.match(/\/clips\/.*$/)
+	if (match) {
+		return match[0]
+	}
+
+	// Last resort: just return /clips + filename
+	const filename = normalized.split('/').pop() || ''
+	console.warn(`[CinemaPippinModule] Could not parse clips path: ${fsPath}`)
+	return `/clips/${filename}`
+}
+
 class CinemaPippinModule implements PluggableGameModule {
 	id = 'cinema-pippin' as const
 	name = 'Cinema Pippin'
@@ -119,8 +145,7 @@ class CinemaPippinModule implements PluggableGameModule {
 			}
 
 			// Convert filesystem path to web URL
-			// /home/jk/jkbox/generated/clips/... → /clips/...
-			const videoUrl = currentClip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
+			const videoUrl = toClipsUrl(currentClip.videoPath)
 
 			enrichedClipData = {
 				clipNumber: currentClip.clipNumber,
@@ -162,7 +187,7 @@ class CinemaPippinModule implements PluggableGameModule {
 				subtitles = mergeSRT(subtitles, winningAnswer)
 
 				// Convert filesystem path to web URL
-				const videoUrl = clip.videoPath.replace('/home/jk/jkbox/generated/clips', '/clips')
+				const videoUrl = toClipsUrl(clip.videoPath)
 
 				return {
 					clipNumber,
