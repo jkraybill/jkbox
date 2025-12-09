@@ -337,3 +337,7 @@ Journal entries reference HC outcomes:
 ### Session 5 (2025-11-24) - jkbox
 
 [2025-11-24 03:06 UTC] Session 5✓. SRT merge fix: keywords[i] not [0], [keyword]→C1 winner always, blanks→prev winners✓. Autoplay: explicit play()+mute→unmute trick, playsInline+preload✓. Final scores leaderboard (crown for winner), end_game_vote→5s timer→context.complete()→lobby✓. Empty playerAnswers guards+logging. Test cleanup (roomId, Player.test). T:729/729✓. C:1168668. Pattern: Mute-unmute bypasses autoplay policies. Multi-film flow verified (3 films→final_scores→lobby). JKLES: ∅ (technical session).
+
+### Session 6 (2025-12-10) - jkbox
+
+[2025-12-10 01:30 UTC] Session 6✓. FFT-driven Pippin lobby animations✓. Full feature: useLobbyAudio hook (random track, Web Audio API, 8 FFT bands @60fps, snappy-smooth interpolation), usePippinAnimations hook (12 animation types: translate/rotate/scale/skew/vibrate/bounce/wiggle/pulse/tilt, random channel mapping per lobby entry), Pippin.tsx fftTransform prop, Jumbotron integration. Server: /api/audio/lobby-tracks + static serving. Maximum hilarity mode: ±150px translate, ±60deg rotate, 0.5-1.8x scale. T:729/729✓. C:75cc0bc. Pattern: Web Audio AnalyserNode→frequencyBinCount→balanced bands. Array.from() for typed arrays (ESLint). JKLES: 10/10 (groovy moodle).
