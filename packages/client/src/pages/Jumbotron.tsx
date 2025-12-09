@@ -9,7 +9,15 @@ import { getJoinUrl } from '../lib/network-url'
 import { UnimplementedGameJumbotron } from '../games/UnimplementedGameJumbotron'
 import { Scratchpad1Jumbotron } from '../games/Scratchpad1Jumbotron'
 import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbotron'
-import type { LobbyCountdownMessage, ClipReplayMessage, RoomState, GameId, JumbotronProps } from '@jkbox/shared'
+import { useLobbyAudio } from '../hooks/use-lobby-audio'
+import { usePippinAnimations } from '../hooks/use-pippin-animations'
+import type {
+	LobbyCountdownMessage,
+	ClipReplayMessage,
+	RoomState,
+	GameId,
+	JumbotronProps
+} from '@jkbox/shared'
 
 const GAME_NAMES: Record<string, string> = {
 	'fake-facts': 'Fake Facts',
@@ -35,6 +43,14 @@ export function Jumbotron() {
 	const [joinUrl, setJoinUrl] = useState<string>('')
 	const [replayTrigger, setReplayTrigger] = useState(0) // Increments when admin requests clip replay
 	const hasJoinedRoom = useRef<string | null>(null) // Track which room we've joined
+
+	// FFT-driven lobby music and Pippin animations
+	const isInLobby = room?.phase === 'lobby'
+	const { frequencyBands, isPlaying: isAudioPlaying } = useLobbyAudio(isInLobby)
+	const { transform: pippinTransform } = usePippinAnimations(
+		frequencyBands,
+		isInLobby && isAudioPlaying
+	)
 
 	// Enter fullscreen mode and hide scrollbars on mount
 	useEffect(() => {
@@ -382,8 +398,10 @@ export function Jumbotron() {
 				</div>
 			) : null}
 
-			{/* Pippin corner mascot (persistent, animated) - hide during countdown phase */}
-			{!countdown && room.phase !== 'countdown' && <Pippin variant="corner" />}
+			{/* Pippin corner mascot (persistent, FFT-animated in lobby) - hide during countdown phase */}
+			{!countdown && room.phase !== 'countdown' && (
+				<Pippin variant="corner" fftTransform={isInLobby ? pippinTransform : undefined} />
+			)}
 
 			{/* Countdown overlay (from lobby:countdown message, different from countdown phase) */}
 			{countdown && (

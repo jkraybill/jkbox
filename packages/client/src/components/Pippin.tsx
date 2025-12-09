@@ -5,12 +5,15 @@ interface PippinProps {
 	onIntroComplete?: () => void
 	/** Duration in milliseconds for intro animation (default: 4000ms / 4 seconds) */
 	introDuration?: number
+	/** CSS transform string from FFT-driven animations (for corner variant) */
+	fftTransform?: string
 }
 
 export function Pippin({
 	variant = 'corner',
 	onIntroComplete,
-	introDuration = 4000 // 4 seconds default
+	introDuration = 4000, // 4 seconds default
+	fftTransform
 }: PippinProps) {
 	const [showIntro, setShowIntro] = useState(variant === 'intro')
 
@@ -42,11 +45,23 @@ export function Pippin({
 		)
 	}
 
-	// Corner mascot - static image
+	// Corner mascot - optionally animated with FFT-driven transforms
 	if (variant === 'corner') {
+		// Apply FFT transform to the image, keeping container fixed
+		const imageStyle: React.CSSProperties = {
+			...styles.cornerImage,
+			transform: fftTransform || undefined,
+			// Smooth transitions for the transform changes
+			transition: fftTransform ? 'none' : 'transform 0.3s ease-out',
+			// Transform origin at center for balanced animations
+			transformOrigin: 'center center',
+			// Prevent layout shifts during animation
+			willChange: fftTransform ? 'transform' : undefined
+		}
+
 		return (
 			<div style={styles.cornerContainer}>
-				<img src="/pippin.png" alt="Pippin the Moodle" style={styles.cornerImage} />
+				<img src="/pippin.png" alt="Pippin the Moodle" style={imageStyle} />
 			</div>
 		)
 	}

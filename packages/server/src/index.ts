@@ -8,9 +8,9 @@ const __dirname = dirname(__filename)
 
 // Load .env from multiple locations (packaged vs dev)
 const envPaths = [
-	join(process.cwd(), '.env'),                    // Packaged: next to executable
-	join(__dirname, '../../../.env'),               // Dev: relative to server/src
-	join(__dirname, '../../../../.env'),            // Dev: from dist folder
+	join(process.cwd(), '.env'), // Packaged: next to executable
+	join(__dirname, '../../../.env'), // Dev: relative to server/src
+	join(__dirname, '../../../../.env') // Dev: from dist folder
 ]
 
 let envLoaded = false
@@ -28,9 +28,15 @@ if (!envLoaded) {
 }
 
 // Validate ANTHROPIC_API_KEY
-const PLACEHOLDER_KEYS = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
+const PLACEHOLDER_KEYS = [
+	'YOUR_API_KEY_HERE',
+	'your_api_key_here',
+	'YOUR_KEY_HERE',
+	'sk-ant-xxx',
+	''
+]
 const apiKey = process.env.ANTHROPIC_API_KEY || ''
-const isPlaceholderKey = PLACEHOLDER_KEYS.some(p => apiKey === p || apiKey.startsWith('YOUR_'))
+const isPlaceholderKey = PLACEHOLDER_KEYS.some((p) => apiKey === p || apiKey.startsWith('YOUR_'))
 
 if (!apiKey || isPlaceholderKey) {
 	console.error('')
@@ -58,7 +64,7 @@ import { Server } from 'socket.io'
 import cors from 'cors'
 import { networkInterfaces } from 'os'
 import { execSync } from 'child_process'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 import type {
 	JoinMessage,
@@ -119,14 +125,14 @@ app.use(express.json())
 // Serve video clips and subtitles with explicit CORS headers
 // Look for clips in multiple locations (dev vs packaged)
 const clipsPaths = [
-	resolve(process.cwd(), 'clips'),                    // Packaged: next to executable
-	resolve(process.cwd(), 'generated/clips'),          // Packaged: generated folder
-	resolve(__dirname, '../../../generated/clips'),     // Dev: relative to server/src
-	resolve(__dirname, '../../../../generated/clips'),  // Dev: from dist folder
-	'/home/jk/jkbox/generated/clips',                   // Fallback: absolute dev path
+	resolve(process.cwd(), 'clips'), // Packaged: next to executable
+	resolve(process.cwd(), 'generated/clips'), // Packaged: generated folder
+	resolve(__dirname, '../../../generated/clips'), // Dev: relative to server/src
+	resolve(__dirname, '../../../../generated/clips'), // Dev: from dist folder
+	'/home/jk/jkbox/generated/clips' // Fallback: absolute dev path
 ]
 
-const clipsPath = clipsPaths.find(p => existsSync(p))
+const clipsPath = clipsPaths.find((p) => existsSync(p))
 
 if (clipsPath) {
 	console.log(`🎬 Serving clips from: ${clipsPath}`)
@@ -150,13 +156,13 @@ if (clipsPath) {
 // Production mode: Serve built React client
 // Look for client dist in multiple locations (dev vs packaged)
 const clientDistPaths = [
-	resolve(__dirname, '../../../client/dist'),     // Dev: relative to server/src
-	resolve(__dirname, '../../client/dist'),        // Built: relative to server/dist
-	resolve(process.cwd(), 'client-dist'),          // Packaged: next to executable
-	resolve(process.cwd(), 'dist'),                 // Packaged: dist folder
+	resolve(__dirname, '../../../client/dist'), // Dev: relative to server/src
+	resolve(__dirname, '../../client/dist'), // Built: relative to server/dist
+	resolve(process.cwd(), 'client-dist'), // Packaged: next to executable
+	resolve(process.cwd(), 'dist') // Packaged: dist folder
 ]
 
-const clientDistPath = clientDistPaths.find(p => existsSync(p))
+const clientDistPath = clientDistPaths.find((p) => existsSync(p))
 
 if (clientDistPath) {
 	console.log(`📦 Serving client from: ${clientDistPath}`)
@@ -168,7 +174,11 @@ if (clientDistPath) {
 	// Must be after API routes but before 404
 	app.get('*', (req, res, next) => {
 		// Don't intercept API routes or socket.io
-		if (req.path.startsWith('/api') || req.path.startsWith('/socket.io') || req.path.startsWith('/clips')) {
+		if (
+			req.path.startsWith('/api') ||
+			req.path.startsWith('/socket.io') ||
+			req.path.startsWith('/clips')
+		) {
 			return next()
 		}
 		res.sendFile(resolve(clientDistPath, 'index.html'))
@@ -230,14 +240,51 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/status', (_req, res) => {
 	const apiKeyVal = process.env.ANTHROPIC_API_KEY || ''
 	const placeholders = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
-	const isPlaceholder = placeholders.some(p => apiKeyVal === p || apiKeyVal.startsWith('YOUR_'))
+	const isPlaceholder = placeholders.some((p) => apiKeyVal === p || apiKeyVal.startsWith('YOUR_'))
 
 	res.json({
 		aiConfigured: !!(apiKeyVal && !isPlaceholder),
-		aiError: (!apiKeyVal || isPlaceholder)
-			? 'API key not configured. Edit .env file and add your Anthropic API key.'
-			: null
+		aiError:
+			!apiKeyVal || isPlaceholder
+				? 'API key not configured. Edit .env file and add your Anthropic API key.'
+				: null
 	})
+})
+
+// Serve lobby audio files
+const lobbyAudioPaths = [
+	resolve(process.cwd(), 'assets/audio/lobby'), // Packaged: next to executable
+	resolve(__dirname, '../../../assets/audio/lobby'), // Dev: relative to server/src
+	resolve(__dirname, '../../../../assets/audio/lobby'), // Dev: from dist folder
+	'/home/jk/jkbox/assets/audio/lobby' // Fallback: absolute dev path
+]
+
+const lobbyAudioPath = lobbyAudioPaths.find((p) => existsSync(p))
+
+if (lobbyAudioPath) {
+	console.log(`🎵 Serving lobby audio from: ${lobbyAudioPath}`)
+	app.use('/audio/lobby', express.static(lobbyAudioPath))
+} else {
+	console.warn('⚠️  No lobby audio folder found!')
+}
+
+// List available lobby audio tracks (for random selection)
+app.get('/api/audio/lobby-tracks', (_req, res) => {
+	if (!lobbyAudioPath) {
+		res.json({ tracks: [] })
+		return
+	}
+
+	try {
+		const files = readdirSync(lobbyAudioPath)
+		const audioFiles = files.filter(
+			(f) => f.endsWith('.mp3') || f.endsWith('.wav') || f.endsWith('.ogg')
+		)
+		res.json({ tracks: audioFiles })
+	} catch (error) {
+		console.error('Failed to list lobby audio tracks:', error)
+		res.json({ tracks: [] })
+	}
 })
 
 // Get available games (for lobby voting)
