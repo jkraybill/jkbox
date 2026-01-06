@@ -440,6 +440,11 @@ io.on('connection', (socket) => {
 		void connectionHandler.handleGameAction(socket, action)
 	})
 
+	// Handle player quitting from game
+	socket.on('game:quit', () => {
+		connectionHandler.handleGameQuit(socket)
+	})
+
 	// Handle disconnect
 	socket.on('disconnect', () => {
 		console.log(`Client disconnected: ${socket.id}`)

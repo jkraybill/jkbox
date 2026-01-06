@@ -200,7 +200,7 @@ describe('ConnectionHandler', () => {
 			expect((errorEvent?.data as { code: string }).code).toBe('ROOM_FULL')
 		})
 
-		it('should reject join if game is in progress (playing phase)', () => {
+		it('should allow mid-game join when game is in playing phase', () => {
 			// Create room and transition to playing phase
 			const lobbyRoom = roomManager.createRoom()
 			const playingRoom: import('@jkbox/shared').PlayingState = {
@@ -223,12 +223,14 @@ describe('ConnectionHandler', () => {
 				nickname: 'Latecomer'
 			})
 
+			// Should allow join (mid-game join feature)
 			const events = socket._getEmittedEvents()
-			const errorEvent = events.find((e) => e.event === 'error')
+			const successEvent = events.find((e) => e.event === 'join:success')
+			expect(successEvent).toBeDefined()
 
-			expect(errorEvent).toBeDefined()
-			expect((errorEvent?.data as { code: string }).code).toBe('GAME_IN_PROGRESS')
-			expect((errorEvent?.data as { message: string }).message).toContain('game is in progress')
+			// Player should be added to room
+			const updated = roomManager.getRoom(lobbyRoom.roomId)
+			expect(updated?.players.find((p) => p.nickname === 'Latecomer')).toBeDefined()
 		})
 
 		it('should allow join if game is in results phase (between rounds)', () => {

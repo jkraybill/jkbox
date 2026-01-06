@@ -171,6 +171,132 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	}
 
 	/**
+	 * Get the count of active players (players still in the game)
+	 */
+	getActivePlayerCount(): number {
+		return this.state.scores.size
+	}
+
+	/**
+	 * Check if game has ended (not enough players to continue)
+	 * Game requires minimum 2 players
+	 */
+	isGameEnded(): boolean {
+		return this.state.scores.size < 2
+	}
+
+	/**
+	 * Check if the current phase should auto-advance based on player status
+	 * Used after player quit to determine if remaining players have all completed
+	 */
+	shouldAutoAdvance(): boolean {
+		const phase = this.state.phase
+		const activePlayers = Array.from(this.state.scores.keys())
+
+		// Check answer collection phases
+		if (phase === 'answer_collection' || phase === 'film_title_collection') {
+			// All remaining players have submitted
+			return activePlayers.every((playerId) => {
+				const status = this.state.playerStatus.get(playerId)
+				return status?.hasSubmittedAnswer === true
+			})
+		}
+
+		// Check voting phases
+		if (phase === 'voting_collection' || phase === 'film_title_voting') {
+			// All remaining players have voted
+			return activePlayers.every((playerId) => {
+				const status = this.state.playerStatus.get(playerId)
+				return status?.hasVoted === true
+			})
+		}
+
+		return false
+	}
+
+	/**
+	 * Handle player quitting mid-game
+	 * - Removes from scores, playerStatus, pending maps
+	 * - Preserves their previous answers for others to vote on
+	 * - Returns true if player was found and removed
+	 */
+	handlePlayerQuit(playerId: string): boolean {
+		// Check if player exists
+		if (!this.state.scores.has(playerId)) {
+			return false
+		}
+
+		// Remove from scores (source of truth for active players)
+		this.state.scores.delete(playerId)
+
+		// Remove from scoresBeforeRound
+		this.state.scoresBeforeRound.delete(playerId)
+
+		// Remove from playerStatus
+		this.state.playerStatus.delete(playerId)
+
+		// Remove from playerErrors
+		this.state.playerErrors.delete(playerId)
+
+		// Remove pending answer (but NOT from allAnswers - preserve for voting)
+		this.state.playerAnswers.delete(playerId)
+
+		// Remove pending vote
+		this.state.votes.delete(playerId)
+
+		// Remove from endGameVotes if present
+		this.state.endGameVotes.delete(playerId)
+
+		// Remove from voteCountsThisRound
+		this.state.voteCountsThisRound.delete(playerId)
+
+		console.log(
+			`[CinemaPippinGame] Player ${playerId} quit. Active players: ${this.state.scores.size}`
+		)
+
+		return true
+	}
+
+	/**
+	 * Handle player joining mid-game
+	 * - Adds with score 0
+	 * - Marks as already submitted/voted if joining during those phases
+	 * - Returns true if player was added, false if already exists
+	 */
+	handlePlayerJoin(playerId: string): boolean {
+		// Check if player already exists
+		if (this.state.scores.has(playerId)) {
+			return false
+		}
+
+		// Add to scores with 0
+		this.state.scores.set(playerId, 0)
+		this.state.scoresBeforeRound.set(playerId, 0)
+
+		// Determine initial status based on current phase
+		const phase = this.state.phase
+		const isAnswerPhase = phase === 'answer_collection' || phase === 'film_title_collection'
+		const isVotingPhase = phase === 'voting_collection' || phase === 'film_title_voting'
+
+		if (isAnswerPhase) {
+			// Player can't answer this round, mark as submitted to not block
+			this.state.playerStatus.set(playerId, { hasSubmittedAnswer: true })
+		} else if (isVotingPhase) {
+			// Player can't vote this round, mark as voted to not block
+			this.state.playerStatus.set(playerId, { hasVoted: true })
+		} else {
+			// No special status needed - player will participate at next question
+			this.state.playerStatus.set(playerId, {})
+		}
+
+		console.log(
+			`[CinemaPippinGame] Player ${playerId} joined mid-game during ${phase}. Active players: ${this.state.scores.size}`
+		)
+
+		return true
+	}
+
+	/**
 	 * Calculate winner from votes
 	 * Tie-breaking rules:
 	 * 1. If all same type (all human OR all AI) → random from all

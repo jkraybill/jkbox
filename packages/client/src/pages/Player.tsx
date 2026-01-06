@@ -195,6 +195,11 @@ export function Player() {
 										socket.emit('game:action', action)
 									}
 								}}
+								onQuit={() => {
+									if (socket) {
+										socket.emit('game:quit')
+									}
+								}}
 							/>
 						)
 					})()}

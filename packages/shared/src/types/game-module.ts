@@ -64,6 +64,7 @@ export interface ControllerProps {
 	playerId: string
 	players: Player[]
 	sendToServer: (action: GameAction) => void
+	onQuit?: () => void // Optional callback for player to quit game mid-play
 }
 
 /**

@@ -8,6 +8,7 @@ import type { ControllerProps } from '@jkbox/shared'
 import { AnswerInput } from './AnswerInput'
 import { VotingUI } from './VotingUI'
 import { PlayerVideoReplay } from './PlayerVideoReplay'
+import { QuitConfirmModal } from './QuitConfirmModal'
 import type { Subtitle } from './VideoPlayer'
 
 interface Answer {
@@ -41,11 +42,12 @@ interface CinemaPippinGameState {
 	}
 }
 
-export function CinemaPippinController({ playerId, state, sendToServer }: ControllerProps) {
+export function CinemaPippinController({ playerId, state, sendToServer, onQuit }: ControllerProps) {
 	const gameState = state as CinemaPippinGameState
 	const [timeRemaining, setTimeRemaining] = useState(60)
 	const [hasSubmitted, setHasSubmitted] = useState(false)
 	const [showVideoReplay, setShowVideoReplay] = useState(false)
+	const [showQuitModal, setShowQuitModal] = useState(false)
 
 	// Check if player has already submitted an answer
 	useEffect(() => {
@@ -135,10 +137,7 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 							error={playerError}
 						/>
 						{gameState.currentClip && (
-							<button
-								onClick={() => setShowVideoReplay(true)}
-								style={styles.replayButton}
-							>
+							<button onClick={() => setShowVideoReplay(true)} style={styles.replayButton}>
 								📹 Replay Clip
 							</button>
 						)}
@@ -198,10 +197,7 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 							error={playerError}
 						/>
 						{gameState.currentClip && (
-							<button
-								onClick={() => setShowVideoReplay(true)}
-								style={styles.replayButton}
-							>
+							<button onClick={() => setShowVideoReplay(true)} style={styles.replayButton}>
 								📹 Replay Clip
 							</button>
 						)}
@@ -246,8 +242,26 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 		}
 	}
 
+	const handleConfirmQuit = useCallback(() => {
+		setShowQuitModal(false)
+		if (onQuit) {
+			onQuit()
+		}
+	}, [onQuit])
+
 	return (
 		<div style={styles.fullscreen}>
+			{/* Quit button - persistent in top-right corner */}
+			{onQuit && (
+				<button
+					onClick={() => setShowQuitModal(true)}
+					style={styles.quitButton}
+					aria-label="Quit game"
+				>
+					✕
+				</button>
+			)}
+
 			{renderPhaseContent()}
 
 			{/* Video replay overlay */}
@@ -257,6 +271,11 @@ export function CinemaPippinController({ playerId, state, sendToServer }: Contro
 					subtitles={gameState.currentClip.subtitles}
 					onClose={() => setShowVideoReplay(false)}
 				/>
+			)}
+
+			{/* Quit confirmation modal */}
+			{showQuitModal && (
+				<QuitConfirmModal onConfirm={handleConfirmQuit} onCancel={() => setShowQuitModal(false)} />
 			)}
 		</div>
 	)
@@ -272,7 +291,28 @@ const styles = {
 		flexDirection: 'column' as const,
 		alignItems: 'center',
 		justifyContent: 'center',
-		padding: 0
+		padding: 0,
+		position: 'relative' as const
+	},
+	quitButton: {
+		position: 'absolute' as const,
+		top: '12px',
+		right: '12px',
+		width: '36px',
+		height: '36px',
+		borderRadius: '50%',
+		backgroundColor: 'rgba(255, 255, 255, 0.1)',
+		border: '1px solid rgba(255, 255, 255, 0.2)',
+		color: '#888',
+		fontSize: '18px',
+		fontWeight: 'bold' as const,
+		cursor: 'pointer',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		zIndex: 100,
+		touchAction: 'manipulation' as const,
+		transition: 'background-color 0.2s, color 0.2s'
 	},
 	container: {
 		width: '100%',
