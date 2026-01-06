@@ -243,16 +243,16 @@ describe('VotingHandler', () => {
 			handler.submitVote('human-1', 'fake-facts')
 			handler.toggleReady('human-1', true)
 
-			// Should be ready
+			// Should be ready (2 total players: 1 human + 1 AI)
 			let state = handler.getVotingState()
 			expect(state.allReady).toBe(true)
 
 			// Remove AI player
 			handler.removePlayer('ai-1')
 
-			// Should still be ready
+			// Should NOT be ready - only 1 player left (need 2 to start game)
 			state = handler.getVotingState()
-			expect(state.allReady).toBe(true)
+			expect(state.allReady).toBe(false)
 		})
 	})
 })

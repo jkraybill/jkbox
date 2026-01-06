@@ -7,6 +7,8 @@
  * - Development/Testing: Works with vitest in Node.js (better-sqlite3)
  */
 
+import { createRequire } from 'node:module'
+
 // Detect if we're running in Bun
 // @ts-expect-error - Bun global only exists in Bun runtime
 const isBun = typeof Bun !== 'undefined'
@@ -17,13 +19,15 @@ const isBun = typeof Bun !== 'undefined'
 let Database: typeof import('bun:sqlite').Database
 
 if (isBun) {
-  // Use Bun's native SQLite - direct import works in Bun
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Database = require('bun:sqlite').Database
+	// Use Bun's native SQLite - direct import works in Bun
+	// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires
+	Database = require('bun:sqlite').Database
 } else {
-  // Use better-sqlite3 for Node.js (testing)
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Database = require('better-sqlite3')
+	// Use better-sqlite3 for Node.js (testing)
+	// createRequire allows us to use require() in ESM context
+	const require = createRequire(import.meta.url)
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	Database = require('better-sqlite3')
 }
 
 export { Database }

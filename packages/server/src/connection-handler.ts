@@ -454,9 +454,7 @@ export class ConnectionHandler {
 		const votingHandler = this.getVotingHandler(roomId)
 
 		// Get current AI player IDs from room
-		const currentAIPlayerIds = new Set(
-			players.filter((p) => p.isAI).map((p) => p.id)
-		)
+		const currentAIPlayerIds = new Set(players.filter((p) => p.isAI).map((p) => p.id))
 
 		// Remove AI players that are no longer in the room
 		// (VotingHandler tracks playerIds internally, we need to sync removals)
@@ -515,6 +513,14 @@ export class ConnectionHandler {
 
 			// Broadcast voting update
 			this.broadcastVotingUpdate(mapping.roomId)
+
+			// If player un-readied and room is in countdown, cancel it
+			if (!message.isReady) {
+				const room = this.roomManager.getRoom(mapping.roomId)
+				if (room?.phase === 'countdown') {
+					this.cancelCountdown(mapping.roomId, 'player_unready')
+				}
+			}
 
 			// If all ready, start countdown
 			const votingState = handler.getVotingState()
