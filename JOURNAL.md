@@ -192,7 +192,7 @@ Journal entries reference HC outcomes:
 
 ## Session Count
 
-**Current session: 15** (updated at BOS)
+**Current session: 16** (updated at BOS)
 
 ## Current Journal
 
@@ -341,3 +341,7 @@ Journal entries reference HC outcomes:
 ### Session 6 (2025-12-10) - jkbox
 
 [2025-12-10 01:30 UTC] Session 6✓. FFT-driven Pippin lobby animations✓. Full feature: useLobbyAudio hook (random track, Web Audio API, 8 FFT bands @60fps, snappy-smooth interpolation), usePippinAnimations hook (12 animation types: translate/rotate/scale/skew/vibrate/bounce/wiggle/pulse/tilt, random channel mapping per lobby entry), Pippin.tsx fftTransform prop, Jumbotron integration. Server: /api/audio/lobby-tracks + static serving. Maximum hilarity mode: ±150px translate, ±60deg rotate, 0.5-1.8x scale. T:729/729✓. C:75cc0bc. Pattern: Web Audio AnalyserNode→frequencyBinCount→balanced bands. Array.from() for typed arrays (ESLint). JKLES: 10/10 (groovy moodle).
+
+### Session 7 (2026-01-08) - jkbox
+
+[2026-01-08 09:00 UTC] Session 7✓. CRITICAL: Infinite re-render loop fixes. 5 bugs blocking game flow: 1) Pippin intro callback (inline arrow fn→direct ref), 2) sendToServer unstable (→useCallback in Jumbotron.tsx), 3) FilmCountdown onComplete inline, 4) voting timeout race (AI path missing clearVotingTimeout()), 5) ScoreboardTransition freeze (new Map() every render→useMemo). All phase transition callbacks now stable: handleVideoComplete, handleResultsComplete, handleScoreboardComplete, handleFilmTitleResultsComplete, handleMontageComplete. T:729/729✓. C:pending. Pattern: Unstable props in useEffect deps→infinite loops. useCallback for fns, useMemo for objects. Map()=new ref every render⚠. JKLES: 8/10 (debugging detective work).

@@ -3,7 +3,7 @@
  * Displays video playback, voting screens, and results
  */
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import type { JumbotronProps, Player, PauseState } from '@jkbox/shared'
 import { VideoPlayer } from './VideoPlayer'
 import type { Subtitle } from './VideoPlayer'
@@ -257,7 +257,6 @@ export function CinemaPippinJumbotron({
 		if (gameState.phase !== 'film_select') {
 			return
 		}
-
 		// Immediate auto-advance - the actual countdown happens in clip_intro
 		sendToServer({
 			playerId: 'jumbotron',
@@ -291,16 +290,75 @@ export function CinemaPippinJumbotron({
 		return () => clearTimeout(timer)
 	}, [gameState.phase, gameState.currentFilmIndex, gameState.currentClipIndex, sendToServer])
 
-	// Handle video completion
-	const handleVideoComplete = () => {
-		// Notify server that video has completed
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	// Handle video completion (stable callback to prevent re-render issues)
+	const handleVideoComplete = useCallback(() => {
+		console.log('[CinemaPippinJumbotron] Video complete, sending VIDEO_COMPLETE')
 		sendToServer({
 			playerId: 'jumbotron',
 			type: 'VIDEO_COMPLETE',
 			payload: {}
 		})
-	}
+	}, [sendToServer])
+
+	// Stable callbacks for all phase transitions (prevent re-render loops)
+	const handleIntroComplete = useCallback(() => {
+		console.log('[CinemaPippinJumbotron] Intro complete, sending INTRO_COMPLETE')
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'INTRO_COMPLETE',
+			payload: {}
+		})
+	}, [sendToServer])
+
+	const handleResultsComplete = useCallback(() => {
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'RESULTS_COMPLETE',
+			payload: {}
+		})
+	}, [sendToServer])
+
+	const handleScoreboardComplete = useCallback(() => {
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'SCOREBOARD_COMPLETE',
+			payload: {}
+		})
+	}, [sendToServer])
+
+	const handleFilmTitleResultsComplete = useCallback(() => {
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'FILM_TITLE_RESULTS_COMPLETE',
+			payload: {}
+		})
+	}, [sendToServer])
+
+	const handleMontageComplete = useCallback(() => {
+		sendToServer({
+			playerId: 'jumbotron',
+			type: 'MONTAGE_COMPLETE',
+			payload: {}
+		})
+	}, [sendToServer])
+
+	// Memoize Map conversions for scoreboard to prevent re-render loops
+	// (new Map() creates new reference each time, causing child useEffect to re-run)
+	const scoresMap = useMemo(() => {
+		if (!gameState.scoresBeforeRound) return new Map<string, number>()
+		if (gameState.scoresBeforeRound instanceof Map) {
+			return gameState.scoresBeforeRound
+		}
+		return new Map(Object.entries(gameState.scoresBeforeRound))
+	}, [gameState.scoresBeforeRound])
+
+	const voteCountsMap = useMemo(() => {
+		if (!gameState.voteCountsThisRound) return new Map<string, number>()
+		if (gameState.voteCountsThisRound instanceof Map) {
+			return gameState.voteCountsThisRound
+		}
+		return new Map(Object.entries(gameState.voteCountsThisRound))
+	}, [gameState.voteCountsThisRound])
 
 	// Render different views based on game phase
 	const renderPhaseContent = () => {
@@ -329,18 +387,7 @@ export function CinemaPippinJumbotron({
 				// Old-timey countdown ONLY for the very first clip of the game (Film 1, Clip 1)
 				// All subsequent clips show "Act X" slide then auto-advance
 				if (gameState.currentFilmIndex === 0 && gameState.currentClipIndex === 0) {
-					return (
-						<FilmCountdown
-							duration={5000}
-							onComplete={() => {
-								sendToServer({
-									playerId: 'jumbotron',
-									type: 'INTRO_COMPLETE',
-									payload: {}
-								})
-							}}
-						/>
-					)
+					return <FilmCountdown duration={5000} onComplete={handleIntroComplete} />
 				}
 				// For all other clips, show "Act X" slide then auto-advance
 				// (the useEffect handles the auto-advance timing)
@@ -467,13 +514,7 @@ export function CinemaPippinJumbotron({
 							sortedResults={gameState.sortedResults}
 							scores={gameState.scores}
 							players={players}
-							onComplete={() => {
-								sendToServer({
-									playerId: 'jumbotron',
-									type: 'RESULTS_COMPLETE',
-									payload: {}
-								})
-							}}
+							onComplete={handleResultsComplete}
 						/>
 					)
 				}
@@ -490,22 +531,6 @@ export function CinemaPippinJumbotron({
 					gameState.voteCountsThisRound &&
 					gameState.currentFilmIndex !== undefined
 				) {
-					// Convert scores to Map
-					let scoresMap: Map<string, number>
-					if (gameState.scoresBeforeRound instanceof Map) {
-						scoresMap = gameState.scoresBeforeRound
-					} else {
-						scoresMap = new Map(Object.entries(gameState.scoresBeforeRound))
-					}
-
-					// Convert vote counts to Map
-					let voteCountsMap: Map<string, number>
-					if (gameState.voteCountsThisRound instanceof Map) {
-						voteCountsMap = gameState.voteCountsThisRound
-					} else {
-						voteCountsMap = new Map(Object.entries(gameState.voteCountsThisRound))
-					}
-
 					const pointsPerVote = gameState.currentFilmIndex + 1
 
 					return (
@@ -514,13 +539,7 @@ export function CinemaPippinJumbotron({
 							currentScores={scoresMap}
 							voteCounts={voteCountsMap}
 							pointsPerVote={pointsPerVote}
-							onComplete={() => {
-								sendToServer({
-									playerId: 'jumbotron',
-									type: 'SCOREBOARD_COMPLETE',
-									payload: {}
-								})
-							}}
+							onComplete={handleScoreboardComplete}
 						/>
 					)
 				}
@@ -583,13 +602,7 @@ export function CinemaPippinJumbotron({
 							sortedResults={gameState.sortedResults}
 							scores={gameState.scores}
 							players={players}
-							onComplete={() => {
-								sendToServer({
-									playerId: 'jumbotron',
-									type: 'FILM_TITLE_RESULTS_COMPLETE',
-									payload: {}
-								})
-							}}
+							onComplete={handleFilmTitleResultsComplete}
 						/>
 					)
 				}
@@ -606,13 +619,7 @@ export function CinemaPippinJumbotron({
 						<FinalMontage
 							filmTitle={gameState.filmTitle}
 							clips={gameState.montageClips}
-							onComplete={() => {
-								sendToServer({
-									playerId: 'jumbotron',
-									type: 'MONTAGE_COMPLETE',
-									payload: {}
-								})
-							}}
+							onComplete={handleMontageComplete}
 						/>
 					)
 				}

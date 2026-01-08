@@ -197,6 +197,35 @@ export interface GameModule {
 	loadControllerComponent(): Promise<React.ComponentType<ControllerProps>>
 
 	/**
+	 * Handle player joining mid-game (optional)
+	 * Called when: A new player joins while game is in progress
+	 * Returns: true if player was added, false if already exists
+	 *
+	 * @param playerId - ID of the player joining
+	 */
+	handlePlayerJoin?(playerId: string): boolean
+
+	/**
+	 * Handle player quitting mid-game (optional)
+	 * Called when: A player quits while game is in progress
+	 * Returns: true if player was removed, false if not found
+	 *
+	 * @param playerId - ID of the player quitting
+	 */
+	handlePlayerQuit?(playerId: string): boolean
+
+	/**
+	 * Get the number of active players (optional)
+	 * Used to determine if game should end (e.g., < 2 players remaining)
+	 */
+	getActivePlayerCount?(): number
+
+	/**
+	 * Check if game has ended due to insufficient players (optional)
+	 */
+	isGameEnded?(): boolean
+
+	/**
 	 * Cleanup hook (optional)
 	 * Called when: Game module is being unloaded (after results phase)
 	 * Use for: Clearing timers, closing connections, etc.

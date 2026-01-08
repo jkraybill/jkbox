@@ -11,6 +11,8 @@ import { Scratchpad1Jumbotron } from '../games/Scratchpad1Jumbotron'
 import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbotron'
 import { useLobbyAudio } from '../hooks/use-lobby-audio'
 import { usePippinAnimations } from '../hooks/use-pippin-animations'
+import { useJumbotronAudio } from '../hooks/use-jumbotron-audio'
+import { AudioProvider } from '../audio'
 import type {
 	LobbyCountdownMessage,
 	ClipReplayMessage,
@@ -34,7 +36,7 @@ const GAME_COMPONENTS: Record<GameId, React.ComponentType<JumbotronProps>> = {
 	test: Scratchpad1Jumbotron
 }
 
-export function Jumbotron() {
+function JumbotronContent() {
 	const { room, setRoom } = useGameStore()
 	const { socket, isConnected } = useSocket()
 	const [countdown, setCountdown] = useState<{ count: number; game: string } | null>(null)
@@ -50,6 +52,36 @@ export function Jumbotron() {
 	const { transform: pippinTransform } = usePippinAnimations(
 		frequencyBands,
 		isInLobby && isAudioPlaying
+	)
+
+	// Phase-based and player action audio triggers
+	useJumbotronAudio({ room, enabled: true })
+
+	// Stable callback for game actions (prevents infinite re-render loops)
+	const sendToServer = useCallback(
+		(action: { playerId: string; type: string; payload: unknown }) => {
+			if (!socket) {
+				console.error('[Jumbotron] Cannot send action - socket is null')
+				return
+			}
+			if (!socket.connected) {
+				console.error(
+					'[Jumbotron] Cannot send action - socket not connected, state:',
+					socket.connected
+				)
+				return
+			}
+			console.log(
+				'[Jumbotron] sendToServer called:',
+				action,
+				'socket.id:',
+				socket.id,
+				'connected:',
+				socket.connected
+			)
+			socket.emit('game:action', action)
+		},
+		[socket]
 	)
 
 	// Enter fullscreen mode and hide scrollbars on mount
@@ -265,6 +297,12 @@ export function Jumbotron() {
 		}
 	}, [room?.phase, setRoom]) // Dependencies: only room.phase and setRoom
 
+	// Stable non-async wrapper to avoid ESLint "no-misused-promises" error
+	// while maintaining stable callback reference to prevent re-render loops
+	const onPippinIntroComplete = useCallback(() => {
+		void handleIntroComplete()
+	}, [handleIntroComplete])
+
 	if (isLoadingRoom) {
 		return (
 			<div style={styles.container}>
@@ -285,7 +323,7 @@ export function Jumbotron() {
 	if (room.phase === 'title') {
 		return (
 			<div style={styles.container}>
-				<Pippin variant="intro" onIntroComplete={() => void handleIntroComplete()} />
+				<Pippin variant="intro" onIntroComplete={onPippinIntroComplete} />
 			</div>
 		)
 	}
@@ -357,7 +395,7 @@ export function Jumbotron() {
 							<GameComponent
 								state={room.gameState}
 								players={room.players}
-								sendToServer={(action) => socket.emit('game:action', action)}
+								sendToServer={sendToServer}
 								pauseState={room.pauseState}
 								replayTrigger={replayTrigger}
 							/>
@@ -627,4 +665,16 @@ const styles = {
 		color: '#f59e0b',
 		fontWeight: 'bold'
 	}
+}
+
+/**
+ * Jumbotron wrapper with AudioProvider
+ * Enables audio context for phase-based music and player sounds
+ */
+export function Jumbotron() {
+	return (
+		<AudioProvider enableFFT>
+			<JumbotronContent />
+		</AudioProvider>
+	)
 }

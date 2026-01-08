@@ -33,6 +33,7 @@ import { VotingHandler } from './voting-handler'
 import { generatePlayerId, generateSessionToken } from './utils/session-token'
 import { GameModuleHost } from './game-module-host'
 import { gameRegistry } from './games/game-registry'
+import { assignPlayerSound } from './utils/player-sounds'
 
 // Heartbeat intervals
 const DISCONNECT_THRESHOLD = 5000 // Mark disconnected after 5s (client pings every 2s)
@@ -135,14 +136,16 @@ export class ConnectionHandler {
 		const bootedPlayerKey = `${message.roomId}:${nickname}`
 		const bootedPlayer = this.bootedPlayers.get(bootedPlayerKey)
 
+		const playerId = generatePlayerId()
 		const player: Player = {
-			id: generatePlayerId(),
+			id: playerId,
 			roomId: message.roomId,
 			nickname,
 			sessionToken: generateSessionToken(),
 			deviceId,
 			isAdmin,
 			isHost: false,
+			soundId: assignPlayerSound(playerId), // Assign unique player sound
 			score: bootedPlayer?.score ?? 0, // Preserve score if rejoining
 			connectedAt: new Date(),
 			lastSeenAt: new Date(),
@@ -182,16 +185,11 @@ export class ConnectionHandler {
 		// If mid-game join, notify the active game
 		if (isMidGameJoin) {
 			const gameHost = this.gameHosts.get(message.roomId)
-			if (gameHost) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-				const game = gameHost.getGame()
-				if (game && 'handlePlayerJoin' in game) {
-					const cinemaPippinGame = game as { handlePlayerJoin: (playerId: string) => boolean }
-					const added = cinemaPippinGame.handlePlayerJoin(player.id)
-					console.log(
-						`[JOIN] Mid-game join for ${player.nickname}: ${added ? 'added to game' : 'already in game'}`
-					)
-				}
+			if (gameHost?.module.handlePlayerJoin) {
+				const added = gameHost.module.handlePlayerJoin(player.id)
+				console.log(
+					`[JOIN] Mid-game join for ${player.nickname}: ${added ? 'added to game' : 'already in game'}`
+				)
 			}
 		}
 
@@ -1067,6 +1065,59 @@ export class ConnectionHandler {
 	}
 
 	/**
+	 * Force a room back to lobby phase (internal use - no auth check)
+	 * Used when game ends due to insufficient players
+	 */
+	private forceRoomToLobby(roomId: string): void {
+		const room = this.roomManager.getRoom(roomId)
+		if (!room) return
+
+		console.log(`[ConnectionHandler] Forcing room ${roomId} back to lobby`)
+
+		// Cleanup game host if exists
+		const gameHost = this.gameHosts.get(roomId)
+		if (gameHost) {
+			void gameHost.cleanup().catch((err) => {
+				console.error(`[ConnectionHandler] Error cleaning up game host:`, err)
+			})
+			this.gameHosts.delete(roomId)
+		}
+
+		// Transition room back to lobby phase (preserve config)
+		const lobbyRoom: LobbyState = {
+			phase: 'lobby',
+			roomId: roomId,
+			players: room.players,
+			gameVotes: {},
+			readyStates: {},
+			selectedGame: null,
+			config: room.config,
+			pauseState: {
+				isPaused: false,
+				pausedBy: null,
+				pausedByName: null,
+				pausedAt: null
+			}
+		}
+		this.roomManager.updateRoomState(roomId, lobbyRoom)
+
+		// Reset voting state
+		const votingHandler = this.getVotingHandler(roomId)
+		votingHandler.reset()
+
+		// Broadcast updated room state
+		const updated = this.roomManager.getRoom(roomId)
+		if (updated) {
+			const roomStateMessage: RoomStateMessage = {
+				type: 'room:state',
+				state: updated
+			}
+			this.io.to(roomId).emit('room:state', roomStateMessage)
+			this.broadcastVotingUpdate(roomId)
+		}
+	}
+
+	/**
 	 * Admin: Hard reset - clear all ephemeral server state
 	 */
 	handleHardReset(socket: Socket, _message: AdminHardResetMessage): void {
@@ -1552,65 +1603,45 @@ export class ConnectionHandler {
 
 		// Get the game host and call handlePlayerQuit
 		const gameHost = this.gameHosts.get(roomId)
-		if (gameHost) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-			const game = gameHost.getGame()
-			if (game && 'handlePlayerQuit' in game) {
-				const cinemaPippinGame = game as {
-					handlePlayerQuit: (playerId: string) => boolean
-					shouldAutoAdvance: () => boolean
-					isGameEnded: () => boolean
-					getActivePlayerCount: () => number
-				}
+		if (gameHost?.module.handlePlayerQuit) {
+			const removed = gameHost.module.handlePlayerQuit(playerId)
 
-				const removed = cinemaPippinGame.handlePlayerQuit(playerId)
+			if (removed) {
+				// Remove player from room
+				this.roomManager.removePlayer(roomId, playerId)
 
-				if (removed) {
-					// Remove player from room
-					this.roomManager.removePlayer(roomId, playerId)
+				// Remove from voting handler
+				const votingHandler = this.getVotingHandler(roomId)
+				votingHandler.removePlayer(playerId)
 
-					// Remove from voting handler
-					const votingHandler = this.getVotingHandler(roomId)
-					votingHandler.removePlayer(playerId)
+				// Clean up socket mapping
+				this.socketToPlayer.delete(socket.id)
 
-					// Clean up socket mapping
-					this.socketToPlayer.delete(socket.id)
+				// Leave socket room
+				void socket.leave(roomId)
 
-					// Leave socket room
-					void socket.leave(roomId)
-
-					// Check if game has ended (not enough players)
-					if (cinemaPippinGame.isGameEnded()) {
-						console.log(`[ConnectionHandler] Game ended - not enough players in room ${roomId}`)
-						// Return to lobby
-						this.handleBackToLobby(socket, { type: 'admin:back-to-lobby' })
-						return
-					}
-
-					// Broadcast updated room state
-					const updatedRoom = this.roomManager.getRoom(roomId)
-					if (updatedRoom) {
-						const stateMessage: RoomStateMessage = {
-							type: 'room:state',
-							state: updatedRoom
-						}
-						this.io.to(roomId).emit('room:state', stateMessage)
-					}
-
-					// Check if should auto-advance (all remaining players have completed)
-					if (cinemaPippinGame.shouldAutoAdvance()) {
-						console.log(`[ConnectionHandler] Auto-advancing after player quit in room ${roomId}`)
-						// Trigger state change callback if set
-						const stateChangeCallback = (game as { stateChangeCallback?: () => void })
-							.stateChangeCallback
-						if (stateChangeCallback) {
-							stateChangeCallback()
-						}
-					}
-
+				// Check if game has ended (not enough players)
+				if (gameHost.module.isGameEnded?.()) {
+					console.log(`[ConnectionHandler] Game ended - not enough players in room ${roomId}`)
 					// Notify quitter that they've left
 					socket.emit('game:quit:success', { type: 'game:quit:success' })
+					// Return to lobby (will also broadcast state)
+					this.forceRoomToLobby(roomId)
+					return
 				}
+
+				// Broadcast updated room state
+				const updatedRoom = this.roomManager.getRoom(roomId)
+				if (updatedRoom) {
+					const stateMessage: RoomStateMessage = {
+						type: 'room:state',
+						state: updatedRoom
+					}
+					this.io.to(roomId).emit('room:state', stateMessage)
+				}
+
+				// Notify quitter that they've left
+				socket.emit('game:quit:success', { type: 'game:quit:success' })
 			}
 		}
 	}

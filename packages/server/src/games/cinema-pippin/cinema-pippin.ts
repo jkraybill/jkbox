@@ -1322,6 +1322,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		if (activePlayersVoting && this.state.votes.size >= activePlayersVoting) {
 			console.log('[AI] All players voted (including AI), advancing to results_display')
 
+			// Clear the voting timeout timer since all players voted
+			this.clearVotingTimeout()
+
 			// Calculate scores before showing results
 			this.applyVoteScores()
 			console.log('[AI] Applied vote scores')

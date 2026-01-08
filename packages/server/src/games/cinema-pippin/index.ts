@@ -266,14 +266,44 @@ class CinemaPippinModule implements PluggableGameModule {
 		return Promise.resolve(enrichedState)
 	}
 
-	async loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {
+	loadJumbotronComponent(): Promise<React.ComponentType<JumbotronProps>> {
 		// Component loading happens on the client side via the game router
-		throw new Error('loadJumbotronComponent should only be called on client')
+		return Promise.reject(new Error('loadJumbotronComponent should only be called on client'))
 	}
 
-	async loadControllerComponent(): Promise<React.ComponentType<ControllerProps>> {
+	loadControllerComponent(): Promise<React.ComponentType<ControllerProps>> {
 		// Component loading happens on the client side via the game router
-		throw new Error('loadControllerComponent should only be called on client')
+		return Promise.reject(new Error('loadControllerComponent should only be called on client'))
+	}
+
+	/**
+	 * Handle player joining mid-game
+	 * Delegates to internal game instance
+	 */
+	handlePlayerJoin(playerId: string): boolean {
+		return this.game.handlePlayerJoin(playerId)
+	}
+
+	/**
+	 * Handle player quitting mid-game
+	 * Delegates to internal game instance
+	 */
+	handlePlayerQuit(playerId: string): boolean {
+		return this.game.handlePlayerQuit(playerId)
+	}
+
+	/**
+	 * Get the number of active players
+	 */
+	getActivePlayerCount(): number {
+		return this.game.getActivePlayerCount()
+	}
+
+	/**
+	 * Check if game has ended due to insufficient players
+	 */
+	isGameEnded(): boolean {
+		return this.game.isGameEnded()
 	}
 
 	async cleanup(): Promise<void> {

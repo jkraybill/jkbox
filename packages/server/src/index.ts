@@ -287,6 +287,40 @@ app.get('/api/audio/lobby-tracks', (_req, res) => {
 	}
 })
 
+// Serve music files (intro, victory, etc.)
+const musicPaths = [
+	resolve(process.cwd(), 'assets/audio/music'),
+	resolve(__dirname, '../../../assets/audio/music'),
+	resolve(__dirname, '../../../../assets/audio/music'),
+	'/home/jk/jkbox/assets/audio/music'
+]
+
+const musicPath = musicPaths.find((p) => existsSync(p))
+
+if (musicPath) {
+	console.log(`🎶 Serving music from: ${musicPath}`)
+	app.use('/audio/music', express.static(musicPath))
+} else {
+	console.warn('⚠️  No music folder found!')
+}
+
+// Serve sound effects
+const sfxPaths = [
+	resolve(process.cwd(), 'assets/audio/sfx'),
+	resolve(__dirname, '../../../assets/audio/sfx'),
+	resolve(__dirname, '../../../../assets/audio/sfx'),
+	'/home/jk/jkbox/assets/audio/sfx'
+]
+
+const sfxPath = sfxPaths.find((p) => existsSync(p))
+
+if (sfxPath) {
+	console.log(`🔊 Serving SFX from: ${sfxPath}`)
+	app.use('/audio/sfx', express.static(sfxPath))
+} else {
+	console.warn('⚠️  No SFX folder found!')
+}
+
 // Get available games (for lobby voting)
 app.get('/api/games', (_req, res) => {
 	const allGames = gameRegistry.list()
