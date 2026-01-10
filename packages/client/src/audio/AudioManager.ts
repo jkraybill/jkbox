@@ -16,7 +16,7 @@ import type {
 	AudioState,
 	PlayerSoundTrigger
 } from './types'
-import { SOUND_DEFINITIONS, AUDIO_BASE_URL, getPlayerSoundId } from './sounds'
+import { SOUND_DEFINITIONS, getAudioUrl, getPlayerSoundId } from './sounds'
 
 /** FFT configuration */
 const FFT_SIZE = 256
@@ -135,7 +135,7 @@ class AudioManagerClass {
 
 		const loadPromises = sfxToPreload.map(async (sound) => {
 			try {
-				const url = `${AUDIO_BASE_URL}${sound.path}`
+				const url = `${getAudioUrl()}${sound.path}`
 				const response = await fetch(url)
 
 				if (!response.ok) {
@@ -181,7 +181,7 @@ class AudioManagerClass {
 			return
 		}
 
-		const url = `${AUDIO_BASE_URL}${sound.path}`
+		const url = `${getAudioUrl()}${sound.path}`
 
 		// Create new audio element
 		const newAudio = new Audio(url)

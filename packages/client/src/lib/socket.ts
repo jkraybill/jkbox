@@ -1,30 +1,6 @@
 import { io, Socket } from 'socket.io-client'
 import type { ServerMessage, ClientMessage } from '@jkbox/shared'
-
-/**
- * Get the WebSocket server URL dynamically
- * - In dev (localhost): use localhost:3001
- * - On network (192.168.x.x): use same hostname with port 3001
- * - Handles WSL2 network access from phones
- */
-function getServerUrl(): string {
-	// Allow override via env var (useful for custom deployments)
-	if (import.meta.env['VITE_SERVER_URL']) {
-		return import.meta.env['VITE_SERVER_URL'] as string
-	}
-
-	const hostname = window.location.hostname
-	const protocol = window.location.protocol
-
-	// In production (served from server), use same port as the page
-	// In dev (localhost with separate vite server), use configured port
-	const isDevMode = hostname === 'localhost' || hostname === '127.0.0.1'
-	const serverPort = isDevMode
-		? (import.meta.env['VITE_SERVER_PORT'] as string | undefined) || '3001'
-		: window.location.port
-
-	return `${protocol}//${hostname}:${serverPort}`
-}
+import { getServerUrl } from './server-url'
 
 class SocketClient {
 	private socket: Socket | null = null

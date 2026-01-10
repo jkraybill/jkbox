@@ -5,9 +5,12 @@
  */
 
 import type { SoundManifest, SoundDefinition, SFXId } from './types'
+import { getAudioBaseUrl } from '../lib/server-url'
 
-/** Base URL for audio files served by the server */
-export const AUDIO_BASE_URL = 'http://localhost:3001/audio'
+/** Get the base URL for audio files served by the server */
+export function getAudioUrl(): string {
+	return getAudioBaseUrl()
+}
 
 /** Player sound pool - these are randomly assigned to players */
 export const PLAYER_SOUND_POOL: SFXId[] = [
@@ -58,10 +61,12 @@ export const SOUND_DEFINITIONS: SoundDefinition[] = [
 	{ id: 'player-airhorn', path: '/sfx/players/airhorn.mp3', type: 'sfx', preload: true }
 ]
 
-/** Complete sound manifest */
-export const SOUND_MANIFEST: SoundManifest = {
-	baseUrl: AUDIO_BASE_URL,
-	sounds: SOUND_DEFINITIONS
+/** Get the complete sound manifest with dynamic base URL */
+export function getSoundManifest(): SoundManifest {
+	return {
+		baseUrl: getAudioUrl(),
+		sounds: SOUND_DEFINITIONS
+	}
 }
 
 /**
@@ -73,7 +78,7 @@ export function getSoundUrl(id: string): string {
 		console.warn(`[Sounds] Unknown sound ID: ${id}`)
 		return ''
 	}
-	return `${AUDIO_BASE_URL}${sound.path}`
+	return `${getAudioUrl()}${sound.path}`
 }
 
 /**

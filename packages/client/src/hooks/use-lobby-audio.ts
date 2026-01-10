@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { getAudioBaseUrl, getApiBaseUrl } from '../lib/server-url'
 
 /**
  * Number of frequency bands to extract from FFT analysis.
@@ -65,7 +66,7 @@ export function useLobbyAudio(isActive: boolean): UseLobbyAudioResult {
 	 */
 	const fetchRandomTrack = useCallback(async (): Promise<string | null> => {
 		try {
-			const response = await fetch('http://localhost:3001/api/audio/lobby-tracks')
+			const response = await fetch(`${getApiBaseUrl()}/audio/lobby-tracks`)
 			const { tracks } = (await response.json()) as { tracks: string[] }
 
 			if (tracks.length === 0) {
@@ -187,7 +188,7 @@ export function useLobbyAudio(isActive: boolean): UseLobbyAudioResult {
 		try {
 			// Create audio element
 			const audio = new Audio()
-			audio.src = `http://localhost:3001/audio/lobby/${track}`
+			audio.src = `${getAudioBaseUrl()}/lobby/${track}`
 			audio.loop = true
 			audio.volume = 0.7
 			audioElementRef.current = audio
