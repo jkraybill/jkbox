@@ -562,6 +562,12 @@ export function CinemaPippinJumbotron({
 						)}
 						<h1 style={styles.title}>Create a title for this movie!</h1>
 						<p style={styles.subtitle}>Players are submitting film titles...</p>
+						<PlayerStatusList
+							playerStatus={gameState.playerStatus}
+							scores={gameState.scores}
+							players={players}
+							mode="answering"
+						/>
 					</div>
 				)
 
@@ -585,6 +591,12 @@ export function CinemaPippinJumbotron({
 									</div>
 								))}
 							</div>
+							<PlayerStatusList
+								playerStatus={gameState.playerStatus}
+								scores={gameState.scores}
+								players={players}
+								mode="voting"
+							/>
 						</div>
 					)
 				}
