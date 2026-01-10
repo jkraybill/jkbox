@@ -5,7 +5,9 @@ import type {
 	PauseState,
 	LobbyState,
 	TitleState,
+	PlayingState,
 	ResultsState,
+	GameState,
 	ModuleGameResults as GameResults
 } from '@jkbox/shared'
 import { generateRoomCode } from './utils/room-code'
@@ -306,12 +308,12 @@ export class RoomManager {
 		if (currentCount > targetCount) {
 			const removeCount = currentCount - targetCount
 			// Take the last N AI players (most recently added) to remove
-			const toRemove = new Set(
-				currentAIPlayers.slice(-removeCount).map((p) => p.id)
-			)
+			const toRemove = new Set(currentAIPlayers.slice(-removeCount).map((p) => p.id))
 
 			room.players = room.players.filter((p) => !toRemove.has(p.id))
-			console.log(`[RoomManager] Removed ${removeCount} AI players LIFO (${currentCount} → ${targetCount})`)
+			console.log(
+				`[RoomManager] Removed ${removeCount} AI players LIFO (${currentCount} → ${targetCount})`
+			)
 			return
 		}
 
@@ -323,9 +325,7 @@ export class RoomManager {
 
 			// Get constraints already in use by existing AI players
 			const usedConstraints = new Set(
-				currentAIPlayers
-					.map((p) => p.aiConstraint)
-					.filter((c): c is string => c !== undefined)
+				currentAIPlayers.map((p) => p.aiConstraint).filter((c): c is string => c !== undefined)
 			)
 
 			// Get available constraints (not already in use)

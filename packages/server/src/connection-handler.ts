@@ -686,7 +686,27 @@ export class ConnectionHandler {
 		const gameModule = gameRegistry.get(selectedGame)
 		if (!gameModule) {
 			console.error(`[ConnectionHandler] Game module not found: ${selectedGame}`)
-			// TODO: Show error to players
+			// Broadcast error to all players in room
+			this.io.to(roomId).emit('error', {
+				type: 'error',
+				code: 'GAME_NOT_FOUND',
+				message: `Game "${selectedGame}" is not available`
+			})
+			// Return room to lobby state
+			const votingHandler = this.getVotingHandler(roomId)
+			const votingState = votingHandler.getVotingState()
+			const lobbyState: LobbyState = {
+				phase: 'lobby',
+				roomId,
+				players: room.players,
+				gameVotes: {},
+				readyStates: {},
+				selectedGame: votingState.selectedGame,
+				config: room.config,
+				pauseState: { isPaused: false, pausedBy: null, pausedByName: null, pausedAt: null }
+			}
+			this.roomManager.updateRoomState(roomId, lobbyState)
+			this.io.to(roomId).emit('room:state', { type: 'room:state', state: lobbyState })
 			return
 		}
 
@@ -1589,10 +1609,7 @@ export class ConnectionHandler {
 			const newGameState: GameState = await gameHost.handleAction(action)
 
 			// Update room with new game state
-			const updatedRoom = this.roomManager.updateGameState(
-				roomId,
-				newGameState
-			) as PlayingState | null
+			const updatedRoom = this.roomManager.updateGameState(roomId, newGameState)
 			if (updatedRoom) {
 				// Broadcast updated state to all clients
 				const stateMessage: RoomStateMessage = {

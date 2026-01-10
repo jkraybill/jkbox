@@ -15,22 +15,22 @@ function findClipsRoot(): string {
 	const currentDir = path.dirname(new URL(import.meta.url).pathname)
 
 	const clipsPaths = [
-		path.join(process.cwd(), 'clips'),                              // Packaged: next to executable
-		path.join(process.cwd(), 'generated/clips'),                    // Packaged: generated folder
-		path.join(currentDir, '../../../../../generated/clips'),        // Dev: relative to film-loader.ts
-		path.join(currentDir, '../../../../../../generated/clips'),     // Dev: from dist folder
-		'/home/jk/jkbox/generated/clips',                               // Fallback: absolute dev path
+		path.join(process.cwd(), 'clips'), // Packaged: next to executable
+		path.join(process.cwd(), 'generated/clips'), // Packaged: generated folder
+		path.join(currentDir, '../../../../../generated/clips'), // Dev: relative to film-loader.ts
+		path.join(currentDir, '../../../../../../generated/clips'), // Dev: from dist folder
+		'/home/jk/jkbox/generated/clips' // Fallback: absolute dev path
 	]
 
 	// Normalize paths for Windows (remove leading / before drive letter)
-	const normalizedPaths = clipsPaths.map(p => {
+	const normalizedPaths = clipsPaths.map((p) => {
 		if (process.platform === 'win32' && p.startsWith('/') && p[2] === ':') {
 			return p.substring(1)
 		}
 		return p
 	})
 
-	const clipsPath = normalizedPaths.find(p => fs.existsSync(p))
+	const clipsPath = normalizedPaths.find((p) => fs.existsSync(p))
 
 	if (!clipsPath) {
 		console.error('[FilmLoader] Searched paths:', normalizedPaths)
@@ -115,7 +115,7 @@ export function loadClipsFromSequence(filmName: string, sequenceNumber: number):
 			clipNumber,
 			videoPath: path.join(sequencePath, videoFile),
 			srtPath: path.join(sequencePath, srtFile),
-			precomputedAnswers: precomputedAnswers[clipNum - 1]
+			precomputedAnswers: precomputedAnswers[clipNum - 1] ?? []
 		})
 	}
 
@@ -148,7 +148,8 @@ export function loadFilms(): FilmData[] {
 		}
 
 		// Random sequence
-		const sequenceNumber = availableSequences[Math.floor(Math.random() * availableSequences.length)]
+		const sequenceNumber =
+			availableSequences[Math.floor(Math.random() * availableSequences.length)]!
 
 		return {
 			filmName,

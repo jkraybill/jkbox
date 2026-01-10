@@ -35,7 +35,7 @@ const PLACEHOLDER_KEYS = [
 	'sk-ant-xxx',
 	''
 ]
-const apiKey = process.env.ANTHROPIC_API_KEY || ''
+const apiKey = process.env['ANTHROPIC_API_KEY'] || ''
 const isPlaceholderKey = PLACEHOLDER_KEYS.some((p) => apiKey === p || apiKey.startsWith('YOUR_'))
 
 if (!apiKey || isPlaceholderKey) {
@@ -138,7 +138,7 @@ if (clipsPath) {
 	console.log(`🎬 Serving clips from: ${clipsPath}`)
 	app.use(
 		'/clips',
-		(req, res, next) => {
+		(_req, res, next) => {
 			// Set CORS headers explicitly for video and subtitle files
 			res.setHeader('Access-Control-Allow-Origin', '*')
 			res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -238,7 +238,7 @@ app.get('/api/health', (_req, res) => {
 
 // API configuration status (for client to check if AI is available)
 app.get('/api/status', (_req, res) => {
-	const apiKeyVal = process.env.ANTHROPIC_API_KEY || ''
+	const apiKeyVal = process.env['ANTHROPIC_API_KEY'] || ''
 	const placeholders = ['YOUR_API_KEY_HERE', 'your_api_key_here', 'YOUR_KEY_HERE', 'sk-ant-xxx', '']
 	const isPlaceholder = placeholders.some((p) => apiKeyVal === p || apiKeyVal.startsWith('YOUR_'))
 

@@ -170,8 +170,12 @@ describe('Cinema Pippin Phase Transitions', () => {
 			game.advancePhase()
 			expect(game.getPhase()).toBe('results_display')
 
-			// Note: results_display normally goes to clip_intro
-			// but advanceToNextClip() would override to film_title_collection after 3 clips
+			// results_display goes to scoreboard_transition for dramatic animations
+			game.advancePhase()
+			expect(game.getPhase()).toBe('scoreboard_transition')
+
+			// scoreboard_transition goes to clip_intro
+			// (but advanceToNextClip() would override to film_title_collection after 3 clips)
 			game.advancePhase()
 			expect(game.getPhase()).toBe('clip_intro')
 		})

@@ -47,6 +47,7 @@ export type {
 	JumbotronProps,
 	ControllerProps,
 	GameModule as PluggableGameModule,
+	GameModuleMetadata,
 	GameRegistry,
 	GameModuleContext,
 	GameCompleteCallback

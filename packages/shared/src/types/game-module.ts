@@ -11,6 +11,17 @@ import type { PauseState } from './room-state'
 export type GameId = 'fake-facts' | 'cinema-pippin' | 'scratchpad1' | 'test'
 
 /**
+ * Game module metadata
+ */
+export interface GameModuleMetadata {
+	id: string
+	name: string
+	description: string
+	minPlayers: number
+	maxPlayers: number
+}
+
+/**
  * Game-specific state (opaque to lobby system)
  * Each game module defines its own state structure
  */

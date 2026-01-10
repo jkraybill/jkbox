@@ -248,7 +248,13 @@ class CinemaPippinModule implements PluggableGameModule {
 		// Check if game ended and should return to lobby
 		if (action.type === 'END_GAME_COMPLETE' && this.context) {
 			console.log('[CinemaPippinModule] Game complete, returning to lobby')
-			this.context.complete()
+			const gameState = this.game.getState()
+			const scores = Object.fromEntries(gameState.scores)
+			const maxScore = Math.max(...Object.values(scores))
+			const winners = Object.entries(scores)
+				.filter(([, score]) => score === maxScore)
+				.map(([playerId]) => playerId)
+			this.context.complete({ winners, scores })
 		}
 
 		// Log playerStatus to debug AI status issue
@@ -259,7 +265,7 @@ class CinemaPippinModule implements PluggableGameModule {
 		) {
 			console.log(
 				'[CinemaPippinModule] Returning state with playerStatus:',
-				enrichedState.playerStatus
+				(enrichedState as { playerStatus?: unknown }).playerStatus
 			)
 		}
 

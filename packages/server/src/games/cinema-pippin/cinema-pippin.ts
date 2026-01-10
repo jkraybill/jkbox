@@ -3,9 +3,16 @@
  */
 
 import * as fs from 'fs'
-import type { GameModuleMetadata, GameModule } from '@jkbox/shared'
+import type { GameModuleMetadata, PluggableGameModule as GameModule } from '@jkbox/shared'
 import { loadFilms } from './film-loader'
-import type { CinemaPippinState, GamePhase, FilmData, ClipData, AIPlayerData } from './types'
+import type {
+	CinemaPippinState,
+	GamePhase,
+	FilmData,
+	ClipData,
+	AIPlayerData,
+	Answer
+} from './types'
 import { transition, type GameEvent, type TransitionContext } from './fsm'
 import {
 	createAIPlayers,
@@ -354,11 +361,11 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		)
 
 		if (topAnswers.length === 0) {
-			return this.state.allAnswers[0]
+			return this.state.allAnswers[0] ?? null
 		}
 
 		if (topAnswers.length === 1) {
-			return topAnswers[0]
+			return topAnswers[0]!
 		}
 
 		// Tie-breaking logic
@@ -367,16 +374,16 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 		// Case 1: All same type (all human OR all AI) → random from all
 		if (humanAnswers.length === 0 || aiAnswers.length === 0) {
-			return topAnswers[Math.floor(Math.random() * topAnswers.length)]
+			return topAnswers[Math.floor(Math.random() * topAnswers.length)]!
 		}
 
 		// Case 2: Single human + bots → human wins
 		if (humanAnswers.length === 1) {
-			return humanAnswers[0]
+			return humanAnswers[0]!
 		}
 
 		// Case 3: Multiple humans + bots → random from humans only
-		return humanAnswers[Math.floor(Math.random() * humanAnswers.length)]
+		return humanAnswers[Math.floor(Math.random() * humanAnswers.length)]!
 	}
 
 	/**
@@ -384,15 +391,12 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 	 * Only includes answers that received at least 1 vote
 	 */
 	getSortedAnswersByVotes(): Array<{
-		answer: (typeof this.state.allAnswers)[number]
+		answer: Answer
 		voteCount: number
 		voters: string[]
 	}> {
 		// Count votes and track voters for each answer
-		const answerData = new Map<
-			string,
-			{ answer: (typeof this.state.allAnswers)[number]; voteCount: number; voters: string[] }
-		>()
+		const answerData = new Map<string, { answer: Answer; voteCount: number; voters: string[] }>()
 
 		// Initialize with all answers
 		for (const answer of this.state.allAnswers) {
@@ -487,7 +491,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			answer_collection: 'voting_playback',
 			voting_playback: 'voting_collection',
 			voting_collection: 'results_display',
-			results_display: 'clip_intro', // Will be overridden by advanceToNextClip
+			results_display: 'scoreboard_transition',
+			scoreboard_transition: 'clip_intro', // Will be overridden by advanceToNextClip
 			film_title_collection: 'film_title_voting',
 			film_title_voting: 'film_title_results',
 			film_title_results: 'final_montage',
@@ -974,6 +979,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			// Assign AI answers with staggered delays (like voting)
 			const assignmentPromises = this.state.aiPlayers.map(async (aiPlayer, index) => {
 				const answer = aiAnswers[index]
+				if (!answer) return // Skip if no answer available for this AI
 
 				// Wait random delay (0-1500ms) before showing as "submitted"
 				const delay = Math.floor(Math.random() * 1500)
@@ -1104,6 +1110,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			// Assign AI titles with staggered delays (like voting)
 			const assignmentPromises = this.state.aiPlayers.map(async (aiPlayer, index) => {
 				const title = aiTitles[index]
+				if (!title) return // Skip if no title available for this AI
 
 				// Wait random delay (0-1500ms) before showing as "submitted"
 				const delay = Math.floor(Math.random() * 1500)
@@ -1150,8 +1157,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			// Assign to AI players
 			this.state.aiPlayers.forEach((aiPlayer, index) => {
-				if (index < shuffled.length) {
-					const title = shuffled[index]
+				const title = shuffled[index]
+				if (title) {
 					this.state.playerAnswers.set(aiPlayer.playerId, title)
 
 					const status = this.state.playerStatus.get(aiPlayer.playerId) || {}
@@ -1207,6 +1214,10 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		try {
 			const currentFilm = this.getCurrentFilm()
 			const currentClip = currentFilm.clips[this.state.currentClipIndex]
+			if (!currentClip) {
+				console.error('[CinemaPippinGame] No current clip available for fallback answers')
+				return
+			}
 
 			// Load answers.json from clip directory (same directory as the SRT file)
 			const path = await import('path')
@@ -1227,8 +1238,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 			// Assign to AI players
 			this.state.aiPlayers.forEach((aiPlayer, index) => {
-				if (index < shuffled.length) {
-					const answer = shuffled[index]
+				const answer = shuffled[index]
+				if (answer) {
 					this.state.playerAnswers.set(aiPlayer.playerId, answer)
 
 					// Mark AI player as having submitted answer
@@ -1370,6 +1381,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			currentAnswerIndex: 0,
 			votes: new Map(),
 			scores: new Map(),
+			scoresBeforeRound: new Map(),
+			voteCountsThisRound: new Map(),
 			clipWinners: [],
 			filmTitle: '',
 			endGameVotes: new Map(),
@@ -1388,7 +1401,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		const shuffled = [...array]
 		for (let i = shuffled.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1))
-			;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+			const temp = shuffled[i]!
+			shuffled[i] = shuffled[j]!
+			shuffled[j] = temp
 		}
 		return shuffled
 	}
@@ -1466,6 +1481,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			// Assign house answers to non-submitters
 			for (let i = 0; i < nonSubmitters.length; i++) {
 				const playerId = nonSubmitters[i]
+				if (!playerId) continue
 				const houseAnswer = this.state.houseAnswerQueue[i] || `answer ${i + 1}` // Fallback
 
 				this.state.playerAnswers.set(playerId, houseAnswer)
