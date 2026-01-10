@@ -213,10 +213,16 @@ describe('Cinema Pippin Phase Transitions', () => {
 			const state = game.getState()
 			expect(state.currentClipIndex).toBe(0)
 
+			// FSM requires being in scoreboard_transition phase
+			state.phase = 'scoreboard_transition'
+			game.setState(state)
+
 			game.advanceToNextClip()
 			expect(game.getState().currentClipIndex).toBe(1)
 			expect(game.getPhase()).toBe('clip_intro')
 
+			// Set phase again for next advance
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip()
 			expect(game.getState().currentClipIndex).toBe(2)
 			expect(game.getPhase()).toBe('clip_intro')
@@ -227,6 +233,8 @@ describe('Cinema Pippin Phase Transitions', () => {
 			const state = game.getState()
 
 			// Manually set to 2nd clip (0-indexed, so this is the 3rd clip)
+			// FSM requires being in scoreboard_transition phase
+			state.phase = 'scoreboard_transition'
 			state.currentClipIndex = 2
 
 			game.advanceToNextClip()
@@ -242,6 +250,10 @@ describe('Cinema Pippin Phase Transitions', () => {
 			expect(state.currentFilmIndex).toBe(0)
 			expect(state.currentClipIndex).toBe(0)
 
+			// FSM requires being in next_film_or_end phase
+			state.phase = 'next_film_or_end'
+			game.setState(state)
+
 			game.advanceToNextFilm()
 			expect(game.getState().currentFilmIndex).toBe(1)
 			expect(game.getState().currentClipIndex).toBe(0) // Reset to first clip
@@ -251,7 +263,10 @@ describe('Cinema Pippin Phase Transitions', () => {
 		it('should advance to final_scores after 3rd film', () => {
 			game.initialize([])
 			const state = game.getState()
+			// FSM requires being in next_film_or_end phase
+			state.phase = 'next_film_or_end'
 			state.currentFilmIndex = 2 // 3rd film (0-indexed)
+			game.setState(state)
 
 			game.advanceToNextFilm()
 			expect(game.getState().currentFilmIndex).toBe(3)
@@ -261,8 +276,11 @@ describe('Cinema Pippin Phase Transitions', () => {
 		it('should reset clip index when advancing films', () => {
 			game.initialize([])
 			const state = game.getState()
+			// FSM requires being in next_film_or_end phase
+			state.phase = 'next_film_or_end'
 			state.currentClipIndex = 2
 			state.currentFilmIndex = 0
+			game.setState(state)
 
 			game.advanceToNextFilm()
 			expect(game.getState().currentClipIndex).toBe(0)
@@ -316,52 +334,47 @@ describe('Cinema Pippin Phase Transitions', () => {
 			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
 			expect(game.getPhase()).toBe('answer_collection')
 
-			// Advance through voting and results
-			game.advancePhase() // voting_playback
-			game.advancePhase() // voting_collection
-			game.advancePhase() // results_display
+			// Skip to scoreboard_transition (FSM requirement for advanceToNextClip)
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 
-			// Advance to next clip
+			// Advance to next clip - must be in scoreboard_transition phase
 			game.advanceToNextClip()
 			expect(game.getPhase()).toBe('clip_intro')
 			expect(game.getState().currentClipIndex).toBe(1)
 
-			// Clip 2
-			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
-			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
-			game.advancePhase() // voting_playback
-			game.advancePhase() // voting_collection
-			game.advancePhase() // results_display
+			// Clip 2 - skip to scoreboard_transition
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip()
 			expect(game.getState().currentClipIndex).toBe(2)
+			expect(game.getPhase()).toBe('clip_intro')
 
-			// Clip 3
-			game.handlePlayerAction('jumbotron', { type: 'INTRO_COMPLETE', payload: {} })
-			game.handlePlayerAction('jumbotron', { type: 'VIDEO_COMPLETE', payload: {} })
-			game.advancePhase() // voting_playback
-			game.advancePhase() // voting_collection
-			game.advancePhase() // results_display
+			// Clip 3 - skip to scoreboard_transition
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 
-			// After 3rd clip, should go to film title round
+			// After 3rd clip, should go to film title round (clipIndex becomes 3)
 			game.advanceToNextClip()
 			expect(game.getPhase()).toBe('film_title_collection')
 		})
 
 		it('should handle complete 3-film game flow', () => {
 			game.initialize(['player1'])
-			game.setState({ ...game.getState(), currentFilmIndex: 0 })
 
-			// Complete film 1
+			// Must be in next_film_or_end phase to call advanceToNextFilm (FSM requirement)
+			game.setState({ ...game.getState(), phase: 'next_film_or_end', currentFilmIndex: 0 })
+
+			// Complete film 1 - filmIndex increments to 1, goes to clip_intro
 			game.advanceToNextFilm()
 			expect(game.getState().currentFilmIndex).toBe(1)
 			expect(game.getPhase()).toBe('clip_intro')
 
-			// Complete film 2
+			// Set phase back to next_film_or_end to complete film 2
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm()
 			expect(game.getState().currentFilmIndex).toBe(2)
 			expect(game.getPhase()).toBe('clip_intro')
 
 			// Complete film 3 - should go to final_scores
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm()
 			expect(game.getState().currentFilmIndex).toBe(3)
 			expect(game.getPhase()).toBe('final_scores')

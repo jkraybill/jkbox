@@ -242,11 +242,14 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		// Manually set current film and populate state
 		const state = game.getState()
+		// FSM requires being in next_film_or_end phase to call advanceToNextFilm
+		state.phase = 'next_film_or_end'
 		state.currentFilmIndex = 0
 		state.currentClipIndex = 3 // All clips done
 		state.playerAnswers.set('player1', 'leftover answer')
 		state.votes.set('player1', 'leftover vote')
 		state.playerStatus.set('player1', { hasSubmittedAnswer: true, hasVoted: true })
+		game.setState(state)
 
 		// Trigger next film
 		game.advanceToNextFilm()
@@ -273,10 +276,13 @@ describe('Full Game Flow Through Act 3 (State Management)', () => {
 
 		// Manually set to film 3, all clips done
 		const state = game.getState()
+		// FSM requires being in next_film_or_end phase to call advanceToNextFilm
+		state.phase = 'next_film_or_end'
 		state.currentFilmIndex = 2 // Film 3 (0-indexed)
 		state.currentClipIndex = 3 // All clips done
 		state.playerAnswers.set('player1', 'leftover')
 		state.votes.set('player1', 'leftover')
+		game.setState(state)
 
 		// Trigger next film (should go to final_scores)
 		game.advanceToNextFilm()

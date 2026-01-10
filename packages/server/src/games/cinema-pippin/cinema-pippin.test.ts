@@ -153,7 +153,8 @@ describe('CinemaPippinGame', () => {
 	describe('advanceToNextClip', () => {
 		it('should advance from C1 to C2', () => {
 			game.initialize([])
-			game.advancePhase() // to clip_intro
+			// FSM requires being in scoreboard_transition phase
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentClipIndex).toBe(0)
@@ -167,12 +168,15 @@ describe('CinemaPippinGame', () => {
 
 		it('should advance from C2 to C3', () => {
 			game.initialize([])
-			game.advancePhase() // to clip_intro
+			// FSM requires being in scoreboard_transition phase for each advance
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip() // to C2
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentClipIndex).toBe(1)
 
+			// Set phase again for next advance
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip()
 
 			const stateAfter = game.getState()
@@ -181,13 +185,16 @@ describe('CinemaPippinGame', () => {
 
 		it('should advance from C3 to film title round', () => {
 			game.initialize([])
-			game.advancePhase() // to clip_intro
+			// FSM requires being in scoreboard_transition phase for each advance
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip() // to C2
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip() // to C3
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentClipIndex).toBe(2)
 
+			game.setState({ ...game.getState(), phase: 'scoreboard_transition' })
 			game.advanceToNextClip()
 
 			const stateAfter = game.getState()
@@ -198,6 +205,9 @@ describe('CinemaPippinGame', () => {
 	describe('advanceToNextFilm', () => {
 		it('should advance from film 1 to film 2', () => {
 			game.initialize([])
+
+			// FSM requires being in next_film_or_end phase
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentFilmIndex).toBe(0)
@@ -212,11 +222,15 @@ describe('CinemaPippinGame', () => {
 
 		it('should advance from film 2 to film 3', () => {
 			game.initialize([])
+			// FSM requires being in next_film_or_end phase for each advance
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm() // to film 2
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentFilmIndex).toBe(1)
 
+			// Set phase again for next advance
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm()
 
 			const stateAfter = game.getState()
@@ -225,12 +239,16 @@ describe('CinemaPippinGame', () => {
 
 		it('should transition to final_scores after film 3', () => {
 			game.initialize([])
+			// FSM requires being in next_film_or_end phase for each advance
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm() // to film 2
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm() // to film 3
 
 			const stateBefore = game.getState()
 			expect(stateBefore.currentFilmIndex).toBe(2)
 
+			game.setState({ ...game.getState(), phase: 'next_film_or_end' })
 			game.advanceToNextFilm()
 
 			const stateAfter = game.getState()

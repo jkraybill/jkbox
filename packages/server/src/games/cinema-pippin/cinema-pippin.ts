@@ -6,6 +6,7 @@ import * as fs from 'fs'
 import type { GameModuleMetadata, GameModule } from '@jkbox/shared'
 import { loadFilms } from './film-loader'
 import type { CinemaPippinState, GamePhase, FilmData, ClipData, AIPlayerData } from './types'
+import { transition, type GameEvent, type TransitionContext } from './fsm'
 import {
 	createAIPlayers,
 	loadConstraints,
@@ -141,6 +142,31 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 	getPhase(): GamePhase {
 		return this.state.phase
+	}
+
+	/**
+	 * Attempt a phase transition using the FSM
+	 * Returns true if transition was valid and applied, false otherwise
+	 */
+	private tryTransition(event: GameEvent, context?: TransitionContext): boolean {
+		const result = transition(this.state.phase, event, context)
+		if (result.valid) {
+			this.state.phase = result.nextPhase
+			return true
+		}
+		console.warn(`[CinemaPippinGame] Invalid transition attempted: ${this.state.phase} + ${event}`)
+		return false
+	}
+
+	/**
+	 * Get the current transition context for conditional transitions
+	 */
+	private getTransitionContext(allAnswersShown?: boolean): TransitionContext {
+		return {
+			currentClipIndex: this.state.currentClipIndex,
+			currentFilmIndex: this.state.currentFilmIndex,
+			allAnswersShown
+		}
 	}
 
 	getCurrentFilm(): FilmData {
@@ -488,23 +514,25 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			this.state.playerStatus.set(playerId, status)
 		}
 
-		if (this.state.currentClipIndex >= 3) {
-			// All 3 clips done, go to film title round
-			console.log('[CinemaPippinGame] Cleared state before film_title_collection')
-			this.state.phase = 'film_title_collection'
-			this.state.answerCollectionStartTime = Date.now()
+		// Use FSM to determine next phase based on clip index
+		// Note: We already incremented clipIndex, so check if we just finished clip 3 (index 2 → 3)
+		if (this.tryTransition('SCOREBOARD_COMPLETE', this.getTransitionContext())) {
+			if (this.state.phase === 'film_title_collection') {
+				// All 3 clips done, went to film title round
+				console.log('[CinemaPippinGame] Cleared state before film_title_collection')
+				this.state.answerCollectionStartTime = Date.now()
 
-			// Start answer timeout timer
-			this.startAnswerTimeout()
+				// Start answer timeout timer
+				this.startAnswerTimeout()
 
-			// Trigger AI film title generation (async, don't await)
-			// AI players will be marked as submitted after their responses come back (with staggered delays)
-			console.log('[CinemaPippinGame] Triggering AI film title generation...')
-			void this.generateAIFilmTitles()
-		} else {
-			// Next clip
-			console.log('[CinemaPippinGame] Cleared state before next clip')
-			this.state.phase = 'clip_intro'
+				// Trigger AI film title generation (async, don't await)
+				// AI players will be marked as submitted after their responses come back (with staggered delays)
+				console.log('[CinemaPippinGame] Triggering AI film title generation...')
+				void this.generateAIFilmTitles()
+			} else {
+				// Next clip
+				console.log('[CinemaPippinGame] Cleared state before next clip')
+			}
 		}
 	}
 
@@ -520,17 +548,16 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.state.clipWinners = []
 		console.log('[CinemaPippinGame] Cleared state before new film or final_scores')
 
-		if (this.state.currentFilmIndex >= 3) {
-			// All 3 films done
-			this.state.phase = 'final_scores'
-		} else {
-			// Next film - reset player statuses for new film
-			for (const playerId of this.state.playerStatus.keys()) {
-				this.state.playerStatus.set(playerId, {})
+		// Use FSM to determine next phase based on film index
+		if (this.tryTransition('NEXT_FILM_CHECK', this.getTransitionContext())) {
+			if (this.state.phase === 'clip_intro') {
+				// Next film - reset player statuses for new film
+				for (const playerId of this.state.playerStatus.keys()) {
+					this.state.playerStatus.set(playerId, {})
+				}
+				console.log('[CinemaPippinGame] Reset player statuses for new film')
 			}
-			console.log('[CinemaPippinGame] Reset player statuses for new film')
-
-			this.state.phase = 'clip_intro'
+			// If phase is final_scores, no additional setup needed
 		}
 	}
 
@@ -546,87 +573,81 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 		switch (gameAction.type) {
 			case 'FILM_SELECT_COMPLETE':
-				if (this.state.phase === 'film_select') {
-					this.state.phase = 'clip_intro'
-					console.log('[CinemaPippinGame] Advanced to clip_intro')
-				}
+				this.tryTransition('FILM_SELECT_COMPLETE')
 				break
 
 			case 'INTRO_COMPLETE':
-				if (this.state.phase === 'clip_intro') {
-					this.state.phase = 'clip_playback'
-					console.log('[CinemaPippinGame] Advanced to clip_playback')
-				}
+				this.tryTransition('INTRO_COMPLETE')
 				break
 
 			case 'VIDEO_COMPLETE':
 				if (this.state.phase === 'clip_playback') {
-					this.state.phase = 'answer_collection'
-					this.state.answerCollectionStartTime = Date.now()
+					if (this.tryTransition('VIDEO_COMPLETE')) {
+						this.state.answerCollectionStartTime = Date.now()
 
-					// Clear previous clip's answers
-					this.clearAnswers()
-					console.log('[CinemaPippinGame] Cleared previous answers for new clip')
+						// Clear previous clip's answers
+						this.clearAnswers()
+						console.log('[CinemaPippinGame] Cleared previous answers for new clip')
 
-					// Reset player statuses for answer submission
-					console.log('[CinemaPippinGame] Resetting player statuses for answer collection')
-					for (const playerId of this.state.playerStatus.keys()) {
-						this.state.playerStatus.set(playerId, {})
-						console.log(`  - Reset status for ${playerId}`)
+						// Reset player statuses for answer submission
+						console.log('[CinemaPippinGame] Resetting player statuses for answer collection')
+						for (const playerId of this.state.playerStatus.keys()) {
+							this.state.playerStatus.set(playerId, {})
+							console.log(`  - Reset status for ${playerId}`)
+						}
+
+						console.log(
+							`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`
+						)
+
+						// Start answer timeout timer
+						this.startAnswerTimeout()
+
+						// Trigger AI answer generation (async, don't await)
+						// AI players will be marked as submitted after their responses come back (with staggered delays)
+						console.log('[CinemaPippinGame] Triggering AI answer generation...')
+						void this.generateAIAnswers()
 					}
-
-					console.log('[CinemaPippinGame] Advanced to answer_collection')
-					console.log(
-						`[CinemaPippinGame] Active players: ${this.state.scores.size}, AI players: ${this.state.aiPlayers.length}`
-					)
-
-					// Start answer timeout timer
-					this.startAnswerTimeout()
-
-					// Trigger AI answer generation (async, don't await)
-					// AI players will be marked as submitted after their responses come back (with staggered delays)
-					console.log('[CinemaPippinGame] Triggering AI answer generation...')
-					void this.generateAIAnswers()
 				} else if (this.state.phase === 'voting_playback') {
 					// Guard against empty allAnswers (skip voting if no answers)
 					if (this.state.allAnswers.length === 0) {
 						console.error('[CinemaPippinGame] ERROR: No answers to vote on! Skipping voting phase.')
 						// Skip to results with empty state
-						this.state.phase = 'results_display'
-						// No results to calculate if no answers
+						this.tryTransition('ALL_VOTES_RECEIVED') // Will go to results_display
 						break
 					}
 
 					// Advance to next answer or move to voting_collection
 					this.state.currentAnswerIndex++
-					if (this.state.currentAnswerIndex >= this.state.allAnswers.length) {
-						// All answers shown, move to voting
-						this.state.phase = 'voting_collection'
-						this.state.votingCollectionStartTime = Date.now()
+					const allAnswersShown = this.state.currentAnswerIndex >= this.state.allAnswers.length
 
-						// Reset player statuses for voting
-						for (const playerId of this.state.playerStatus.keys()) {
-							const status = this.state.playerStatus.get(playerId) || {}
-							status.hasVoted = false
-							this.state.playerStatus.set(playerId, status)
+					if (this.tryTransition('VIDEO_COMPLETE', this.getTransitionContext(allAnswersShown))) {
+						if (allAnswersShown) {
+							// All answers shown, moved to voting_collection
+							this.state.votingCollectionStartTime = Date.now()
+
+							// Reset player statuses for voting
+							for (const playerId of this.state.playerStatus.keys()) {
+								const status = this.state.playerStatus.get(playerId) || {}
+								status.hasVoted = false
+								this.state.playerStatus.set(playerId, status)
+							}
+
+							// Start voting timeout timer
+							this.startVotingTimeout()
+
+							// Trigger AI voting (async, don't await)
+							// AI players will be marked as voted after their responses come back (with staggered delays)
+							void this.generateAIVotes()
+						} else {
+							// Stay in voting_playback, show next answer
+							console.log(
+								'[CinemaPippinGame] Showing next answer',
+								this.state.currentAnswerIndex + 1,
+								'/',
+								this.state.allAnswers.length
+							)
 						}
-
-						console.log('[CinemaPippinGame] All answers shown, advanced to voting_collection')
-
-						// Start voting timeout timer
-						this.startVotingTimeout()
-
-						// Trigger AI voting (async, don't await)
-						// AI players will be marked as voted after their responses come back (with staggered delays)
-						void this.generateAIVotes()
-					} else {
-						// Stay in voting_playback, show next answer
-						console.log(
-							'[CinemaPippinGame] Showing next answer',
-							this.state.currentAnswerIndex + 1,
-							'/',
-							this.state.allAnswers.length
-						)
 					}
 				}
 				break
@@ -794,7 +815,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 					this.applyVoteScores()
 					console.log('[CinemaPippinGame] Applied vote scores')
 
-					// Advance to appropriate results phase
+					// Advance to appropriate results phase using FSM
 					if (this.state.phase === 'film_title_voting') {
 						// Store winning film title
 						const winner = this.calculateWinner()
@@ -802,10 +823,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 							this.state.filmTitle = winner.text
 							console.log('[CinemaPippinGame] Stored winning film title:', winner.text)
 						}
-						this.state.phase = 'film_title_results'
-					} else {
-						this.state.phase = 'results_display'
 					}
+					this.tryTransition('ALL_VOTES_RECEIVED')
 				}
 				break
 			}
@@ -833,9 +852,8 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 						}
 					}
 
-					// Transition to scoreboard animation
-					this.state.phase = 'scoreboard_transition'
-					console.log('[CinemaPippinGame] Results complete, advancing to scoreboard_transition')
+					// Transition to scoreboard animation using FSM
+					this.tryTransition('RESULTS_COMPLETE')
 				}
 				break
 
@@ -843,43 +861,30 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 				if (this.state.phase === 'scoreboard_transition') {
 					// Advance to next clip after scoreboard animation
 					this.advanceToNextClip()
-					console.log('[CinemaPippinGame] Scoreboard complete, advanced to', this.state.phase)
 				}
 				break
 
 			case 'FILM_TITLE_RESULTS_COMPLETE':
-				if (this.state.phase === 'film_title_results') {
-					this.state.phase = 'final_montage'
-					console.log('[CinemaPippinGame] Film title results complete, advanced to final_montage')
-				}
+				this.tryTransition('FILM_TITLE_RESULTS_COMPLETE')
 				break
 
 			case 'FINAL_SCORES_COMPLETE':
-				if (this.state.phase === 'final_scores') {
-					this.state.phase = 'end_game_vote'
-					console.log('[CinemaPippinGame] Final scores complete, advanced to end_game_vote')
-				}
+				this.tryTransition('FINAL_SCORES_COMPLETE')
 				break
 
 			case 'END_GAME_COMPLETE':
-				if (this.state.phase === 'end_game_vote') {
-					// Module layer will call context.complete() to return to lobby
-					console.log('[CinemaPippinGame] End game complete, module will handle lobby transition')
-					// No phase change needed - module calls context.complete()
-				}
+				// END_GAME_COMPLETE is a terminal event - no phase transition
+				// Module layer will call context.complete() to return to lobby
+				console.log('[CinemaPippinGame] End game complete, module will handle lobby transition')
 				break
 
 			case 'MONTAGE_COMPLETE':
-				if (this.state.phase === 'final_montage') {
-					this.state.phase = 'next_film_or_end'
-					console.log('[CinemaPippinGame] Montage complete, advanced to next_film_or_end')
-				}
+				this.tryTransition('MONTAGE_COMPLETE')
 				break
 
 			case 'NEXT_FILM_CHECK':
 				if (this.state.phase === 'next_film_or_end') {
 					this.advanceToNextFilm()
-					console.log('[CinemaPippinGame] Next film check, advanced to', this.state.phase)
 				}
 				break
 
@@ -1332,22 +1337,17 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			this.applyVoteScores()
 			console.log('[AI] Applied vote scores')
 
-			// Advance to appropriate results phase based on current phase
+			// Store winning film title if in film_title_voting
 			if (this.state.phase === 'film_title_voting') {
-				// Store winning film title
 				const winner = this.calculateWinner()
 				if (winner) {
 					this.state.filmTitle = winner.text
 					console.log('[AI] Stored winning film title:', winner.text)
 				}
-				this.state.phase = 'film_title_results'
-				console.log('[AI] Advanced to film_title_results')
-			} else {
-				// NOTE: Winner is stored in clipWinners array by RESULTS_COMPLETE handler
-				// when leaving results_display phase, not here when entering it
-				this.state.phase = 'results_display'
-				console.log('[AI] Advanced to results_display')
 			}
+
+			// Advance to appropriate results phase using FSM
+			this.tryTransition('ALL_VOTES_RECEIVED')
 
 			// Notify module of state change so it can broadcast to clients
 			if (this.stateChangeCallback) {
@@ -1505,6 +1505,7 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		}
 
 		// Advance to appropriate voting phase
+		// Note: These methods already use FSM internally
 		if (this.state.phase === 'film_title_collection') {
 			this.advanceToFilmTitleVoting()
 		} else {
@@ -1589,7 +1590,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Shuffle answers
 		this.state.allAnswers = this.shuffleArray(answers)
 		this.state.currentAnswerIndex = 0
-		this.state.phase = 'voting_playback'
+
+		// Transition to voting_playback using FSM
+		this.tryTransition('ALL_ANSWERS_RECEIVED')
 
 		console.log('[CinemaPippinGame] Prepared', this.state.allAnswers.length, 'answers for voting')
 	}
@@ -1631,7 +1634,9 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 
 		// Shuffle film titles
 		this.state.allAnswers = this.shuffleArray(answers)
-		this.state.phase = 'film_title_voting'
+
+		// Transition to film_title_voting using FSM
+		this.tryTransition('ALL_ANSWERS_RECEIVED')
 		this.state.votingCollectionStartTime = Date.now() // Set start time for countdown timer
 
 		console.log(
@@ -1704,20 +1709,17 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		this.applyVoteScores()
 		console.log('[CinemaPippinGame] Applied vote scores')
 
-		// Advance to appropriate results phase based on current phase
+		// Store winning film title if in film_title_voting
 		if (this.state.phase === 'film_title_voting') {
-			// Store winning film title
 			const winner = this.calculateWinner()
 			if (winner) {
 				this.state.filmTitle = winner.text
 				console.log('[CinemaPippinGame] Stored winning film title:', winner.text)
 			}
-			this.state.phase = 'film_title_results'
-			console.log('[CinemaPippinGame] Advanced to film_title_results (voting timeout)')
-		} else {
-			this.state.phase = 'results_display'
-			console.log('[CinemaPippinGame] Advanced to results_display (voting timeout)')
 		}
+
+		// Advance to appropriate results phase using FSM
+		this.tryTransition('VOTING_TIMEOUT')
 
 		// Notify module of state change so it can broadcast to clients
 		if (this.stateChangeCallback) {

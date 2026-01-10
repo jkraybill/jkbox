@@ -513,7 +513,9 @@ describe('Film Title Phase Safety', () => {
 	it('should set answerCollectionStartTime for film_title_collection phase', () => {
 		const state = game.getState()
 		// Simulate completing all 3 clips to enter film_title_collection
-		state.currentClipIndex = 2 // After clip 3
+		// FSM requires being in scoreboard_transition phase to call advanceToNextClip
+		state.phase = 'scoreboard_transition'
+		state.currentClipIndex = 2 // After clip 3 (will become 3 after advanceToNextClip)
 		state.clipWinners = ['word1', 'word2', 'word3']
 		game.setState(state)
 
