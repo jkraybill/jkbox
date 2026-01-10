@@ -404,6 +404,9 @@ describe('Lobby → Game Integration Tests', () => {
 			let currentRoom = roomManager.getRoom(room.roomId)
 			expect(currentRoom?.phase).toBe('countdown')
 
+			// Advance time past debounce window (500ms)
+			vi.advanceTimersByTime(600)
+
 			// Alice un-readies during countdown
 			handler.handleLobbyReadyToggle(socket1 as Socket, {
 				type: 'lobby:ready-toggle',

@@ -851,7 +851,10 @@ export class ConnectionHandler {
 	/**
 	 * Cancel ongoing countdown and return to lobby
 	 */
-	private cancelCountdown(roomId: string, reason: 'player_disconnect' | 'manual_cancel'): void {
+	private cancelCountdown(
+		roomId: string,
+		reason: 'player_disconnect' | 'player_unready' | 'manual_cancel'
+	): void {
 		const room = this.roomManager.getRoom(roomId)
 		if (!room || room.phase !== 'countdown') {
 			return

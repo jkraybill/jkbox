@@ -199,7 +199,7 @@ export interface LobbyCountdownMessage {
 
 export interface LobbyCountdownCancelledMessage {
 	type: 'lobby:countdown-cancelled'
-	reason: 'player_disconnect' | 'manual_cancel'
+	reason: 'player_disconnect' | 'player_unready' | 'manual_cancel'
 }
 
 export interface GameStartMessage {
