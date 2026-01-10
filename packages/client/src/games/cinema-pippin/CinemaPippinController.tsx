@@ -48,18 +48,33 @@ export function CinemaPippinController({ playerId, state, sendToServer, onQuit }
 	const [hasSubmitted, setHasSubmitted] = useState(false)
 	const [showVideoReplay, setShowVideoReplay] = useState(false)
 	const [showQuitModal, setShowQuitModal] = useState(false)
+	// Track which phase we last submitted in to detect phase transitions
+	const [submittedInPhase, setSubmittedInPhase] = useState<string | null>(null)
 
 	// Check if player has already submitted an answer
+	// IMPORTANT: Only sync from server on initial load or phase change, not during active typing
+	// This prevents server state updates from overriding local submission state mid-typing
 	useEffect(() => {
+		// If we've already submitted locally in this phase, don't let server state override
+		if (hasSubmitted && submittedInPhase === gameState.phase) {
+			return
+		}
+
 		if (gameState.playerAnswers) {
 			// Handle both Map (server-side) and plain object (after WebSocket serialization)
 			const hasAnswer =
 				gameState.playerAnswers instanceof Map
 					? gameState.playerAnswers.has(playerId)
 					: playerId in gameState.playerAnswers
-			setHasSubmitted(hasAnswer)
+
+			// Only set submitted from server if we haven't locally submitted yet
+			// This handles reconnection where server knows we already submitted
+			if (hasAnswer && !hasSubmitted) {
+				setHasSubmitted(true)
+				setSubmittedInPhase(gameState.phase)
+			}
 		}
-	}, [gameState.playerAnswers, playerId])
+	}, [gameState.playerAnswers, gameState.phase, playerId, hasSubmitted, submittedInPhase])
 
 	// Countdown timer - sync with server timestamp
 	useEffect(() => {
@@ -69,6 +84,7 @@ export function CinemaPippinController({ playerId, state, sendToServer, onQuit }
 
 		// Reset submitted state when entering answer collection phase
 		setHasSubmitted(false)
+		setSubmittedInPhase(null)
 
 		// Calculate time remaining based on server timestamp
 		const updateTimer = () => {
@@ -102,8 +118,9 @@ export function CinemaPippinController({ playerId, state, sendToServer, onQuit }
 				}
 			})
 			setHasSubmitted(true)
+			setSubmittedInPhase(gameState.phase)
 		},
-		[sendToServer, playerId]
+		[sendToServer, playerId, gameState.phase]
 	)
 
 	// Render different views based on game phase
