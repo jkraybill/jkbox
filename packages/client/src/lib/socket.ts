@@ -14,8 +14,14 @@ function getServerUrl(): string {
 	}
 
 	const hostname = window.location.hostname
-	const serverPort = (import.meta.env['VITE_SERVER_PORT'] as string | undefined) || '3001'
 	const protocol = window.location.protocol
+
+	// In production (served from server), use same port as the page
+	// In dev (localhost with separate vite server), use configured port
+	const isDevMode = hostname === 'localhost' || hostname === '127.0.0.1'
+	const serverPort = isDevMode
+		? (import.meta.env['VITE_SERVER_PORT'] as string | undefined) || '3001'
+		: window.location.port
 
 	return `${protocol}//${hostname}:${serverPort}`
 }

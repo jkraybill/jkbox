@@ -445,6 +445,14 @@ export class ConnectionHandler {
 	}
 
 	/**
+	 * Get voting state for debugging
+	 */
+	getVotingStateForRoom(roomId: string): ReturnType<VotingHandler['getVotingState']> | null {
+		const handler = this.votingHandlers.get(roomId)
+		return handler ? handler.getVotingState() : null
+	}
+
+	/**
 	 * Get or create voting handler for a room
 	 */
 	private getVotingHandler(roomId: string): VotingHandler {
@@ -485,8 +493,10 @@ export class ConnectionHandler {
 	 * Handle lobby game vote
 	 */
 	handleLobbyVote(socket: Socket, message: LobbyVoteGameMessage): void {
+		console.log(`[VOTE] Received vote from socket ${socket.id}:`, message)
 		const mapping = this.socketToPlayer.get(socket.id)
 		if (!mapping) {
+			console.log(`[VOTE] Socket ${socket.id} not in room - rejecting`)
 			socket.emit('error', {
 				type: 'error',
 				code: 'NOT_IN_ROOM',
@@ -495,6 +505,7 @@ export class ConnectionHandler {
 			return
 		}
 
+		console.log(`[VOTE] Player ${mapping.playerId} voting for ${message.gameId}`)
 		const handler = this.getVotingHandler(mapping.roomId)
 		handler.submitVote(mapping.playerId, message.gameId)
 
@@ -506,8 +517,10 @@ export class ConnectionHandler {
 	 * Handle lobby ready toggle
 	 */
 	handleLobbyReadyToggle(socket: Socket, message: LobbyReadyToggleMessage): void {
+		console.log(`[READY] Received ready toggle from socket ${socket.id}:`, message)
 		const mapping = this.socketToPlayer.get(socket.id)
 		if (!mapping) {
+			console.log(`[READY] Socket ${socket.id} not in room - rejecting`)
 			socket.emit('error', {
 				type: 'error',
 				code: 'NOT_IN_ROOM',
@@ -516,6 +529,7 @@ export class ConnectionHandler {
 			return
 		}
 
+		console.log(`[READY] Player ${mapping.playerId} setting ready=${message.isReady}`)
 		const handler = this.getVotingHandler(mapping.roomId)
 
 		try {

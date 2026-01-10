@@ -564,6 +564,165 @@ describe('Lobby → Game Integration Tests', () => {
 		})
 	})
 
+	describe('Three Humans + Two AI Bots', () => {
+		it('should start game when all 3 humans vote and ready (AI bots excluded from voting)', async () => {
+			vi.useFakeTimers()
+
+			const room = roomManager.createRoom()
+
+			// Add 2 AI players via config update
+			roomManager.updateRoomConfig(room.roomId, { cinemaPippinAIPlayers: 2 })
+			handler.syncAIPlayersForRoom(room.roomId)
+
+			// Verify AI players added
+			let currentRoom = roomManager.getRoom(room.roomId)
+			expect(currentRoom?.players.filter((p) => p.isAI)).toHaveLength(2)
+
+			// 3 humans join
+			const socket1 = createMockSocket('alice-socket', '192.168.1.10')
+			const socket2 = createMockSocket('bob-socket', '192.168.1.20')
+			const socket3 = createMockSocket('charlie-socket', '192.168.1.30')
+
+			handler.handleJoin(socket1 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Alice'
+			})
+
+			handler.handleJoin(socket2 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Bob'
+			})
+
+			handler.handleJoin(socket3 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Charlie'
+			})
+
+			// Verify 5 total players (3 human + 2 AI)
+			currentRoom = roomManager.getRoom(room.roomId)
+			expect(currentRoom?.players).toHaveLength(5)
+
+			// All 3 humans vote for Cinema Pippin
+			handler.handleLobbyVote(socket1 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			handler.handleLobbyVote(socket2 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			handler.handleLobbyVote(socket3 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			// All 3 humans go ready
+			handler.handleLobbyReadyToggle(socket1 as Socket, {
+				type: 'lobby:ready-toggle',
+				isReady: true
+			})
+
+			handler.handleLobbyReadyToggle(socket2 as Socket, {
+				type: 'lobby:ready-toggle',
+				isReady: true
+			})
+
+			// After 2 humans ready, game should NOT start yet
+			currentRoom = roomManager.getRoom(room.roomId)
+			expect(currentRoom?.phase).toBe('lobby')
+
+			// 3rd human goes ready - NOW game should start
+			handler.handleLobbyReadyToggle(socket3 as Socket, {
+				type: 'lobby:ready-toggle',
+				isReady: true
+			})
+
+			await vi.advanceTimersByTimeAsync(100)
+
+			// Game should have started
+			currentRoom = roomManager.getRoom(room.roomId)
+			expect(currentRoom?.phase).toBe('playing')
+			if (currentRoom?.phase === 'playing') {
+				expect(currentRoom.gameId).toBe('cinema-pippin')
+			}
+
+			vi.useRealTimers()
+		})
+
+		it('should not start if only 2 of 3 humans are ready (even with AI bots)', async () => {
+			vi.useFakeTimers()
+
+			const room = roomManager.createRoom()
+
+			// Add 2 AI players via config update
+			roomManager.updateRoomConfig(room.roomId, { cinemaPippinAIPlayers: 2 })
+			handler.syncAIPlayersForRoom(room.roomId)
+
+			// 3 humans join
+			const socket1 = createMockSocket('alice-socket', '192.168.1.10')
+			const socket2 = createMockSocket('bob-socket', '192.168.1.20')
+			const socket3 = createMockSocket('charlie-socket', '192.168.1.30')
+
+			handler.handleJoin(socket1 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Alice'
+			})
+
+			handler.handleJoin(socket2 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Bob'
+			})
+
+			handler.handleJoin(socket3 as Socket, {
+				type: 'join',
+				roomId: room.roomId,
+				nickname: 'Charlie'
+			})
+
+			// All 3 vote
+			handler.handleLobbyVote(socket1 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			handler.handleLobbyVote(socket2 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			handler.handleLobbyVote(socket3 as Socket, {
+				type: 'lobby:vote-game',
+				gameId: 'cinema-pippin'
+			})
+
+			// Only 2 of 3 humans ready
+			handler.handleLobbyReadyToggle(socket1 as Socket, {
+				type: 'lobby:ready-toggle',
+				isReady: true
+			})
+
+			handler.handleLobbyReadyToggle(socket2 as Socket, {
+				type: 'lobby:ready-toggle',
+				isReady: true
+			})
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			// Should still be in lobby
+			const currentRoom = roomManager.getRoom(room.roomId)
+			expect(currentRoom?.phase).toBe('lobby')
+
+			vi.useRealTimers()
+		})
+	})
+
 	describe('Jumbotron Watch Flow', () => {
 		it('should send initial room state to jumbotron on watch', () => {
 			const room = roomManager.createRoom()

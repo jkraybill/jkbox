@@ -343,6 +343,13 @@ app.get('/api/room', (_req, res) => {
 	res.json({ room })
 })
 
+// Debug: Get voting state for singleton room
+app.get('/api/room/debug-voting', (_req, res) => {
+	const room = roomManager.getOrCreateSingletonRoom()
+	const votingState = connectionHandler.getVotingStateForRoom(room.roomId)
+	res.json({ room, votingState })
+})
+
 // Transition singleton room from title → lobby
 app.post('/api/room/transition-to-lobby', (_req, res) => {
 	const room = roomManager.transitionTitleToLobby()
