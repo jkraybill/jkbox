@@ -1320,20 +1320,34 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 		// Check if all players (human + AI) have voted
 		const activePlayersVoting = this.state.scores.size
 		if (activePlayersVoting && this.state.votes.size >= activePlayersVoting) {
-			console.log('[AI] All players voted (including AI), advancing to results_display')
+			console.log('[AI] All players voted (including AI), advancing to results')
 
 			// Clear the voting timeout timer since all players voted
 			this.clearVotingTimeout()
+
+			// Prepare scoreboard transition data (save scores BEFORE applying votes)
+			this.prepareScoreboardTransition()
 
 			// Calculate scores before showing results
 			this.applyVoteScores()
 			console.log('[AI] Applied vote scores')
 
-			// NOTE: Winner is stored in clipWinners array by RESULTS_COMPLETE handler
-			// when leaving results_display phase, not here when entering it
-
-			this.state.phase = 'results_display'
-			console.log('[AI] Advanced to results_display')
+			// Advance to appropriate results phase based on current phase
+			if (this.state.phase === 'film_title_voting') {
+				// Store winning film title
+				const winner = this.calculateWinner()
+				if (winner) {
+					this.state.filmTitle = winner.text
+					console.log('[AI] Stored winning film title:', winner.text)
+				}
+				this.state.phase = 'film_title_results'
+				console.log('[AI] Advanced to film_title_results')
+			} else {
+				// NOTE: Winner is stored in clipWinners array by RESULTS_COMPLETE handler
+				// when leaving results_display phase, not here when entering it
+				this.state.phase = 'results_display'
+				console.log('[AI] Advanced to results_display')
+			}
 
 			// Notify module of state change so it can broadcast to clients
 			if (this.stateChangeCallback) {
@@ -1683,11 +1697,31 @@ export class CinemaPippinGame implements GameModule<CinemaPippinState> {
 			console.log(`[CinemaPippinGame] ${nonVoters.length} players did not vote:`, nonVoters)
 		}
 
+		// Prepare scoreboard transition data (save scores BEFORE applying votes)
+		this.prepareScoreboardTransition()
+
 		// Calculate scores before showing results
 		this.applyVoteScores()
 		console.log('[CinemaPippinGame] Applied vote scores')
 
-		this.state.phase = 'results_display'
-		console.log('[CinemaPippinGame] Advanced to results_display (voting timeout)')
+		// Advance to appropriate results phase based on current phase
+		if (this.state.phase === 'film_title_voting') {
+			// Store winning film title
+			const winner = this.calculateWinner()
+			if (winner) {
+				this.state.filmTitle = winner.text
+				console.log('[CinemaPippinGame] Stored winning film title:', winner.text)
+			}
+			this.state.phase = 'film_title_results'
+			console.log('[CinemaPippinGame] Advanced to film_title_results (voting timeout)')
+		} else {
+			this.state.phase = 'results_display'
+			console.log('[CinemaPippinGame] Advanced to results_display (voting timeout)')
+		}
+
+		// Notify module of state change so it can broadcast to clients
+		if (this.stateChangeCallback) {
+			this.stateChangeCallback()
+		}
 	}
 }
