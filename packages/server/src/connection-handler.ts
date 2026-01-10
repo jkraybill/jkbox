@@ -39,6 +39,9 @@ import { assignPlayerSound } from './utils/player-sounds'
 const DISCONNECT_THRESHOLD = 5000 // Mark disconnected after 5s (client pings every 2s)
 const BOOT_THRESHOLD = 60000 // Boot player after 60s
 
+// Ready toggle debounce (prevent spam)
+const READY_TOGGLE_DEBOUNCE_MS = 500
+
 export class ConnectionHandler {
 	private socketToPlayer: Map<string, { playerId: string; roomId: string }> = new Map()
 	private votingHandlers: Map<string, VotingHandler> = new Map() // roomId → VotingHandler
@@ -47,6 +50,7 @@ export class ConnectionHandler {
 		new Map() // Track booted players for rejoin
 	private countdownTimers: Map<string, NodeJS.Timeout> = new Map() // roomId → countdown timer
 	private gameHosts: Map<string, GameModuleHost> = new Map() // roomId → active game host
+	private lastReadyToggle: Map<string, number> = new Map() // playerId → timestamp (for debounce)
 
 	constructor(
 		private roomManager: RoomManager,
@@ -370,6 +374,9 @@ export class ConnectionHandler {
 		const votingHandler = this.getVotingHandler(mapping.roomId)
 		votingHandler.removePlayer(mapping.playerId)
 
+		// Clean up debounce state
+		this.lastReadyToggle.delete(mapping.playerId)
+
 		// DON'T delete socket mapping yet - Socket.io may recover the session
 		// We'll clean up stale mappings after maxDisconnectionDuration (2 min)
 
@@ -530,6 +537,16 @@ export class ConnectionHandler {
 		}
 
 		console.log(`[READY] Player ${mapping.playerId} setting ready=${message.isReady}`)
+
+		// Debounce: Ignore rapid toggles within 500ms
+		const now = Date.now()
+		const lastToggle = this.lastReadyToggle.get(mapping.playerId) ?? 0
+		if (now - lastToggle < READY_TOGGLE_DEBOUNCE_MS) {
+			console.log(`[READY] Ignoring rapid toggle from ${mapping.playerId} (debounced)`)
+			return
+		}
+		this.lastReadyToggle.set(mapping.playerId, now)
+
 		const handler = this.getVotingHandler(mapping.roomId)
 
 		try {
