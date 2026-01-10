@@ -6,6 +6,7 @@ import { JumbotronVoting } from '../components/JumbotronVoting'
 import { Pippin } from '../components/Pippin'
 import { Countdown } from '../components/Countdown'
 import { getJoinUrl } from '../lib/network-url'
+import { getApiBaseUrl } from '../lib/server-url'
 import { UnimplementedGameJumbotron } from '../games/UnimplementedGameJumbotron'
 import { Scratchpad1Jumbotron } from '../games/Scratchpad1Jumbotron'
 import { CinemaPippinJumbotron } from '../games/cinema-pippin/CinemaPippinJumbotron'
@@ -149,7 +150,7 @@ function JumbotronContent() {
 				console.log('[Jumbotron] Ctrl-K pressed - hard resetting server...')
 
 				try {
-					const response = await fetch('http://localhost:3001/api/room/hard-reset', {
+					const response = await fetch(`${getApiBaseUrl()}/room/hard-reset`, {
 						method: 'POST'
 					})
 
@@ -182,7 +183,7 @@ function JumbotronContent() {
 		const fetchRoom = async () => {
 			try {
 				console.log('[Jumbotron] Fetching singleton room...')
-				const response = await fetch('http://localhost:3001/api/room')
+				const response = await fetch(`${getApiBaseUrl()}/room`)
 
 				if (!response.ok) {
 					throw new Error('Failed to fetch room')
@@ -262,7 +263,7 @@ function JumbotronContent() {
 
 		try {
 			console.log('[Jumbotron] Calling POST /api/room/transition-to-lobby...')
-			const response = await fetch('http://localhost:3001/api/room/transition-to-lobby', {
+			const response = await fetch(`${getApiBaseUrl()}/room/transition-to-lobby`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -287,7 +288,7 @@ function JumbotronContent() {
 			// Fallback: try fetching the room again
 			console.log('[Jumbotron] Attempting to refetch room as fallback...')
 			try {
-				const response = await fetch('http://localhost:3001/api/room')
+				const response = await fetch(`${getApiBaseUrl()}/room`)
 				const { room: fetchedRoom } = (await response.json()) as { room: RoomState }
 				console.log('[Jumbotron] Fallback room fetch:', fetchedRoom)
 				setRoom(fetchedRoom)

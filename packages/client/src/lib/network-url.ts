@@ -3,6 +3,8 @@
  * Dynamically fetches the server's local network IP address
  */
 
+import { getApiBaseUrl } from './server-url'
+
 let cachedNetworkIP: string | null = null
 
 /**
@@ -14,7 +16,7 @@ async function fetchNetworkIP(): Promise<string | null> {
 	}
 
 	try {
-		const response = await fetch('http://localhost:3001/api/network-ip')
+		const response = await fetch(`${getApiBaseUrl()}/network-ip`)
 		const data = (await response.json()) as { ip: string }
 		cachedNetworkIP = data.ip
 		return cachedNetworkIP
